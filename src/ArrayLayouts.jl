@@ -48,8 +48,9 @@ end
 
 export materialize, materialize!, MulAdd, muladd!, Ldiv, Lmul, Rmul, MemoryLayout, AbstractStridedLayout,
         DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor,
-        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, SymmetricLayout, TriangularLayout,
-        ApplyBroadcastStyle, colsupport, rowsupport
+        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, HermitianLayout, SymmetricLayout, TriangularLayout, 
+        UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout,
+        colsupport, rowsupport, lazy_getindex
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle}) 
@@ -63,5 +64,11 @@ include("lmul.jl")
 include("ldiv.jl")
 include("diagonal.jl")
 include("triangular.jl")
+
+@inline sub_materialize(_, V) = Array(V)
+@inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(typeof(V)), V)
+
+@inline lazy_getindex(A, I...) = sub_materialize(view(A, I...))
+
 
 end

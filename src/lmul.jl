@@ -58,3 +58,16 @@ end
 materialize!(M::Lmul) = lmul!(M.A,M.B)
 materialize!(M::Rmul) = rmul!(M.A,M.B)
 
+
+
+macro lazylmul(Typ)
+    esc(quote
+        LinearAlgebra.lmul!(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize!(ArrayLayouts.Lmul(A,x))
+        LinearAlgebra.lmul!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Lmul(A,x))
+        LinearAlgebra.lmul!(A::$Typ, x::StridedVector) = ArrayLayouts.materialize!(ArrayLayouts.Lmul(A,x))
+        LinearAlgebra.lmul!(A::$Typ, x::StridedMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Lmul(A,x))
+    end)
+end
+
+
+
