@@ -70,5 +70,6 @@ include("triangular.jl")
 
 @inline lazy_getindex(A, I...) = sub_materialize(view(A, I...))
 
+_fill_lmul!(β, A::AbstractArray{T}) where T = iszero(β) ? zero!(A) : lmul!(β, A)
 
 end
