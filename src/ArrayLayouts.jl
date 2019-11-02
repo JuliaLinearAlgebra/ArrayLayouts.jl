@@ -46,7 +46,10 @@ else
     import Base: require_one_based_indexing    
 end     
 
-export materialize, materialize!, MulAdd, muladd!, Ldiv, Lmul, Rmul, MemoryLayout
+export materialize, materialize!, MulAdd, muladd!, Ldiv, Lmul, Rmul, MemoryLayout, AbstractStridedLayout,
+        DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor,
+        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, SymmetricLayout,
+        ApplyBroadcastStyle, colsupport, rowsupport
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle}) 

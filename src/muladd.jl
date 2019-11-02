@@ -71,7 +71,6 @@ const BlasMatMulMatAdd{StyleA,StyleB,StyleC,T<:BlasFloat} = MulAdd{StyleA,StyleB
 const BlasVecMulMatAdd{StyleA,StyleB,StyleC,T<:BlasFloat} = MulAdd{StyleA,StyleB,StyleC,T,<:AbstractVector{T},<:AbstractMatrix{T},<:AbstractMatrix{T}}
 
 muladd!(α, A, B, β, C) = materialize!(MulAdd(α, A, B, β, C))
-muladd(α, A, B, β, C) = materialize(MulAdd(α, A, B, β, C))
 materialize(M::MulAdd) = copy(instantiate(M))
 copy(M::MulAdd) = copyto!(similar(M), M)
 

@@ -156,81 +156,81 @@ MemoryLayout(::Type{<:ReshapedArray{T,N,A,DIMS}}) where {T,N,A,DIMS} = reshapedl
 
 
 @inline MemoryLayout(A::Type{<:SubArray{T,N,P,I}}) where {T,N,P,I} = 
-    subarraylayout(MemoryLayout(P), I)
-subarraylayout(_1, _2) = UnknownLayout()
-subarraylayout(_1, _2, _3)= UnknownLayout()
-subarraylayout(::DenseColumnMajor, ::Type{<:Tuple{<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex}}}) =
+    sublayout(MemoryLayout(P), I)
+sublayout(_1, _2) = UnknownLayout()
+sublayout(_1, _2, _3)= UnknownLayout()
+sublayout(::DenseColumnMajor, ::Type{<:Tuple{<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex}}}) =
     DenseColumnMajor()  # A[:] is DenseColumnMajor if A is DenseColumnMajor
-subarraylayout(ml::AbstractColumnMajor, inds) = _column_subarraylayout1(ml, inds)
-subarraylayout(::AbstractRowMajor, ::Type{<:Tuple{<:Any}}) =
+sublayout(ml::AbstractColumnMajor, inds) = _column_sublayout1(ml, inds)
+sublayout(::AbstractRowMajor, ::Type{<:Tuple{<:Any}}) =
     UnknownLayout()  # A[:] does not have any structure if A is AbstractRowMajor
-subarraylayout(ml::AbstractRowMajor, inds) = _row_subarraylayout1(ml, tuple_type_reverse(inds))
-subarraylayout(ml::AbstractStridedLayout, inds) = _strided_subarraylayout(ml, inds)
+sublayout(ml::AbstractRowMajor, inds) = _row_sublayout1(ml, tuple_type_reverse(inds))
+sublayout(ml::AbstractStridedLayout, inds) = _strided_sublayout(ml, inds)
 
-_column_subarraylayout1(::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Union{Int,AbstractCartesianIndex} =
+_column_sublayout1(::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Union{Int,AbstractCartesianIndex} =
     DenseColumnMajor() # view(A,1,1,2) is a scalar, which we include in DenseColumnMajor
-_column_subarraylayout1(::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Slice =
+_column_sublayout1(::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Slice =
     DenseColumnMajor() # view(A,:,1,2) is a DenseColumnMajor vector
-_column_subarraylayout1(::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:AbstractUnitRange{Int} =
+_column_sublayout1(::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:AbstractUnitRange{Int} =
     DenseColumnMajor() # view(A,1:3,1,2) is a DenseColumnMajor vector
-_column_subarraylayout1(par, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Union{Int,AbstractCartesianIndex} =
+_column_sublayout1(par, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Union{Int,AbstractCartesianIndex} =
     DenseColumnMajor() # view(A,1,1,2) is a scalar, which we include in DenseColumnMajor
-_column_subarraylayout1(par, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:AbstractUnitRange{Int} =
+_column_sublayout1(par, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:AbstractUnitRange{Int} =
     DenseColumnMajor() # view(A,1:3,1,2) is a DenseColumnMajor vector
-_column_subarraylayout1(::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:Slice =
-    _column_subarraylayout(DenseColumnMajor(), DenseColumnMajor(), tuple_type_tail(inds))
-_column_subarraylayout1(par::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:AbstractUnitRange{Int} =
-    _column_subarraylayout(par, ColumnMajor(), tuple_type_tail(inds))
-_column_subarraylayout1(par, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:AbstractUnitRange{Int} =
-    _column_subarraylayout(par, ColumnMajor(), tuple_type_tail(inds))
-_column_subarraylayout1(par::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
-    _column_subarraylayout(par, StridedLayout(), tuple_type_tail(inds))
-_column_subarraylayout1(par, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
-    _column_subarraylayout(par, StridedLayout(), tuple_type_tail(inds))
-_column_subarraylayout1(par, inds) = UnknownLayout()
-_column_subarraylayout(par, ret, ::Type{<:Tuple{}}) = ret
-_column_subarraylayout(par, ret, ::Type{<:Tuple{I}}) where I = UnknownLayout()
-_column_subarraylayout(::DenseColumnMajor, ::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex} =
+_column_sublayout1(::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:Slice =
+    _column_sublayout(DenseColumnMajor(), DenseColumnMajor(), tuple_type_tail(inds))
+_column_sublayout1(par::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:AbstractUnitRange{Int} =
+    _column_sublayout(par, ColumnMajor(), tuple_type_tail(inds))
+_column_sublayout1(par, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:AbstractUnitRange{Int} =
+    _column_sublayout(par, ColumnMajor(), tuple_type_tail(inds))
+_column_sublayout1(par::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
+    _column_sublayout(par, StridedLayout(), tuple_type_tail(inds))
+_column_sublayout1(par, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
+    _column_sublayout(par, StridedLayout(), tuple_type_tail(inds))
+_column_sublayout1(par, inds) = UnknownLayout()
+_column_sublayout(par, ret, ::Type{<:Tuple{}}) = ret
+_column_sublayout(par, ret, ::Type{<:Tuple{I}}) where I = UnknownLayout()
+_column_sublayout(::DenseColumnMajor, ::DenseColumnMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex} =
     DenseColumnMajor() # A[:,1:3,1,2] is DenseColumnMajor if A is DenseColumnMajor
-_column_subarraylayout(par::DenseColumnMajor, ::DenseColumnMajor, inds::Type{<:Tuple{I, Vararg{Int}}}) where I<:Slice =
+_column_sublayout(par::DenseColumnMajor, ::DenseColumnMajor, inds::Type{<:Tuple{I, Vararg{Int}}}) where I<:Slice =
     DenseColumnMajor()
-_column_subarraylayout(par::DenseColumnMajor, ::DenseColumnMajor, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Slice =
-    _column_subarraylayout(par, DenseColumnMajor(), tuple_type_tail(inds))
-_column_subarraylayout(par, ::AbstractColumnMajor, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex} =
-    _column_subarraylayout(par, ColumnMajor(), tuple_type_tail(inds))
-_column_subarraylayout(par, ::AbstractStridedLayout, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
-    _column_subarraylayout(par, StridedLayout(), tuple_type_tail(inds))
+_column_sublayout(par::DenseColumnMajor, ::DenseColumnMajor, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Slice =
+    _column_sublayout(par, DenseColumnMajor(), tuple_type_tail(inds))
+_column_sublayout(par, ::AbstractColumnMajor, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex} =
+    _column_sublayout(par, ColumnMajor(), tuple_type_tail(inds))
+_column_sublayout(par, ::AbstractStridedLayout, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
+    _column_sublayout(par, StridedLayout(), tuple_type_tail(inds))
 
-_row_subarraylayout1(par, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Union{Int,AbstractCartesianIndex} =
+_row_sublayout1(par, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Union{Int,AbstractCartesianIndex} =
     DenseColumnMajor() # view(A,1,1,2) is a scalar, which we include in DenseColumnMajor
-_row_subarraylayout1(::DenseRowMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Slice =
+_row_sublayout1(::DenseRowMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Slice =
     DenseColumnMajor() # view(A,1,2,:) is a DenseColumnMajor vector
-_row_subarraylayout1(par, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:AbstractUnitRange{Int} =
+_row_sublayout1(par, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:AbstractUnitRange{Int} =
     DenseColumnMajor() # view(A,1,2,1:3) is a DenseColumnMajor vector
-_row_subarraylayout1(::DenseRowMajor, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:Slice =
-    _row_subarraylayout(DenseRowMajor(), DenseRowMajor(), tuple_type_tail(inds))
-_row_subarraylayout1(par, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:AbstractUnitRange{Int} =
-    _row_subarraylayout(par, RowMajor(), tuple_type_tail(inds))
-_row_subarraylayout1(par, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
-    _row_subarraylayout(par, StridedLayout(), tuple_type_tail(inds))
-_row_subarraylayout1(par, inds) = UnknownLayout()
-_row_subarraylayout(par, ret, ::Type{<:Tuple{}}) = ret
-_row_subarraylayout(par, ret, ::Type{<:Tuple{I}}) where I = UnknownLayout()
-_row_subarraylayout(::DenseRowMajor, ::DenseRowMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex} =
+_row_sublayout1(::DenseRowMajor, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:Slice =
+    _row_sublayout(DenseRowMajor(), DenseRowMajor(), tuple_type_tail(inds))
+_row_sublayout1(par, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:AbstractUnitRange{Int} =
+    _row_sublayout(par, RowMajor(), tuple_type_tail(inds))
+_row_sublayout1(par, inds::Type{<:Tuple{I,Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
+    _row_sublayout(par, StridedLayout(), tuple_type_tail(inds))
+_row_sublayout1(par, inds) = UnknownLayout()
+_row_sublayout(par, ret, ::Type{<:Tuple{}}) = ret
+_row_sublayout(par, ret, ::Type{<:Tuple{I}}) where I = UnknownLayout()
+_row_sublayout(::DenseRowMajor, ::DenseRowMajor, inds::Type{<:Tuple{I,Vararg{Int}}}) where I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex} =
     DenseRowMajor() # A[1,2,1:3,:] is DenseRowMajor if A is DenseRowMajor
-_row_subarraylayout(par::DenseRowMajor, ::DenseRowMajor, inds::Type{<:Tuple{I, Vararg{Int}}}) where I<:Slice =
+_row_sublayout(par::DenseRowMajor, ::DenseRowMajor, inds::Type{<:Tuple{I, Vararg{Int}}}) where I<:Slice =
     DenseRowMajor()
-_row_subarraylayout(par::DenseRowMajor, ::DenseRowMajor, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Slice =
-    _row_subarraylayout(par, DenseRowMajor(), tuple_type_tail(inds))
-_row_subarraylayout(par::AbstractRowMajor, ::AbstractRowMajor, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex} =
-    _row_subarraylayout(par, RowMajor(), tuple_type_tail(inds))
-_row_subarraylayout(par::AbstractRowMajor, ::AbstractStridedLayout, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
-    _row_subarraylayout(par, StridedLayout(), tuple_type_tail(inds))
+_row_sublayout(par::DenseRowMajor, ::DenseRowMajor, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Slice =
+    _row_sublayout(par, DenseRowMajor(), tuple_type_tail(inds))
+_row_sublayout(par::AbstractRowMajor, ::AbstractRowMajor, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Union{AbstractUnitRange{Int},Int,AbstractCartesianIndex} =
+    _row_sublayout(par, RowMajor(), tuple_type_tail(inds))
+_row_sublayout(par::AbstractRowMajor, ::AbstractStridedLayout, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
+    _row_sublayout(par, StridedLayout(), tuple_type_tail(inds))
 
-_strided_subarraylayout(par, inds) = UnknownLayout()
-_strided_subarraylayout(par, ::Type{<:Tuple{}}) = StridedLayout()
-_strided_subarraylayout(par, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
-    _strided_subarraylayout(par, tuple_type_tail(inds))
+_strided_sublayout(par, inds) = UnknownLayout()
+_strided_sublayout(par, ::Type{<:Tuple{}}) = StridedLayout()
+_strided_sublayout(par, inds::Type{<:Tuple{I, Vararg{Any}}}) where I<:Union{RangeIndex,AbstractCartesianIndex} =
+    _strided_sublayout(par, tuple_type_tail(inds))
 
 # MemoryLayout of transposed and adjoint matrices
 struct ConjLayout{ML<:MemoryLayout} <: MemoryLayout end
@@ -241,7 +241,7 @@ conjlayout(::Type{<:Complex}, ::ML) where ML<:AbstractStridedLayout = ConjLayout
 conjlayout(::Type{<:Real}, M::MemoryLayout) = M
 
 
-subarraylayout(::ConjLayout{ML}, t::Type{<:Tuple}) where ML = ConjLayout{typeof(subarraylayout(ML(), t))}()
+sublayout(::ConjLayout{ML}, t::Type{<:Tuple}) where ML = ConjLayout{typeof(sublayout(ML(), t))}()
 
 MemoryLayout(::Type{Transpose{T,P}}) where {T,P} = transposelayout(MemoryLayout(P))
 MemoryLayout(::Type{Adjoint{T,P}}) where {T,P} = adjointlayout(T, MemoryLayout(P))
@@ -299,8 +299,8 @@ symmetriclayout(::ML) where ML<:AbstractRowMajor = SymmetricLayout{ML}()
 transposelayout(S::SymmetricLayout) = S
 adjointlayout(::Type{T}, S::SymmetricLayout) where T<:Real = S
 adjointlayout(::Type{T}, S::HermitianLayout) where T = S
-subarraylayout(S::SymmetricLayout, ::Type{<:Tuple{<:Slice,<:Slice}}) = S
-subarraylayout(S::HermitianLayout, ::Type{<:Tuple{<:Slice,<:Slice}}) = S
+sublayout(S::SymmetricLayout, ::Type{<:Tuple{<:Slice,<:Slice}}) = S
+sublayout(S::HermitianLayout, ::Type{<:Tuple{<:Slice,<:Slice}}) = S
 
 symmetricdata(A::Symmetric) = A.data
 symmetricdata(A::Hermitian{<:Real}) = A.data
@@ -314,6 +314,8 @@ hermitiandata(V::Transpose{<:Real}) = hermitiandata(parent(V))
 
 symmetricuplo(A::Symmetric) = A.uplo
 symmetricuplo(A::Hermitian) = A.uplo
+symmetricuplo(A::Adjoint) = symmetricuplo(parent(A))
+symmetricuplo(A::Transpose) = A.uplo
 symmetricuplo(A::SubArray{<:Any, 2, <:Any, <:Tuple{<:Slice,<:Slice}}) = symmetricuplo(parent(A))
 
 # MemoryLayout of triangular matrices
@@ -395,7 +397,7 @@ triangularlayout(_, ::MemoryLayout) = UnknownLayout()
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML<:AbstractColumnMajor} = Tri{ML}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML<:AbstractRowMajor} = Tri{ML}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML<:ConjLayout{<:AbstractRowMajor}} = Tri{ML}()
-subarraylayout(layout::TriangularLayout, ::Type{<:Tuple{<:Union{Slice,Base.OneTo},<:Union{Slice,Base.OneTo}}}) = layout
+sublayout(layout::TriangularLayout, ::Type{<:Tuple{<:Union{Slice,Base.OneTo},<:Union{Slice,Base.OneTo}}}) = layout
 conjlayout(::Type{<:Complex}, ::TriangularLayout{UPLO,UNIT,ML}) where {UPLO,UNIT,ML} =
     TriangularLayout{UPLO,UNIT,ConjLayout{ML}}()
 
@@ -445,7 +447,7 @@ MemoryLayout(::Type{<:AbstractFill}) = FillLayout()
 MemoryLayout(::Type{<:Zeros}) = ZerosLayout()
 diagonallayout(::ML) where ML<:AbstractFillLayout = DiagonalLayout{ML}()
 # all sub arrays are same
-subarraylayout(L::AbstractFillLayout, inds::Type) = L
+sublayout(L::AbstractFillLayout, inds::Type) = L
 reshapedlayout(L::AbstractFillLayout, _) = L
 adjointlayout(::Type, L::AbstractFillLayout) = L
 transposelayout(L::AbstractFillLayout) = L
