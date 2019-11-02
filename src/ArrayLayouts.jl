@@ -48,7 +48,7 @@ end
 
 export materialize, materialize!, MulAdd, muladd!, Ldiv, Lmul, Rmul, MemoryLayout, AbstractStridedLayout,
         DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor,
-        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, SymmetricLayout,
+        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, SymmetricLayout, TriangularLayout,
         ApplyBroadcastStyle, colsupport, rowsupport
 
 struct ApplyBroadcastStyle <: BroadcastStyle end

@@ -8,11 +8,6 @@ rowsupport(::TriangularLayout{'L'}, A, j) = rowsupport(triangulardata(A), j) ∩
 ###
 # Lmul
 ###
-mulapplystyle(::TriangularLayout, ::AbstractStridedLayout) = LmulStyle()
-
-
-
-
 
 @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,<:AbstractColumnMajor},
                                          <:AbstractStridedLayout}) where {UPLO,UNIT}
@@ -81,8 +76,6 @@ materialize!(M::MatLmulMat{<:TriangularLayout}) = lmul!(M.A, M.B)
 ###
 # Rmul
 ###
-
-mulapplystyle(::AbstractStridedLayout, ::TriangularLayout) = RmulStyle()
 
 @inline function materialize!(M::BlasMatRmulMat{<:AbstractStridedLayout,
                                                 <:TriangularLayout{UPLO,UNIT,<:AbstractColumnMajor},T}) where {UPLO,UNIT,T<:BlasFloat}
