@@ -41,6 +41,9 @@ const BlasMatRmulMat{StyleA,StyleB,T<:BlasFloat} = Rmul{StyleA,StyleB,<:Abstract
 
 axes(M::MatLmulVec) = (axes(M.A,1),)
 
+lmul(A, B) = materialize(Lmul(A, B))
+
+materialize(L::Lmul) = copy(instantiate(L))
 
 copy(M::Lmul) = materialize!(Lmul(M.A,copy(M.B)))
 copy(M::Rmul) = materialize!(Rmul(copy(M.A),M.B))

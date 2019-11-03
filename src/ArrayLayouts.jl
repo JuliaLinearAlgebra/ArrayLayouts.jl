@@ -46,11 +46,11 @@ else
     import Base: require_one_based_indexing    
 end     
 
-export materialize, materialize!, MulAdd, muladd!, Ldiv, Lmul, Rmul, MemoryLayout, AbstractStridedLayout,
+export materialize, materialize!, MulAdd, muladd!, Ldiv, Lmul, Rmul, lmul, rmul, MemoryLayout, AbstractStridedLayout,
         DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor,
         DiagonalLayout, ScalarLayout, SymTridiagonalLayout, HermitianLayout, SymmetricLayout, TriangularLayout, 
         UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout,
-        colsupport, rowsupport, lazy_getindex
+        colsupport, rowsupport, lazy_getindex, QLayout
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle}) 
@@ -64,12 +64,75 @@ include("lmul.jl")
 include("ldiv.jl")
 include("diagonal.jl")
 include("triangular.jl")
+include("factorizations.jl")
 
 @inline sub_materialize(_, V) = Array(V)
 @inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(typeof(V)), V)
 
 @inline lazy_getindex(A, I...) = sub_materialize(view(A, I...))
 
+zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
+function zero!(A::AbstractArray{<:AbstractArray}) 
+    for a in A
+        zero!(a)
+    end
+    A
+end
+
 _fill_lmul!(β, A::AbstractArray{T}) where T = iszero(β) ? zero!(A) : lmul!(β, A)
+
+
+# Elementary reflection similar to LAPACK. The reflector is not Hermitian but
+# ensures that tridiagonalization of Hermitian matrices become real. See lawn72
+@inline function reflector!(x::AbstractVector)
+    require_one_based_indexing(x)
+    n = length(x)
+    n == 0 && return zero(eltype(x))
+    @inbounds begin
+        ξ1 = x[1]
+        normu = abs2(ξ1)
+        for i = 2:n
+            normu += abs2(x[i])
+        end
+        if iszero(normu)
+            return zero(ξ1/normu)
+        end
+        normu = sqrt(normu)
+        ν = copysign(normu, real(ξ1))
+        ξ1 += ν
+        x[1] = -ν
+        for i = 2:n
+            x[i] /= ξ1
+        end
+    end
+    ξ1/ν
+end
+
+# apply reflector from left
+@inline function reflectorApply!(x::AbstractVector, τ::Number, A::AbstractVecOrMat)
+    m,n = size(A,1),size(A,2)
+    if length(x) != m
+        throw(DimensionMismatch("reflector has length $(length(x)), which must match the first dimension of matrix A, $m"))
+    end
+    m == 0 && return A
+    @inbounds begin
+        for j = 1:n
+            # dot
+            vAj = A[1, j]
+            for i = 2:m
+                vAj += x[i]'*A[i, j]
+            end
+
+            vAj = conj(τ)*vAj
+
+            # ger
+            A[1, j] -= vAj
+            for i = 2:m
+                A[i, j] -= x[i]*vAj
+            end
+        end
+    end
+    return A
+end
 
 end

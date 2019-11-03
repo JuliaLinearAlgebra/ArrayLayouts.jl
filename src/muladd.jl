@@ -49,6 +49,13 @@ function check_mul_axes(A, B, C...)
     check_mul_axes(B, C...)
 end
 
+# we need to special case AbstractQ as it allows non-compatiple multiplication
+function check_mul_axes(A::AbstractQ, B, C...) 
+    axes(A.factors, 1) == axes(B, 1) || axes(A.factors, 2) == axes(B, 1) ||  
+        throw(DimensionMismatch("First axis of B, $(axes(B,1)) must match either axes of A, $(axes(A))"))
+    check_mul_axes(B, C...)
+end
+
 
 function instantiate(M::MulAdd)
     @boundscheck check_mul_axes(M.α, M.A, M.B)
@@ -374,3 +381,84 @@ copy(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex
 copy(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout},ZerosLayout}) = (M.α * getindex_value(M.B.diag)) .* M.A
 
 BroadcastStyle(::Type{<:MulAdd}) = ApplyBroadcastStyle()
+
+scalarone(::Type{T}) where T = one(T)
+scalarone(::Type{<:AbstractArray{T}}) where T = scalarone(T)
+scalarzero(::Type{T}) where T = zero(T)
+scalarzero(::Type{<:AbstractArray{T}}) where T = scalarzero(T)
+
+fillzeros(::Type{T}, ax) where T = Zeros{T}(ax)
+
+function mul!(dest::AbstractArray{W}, A::AbstractArray{T}, b::AbstractArray{V}) where {T,V,W} 
+    TVW = promote_type(W, _mul_eltype(T,V))
+    muladd!(scalarone(TVW), A, b, scalarzero(TVW), dest)
+end
+
+function MulAdd(A::AbstractArray{T}, B::AbstractVector{V}) where {T,V}
+    TV = _mul_eltype(eltype(A), eltype(B))
+    MulAdd(scalarone(TV), A, B, scalarzero(TV), fillzeros(TV,(axes(A,1))))
+end
+
+function MulAdd(A::AbstractArray{T}, B::AbstractMatrix{V}) where {T,V}
+    TV = _mul_eltype(eltype(A), eltype(B))
+    MulAdd(scalarone(TV), A, B, scalarzero(TV), fillzeros(TV,(axes(A,1),axes(B,2))))
+end
+
+mul(A::AbstractArray, B::AbstractArray) = materialize(MulAdd(A,B))
+
+macro lazymul(Typ)
+    ret = quote
+        LinearAlgebra.mul!(dest::AbstractVector, A::$Typ, b::AbstractVector) =
+            ArrayLayouts.mul!(dest,A,b)
+
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::AbstractMatrix) =
+            ArrayLayouts.mul!(dest,A,b)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::$Typ) =
+            ArrayLayouts.mul!(dest,A,b)
+
+        Base.:*(A::$Typ, B::$Typ) = ArrayLayouts.mul(A,B)
+        Base.:*(A::$Typ, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
+        Base.:*(A::$Typ, B::AbstractVector) = ArrayLayouts.mul(A,B)
+        Base.:*(A::AbstractMatrix, B::$Typ) = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.AdjointAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.TransposeAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
+
+        Base.:*(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.lmul(A,B)
+        Base.:*(A::$Typ, B::LinearAlgebra.AbstractQ) = ArrayLayouts.rmul(A,B)
+    end
+    for Struc in (:AbstractTriangular, :Diagonal)
+        ret = quote
+            $ret
+
+            Base.:*(A::LinearAlgebra.$Struc, B::$Typ) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Typ, B::LinearAlgebra.$Struc) = ArrayLayouts.mul(A,B)
+        end
+    end
+    for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian)
+        ret = quote
+            $ret
+
+            LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::$Mod{<:Any,<:AbstractMatrix}) =
+                ArrayLayouts.mul!(dest,A,b)
+
+            LinearAlgebra.mul!(dest::AbstractVector, A::$Mod{<:Any,<:$Typ}, b::AbstractVector) =
+                ArrayLayouts.mul!(dest,A,b)
+
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
+            Base.:*(A::AbstractMatrix, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractVector) = ArrayLayouts.mul(A,B)
+
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::$Typ) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Typ, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
+
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::Diagonal) = ArrayLayouts.mul(A,B)
+            Base.:*(A::Diagonal, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
+
+            Base.:*(A::LinearAlgebra.AbstractTriangular, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::LinearAlgebra.AbstractTriangular) = ArrayLayouts.mul(A,B)
+        end
+    end
+
+    esc(ret)
+end
