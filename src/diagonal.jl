@@ -29,3 +29,8 @@ end
 
 copy(M::Rmul{<:Any,<:DiagonalLayout}) = M.A .* permutedims(M.B.diag)
 copy(M::Rmul{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) =  M.A .* getindex_value(M.B.diag)
+
+copy(M::Ldiv{<:DiagonalLayout,<:DiagonalLayout}) = Diagonal(M.A.diag .\ M.B.diag)
+copy(M::Ldiv{<:DiagonalLayout}) = M.A.diag .\ M.B
+copy(M::Ldiv{<:DiagonalLayout{<:AbstractFillLayout}}) = getindex_value(M.A.diag) .\ M.B
+copy(M::Ldiv{<:DiagonalLayout{<:AbstractFillLayout},<:DiagonalLayout}) = Diagonal(getindex_value(M.A.diag) .\ M.B.diag)
