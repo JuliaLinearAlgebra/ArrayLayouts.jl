@@ -42,6 +42,7 @@ _ldivaxes(Aax::Tuple{<:Any,<:Any}, Bax::Tuple{<:Any,<:Any}) = (last(Aax),last(Ba
 
 ndims(L::Ldiv) = ndims(last(L.args))
 eltype(M::Ldiv) = promote_type(Base.promote_op(inv, eltype(M.A)), eltype(M.B))
+eltype(M::Rdiv) = promote_type(eltype(M.A), Base.promote_op(inv, eltype(M.B)))
 
 
 check_ldiv_axes(A, B) =
@@ -67,28 +68,29 @@ _ldiv!(A::Factorization, B) = ldiv!(A, B)
 _ldiv!(dest, A, B) = ldiv!(dest, factorize(A), B)
 _ldiv!(dest, A::Factorization, B) = ldiv!(dest, A, B)
 
-_rdiv!(A, B) = rdiv!(factorize(A), B)
-_rdiv!(A::Factorization, B) = rdiv!(A, B)
-
-_rdiv!(dest, A, B) = rdiv!(dest, factorize(A), B)
-_rdiv!(dest, A::Factorization, B) = rdiv!(dest, A, B)
 
 
 materialize!(M::Ldiv) = _ldiv!(M.A, M.B)
-materialize!(M::Rdiv) = _rdiv!(M.A, M.B)
+materialize!(M::Rdiv) = materialize!(Lmul(M.B', M.A'))'
+copyto!(dest::AbstractArray, M::Rdiv) = copyto!(dest', Ldiv(M.B', M.A'))'
 
 if VERSION ≥ v"1.1-pre"
     copyto!(dest::AbstractArray, M::Ldiv) = _ldiv!(dest, M.A, M.B)
-    copyto!(dest::AbstractArray, M::Rdiv) = _ldiv!(dest, M.A, M.B)
 else
     copyto!(dest::AbstractArray, M::Ldiv) = _ldiv!(dest, M.A, copy(M.B))
-    copyto!(dest::AbstractArray, M::Rdiv) = _ldiv!(dest, copy(M.A), M.B)
 end
 
 const MatLdivVec{styleA, styleB, T, V} = Ldiv{styleA, styleB, <:AbstractMatrix{T}, <:AbstractVector{V}}
 const MatLdivMat{styleA, styleB, T, V} = Ldiv{styleA, styleB, <:AbstractMatrix{T}, <:AbstractMatrix{V}}
 const BlasMatLdivVec{styleA, styleB, T<:BlasFloat} = MatLdivVec{styleA, styleB, T, T}
 const BlasMatLdivMat{styleA, styleB, T<:BlasFloat} = MatLdivMat{styleA, styleB, T, T}
+
+const MatRdivMat{styleA, styleB, T, V} = Rdiv{styleA, styleB, <:AbstractMatrix{T}, <:AbstractMatrix{V}}
+const BlasMatRdivMat{styleA, styleB, T<:BlasFloat} = MatRdivMat{styleA, styleB, T, T}
+
+# function materialize!(L::BlasMatLdivVec{<:AbstractColumnMajor,<:AbstractColumnMajor})
+
+# end
 
 
 macro lazyldiv(Typ)
@@ -104,6 +106,14 @@ macro lazyldiv(Typ)
         Base.:\(x::AbstractMatrix, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))
         Base.:\(x::Diagonal, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))        
 
-        Base.:\(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))
+        Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
+
+        Base.:/(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(A,x))
+        Base.:/(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(A,x))
+
+        Base.:/(x::AbstractMatrix, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
+        Base.:/(x::Diagonal, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))        
+
+        Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
     end)
 end
