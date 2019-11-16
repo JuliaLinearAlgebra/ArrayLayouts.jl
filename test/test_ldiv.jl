@@ -1,4 +1,4 @@
-using ArrayLayouts, LinearAlgebra, Test
+using ArrayLayouts, LinearAlgebra, FillArrays, Test
 import ArrayLayouts: ApplyBroadcastStyle
 
 @testset "Ldiv" begin
@@ -92,4 +92,34 @@ import ArrayLayouts: ApplyBroadcastStyle
         A = [1 2 ; 3 4]; b = [5,6];
         @test eltype(Ldiv(A, b)) == Float64
     end
+
+    @testset "Rdiv" begin
+        @testset "Float64 \\ *" begin
+            A = randn(3,5)
+            B = randn(5,5)
+            M = Rdiv(A,B)
+
+            @test size(M) == (3,5)
+            @test axes(M) == (Base.OneTo(3),Base.OneTo(5))
+            @test similar(M) isa Matrix{Float64}
+        end
+    end
+
+    @testset "Diagonal" begin
+        D = Diagonal(randn(5))
+        F = Eye(5)
+        A = randn(5,5)
+        @test copy(Ldiv(D,F)) == D \ F
+        @test copy(Ldiv(F,D)) == F \ D
+        @test copy(Ldiv(D,A)) ≈ D \ A
+        @test copy(Ldiv(A,D)) == A \ D
+        @test copy(Ldiv(F,A)) ≈ F \ A
+        @test copy(Ldiv(A,F)) == A \ F
+
+        @test copy(Rdiv(D,F)) == D / F
+        @test copy(Rdiv(F,D)) == F / D
+        @test copy(Rdiv(A,D)) ≈ A / D
+        @test copy(Rdiv(A,F)) == A / F
+    end
 end
+
