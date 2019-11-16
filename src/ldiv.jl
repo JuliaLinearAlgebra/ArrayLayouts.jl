@@ -69,6 +69,8 @@ _ldiv!(A::Factorization, B) = ldiv!(A, B)
 
 _ldiv!(dest, A, B) = ldiv!(dest, factorize(A), B)
 _ldiv!(dest, A::Factorization, B) = ldiv!(dest, A, B)
+_ldiv!(dest, A::Transpose{<:Any,<:Factorization}, B) = ldiv!(dest, A, B)
+_ldiv!(dest, A::Adjoint{<:Any,<:Factorization}, B) = ldiv!(dest, A, B)
 
 
 
