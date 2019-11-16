@@ -108,7 +108,7 @@ macro lazyldiv(Typ)
         Base.:\(x::AbstractMatrix, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))
         Base.:\(x::Diagonal, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))
 
-        Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
+        Base.:\(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))
 
         Base.:/(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(A,x))
         Base.:/(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(A,x))
