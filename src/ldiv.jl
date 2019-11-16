@@ -36,7 +36,8 @@ eltype(M::Ldiv) = promote_type(Base.promote_op(inv, eltype(M.A)), eltype(M.B))
 BroadcastStyle(::Type{<:Ldiv}) = ApplyBroadcastStyle()
 broadcastable(M::Ldiv) = M
 
-similar(A::Ldiv, ::Type{T}) where T = similar(Array{T}, axes(A))
+similar(A::Ldiv, ::Type{T}, axes) where T = similar(Array{T}, axes)
+similar(A::Ldiv, ::Type{T}) where T = similar(A, T, axes(A))
 similar(A::Ldiv) = similar(A, eltype(A))
 
 function instantiate(L::Ldiv)
