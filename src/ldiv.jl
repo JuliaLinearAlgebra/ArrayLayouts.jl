@@ -5,16 +5,17 @@ for Typ in (:Ldiv, :Rdiv)
             B::BType
         end
 
-        $Typ{StyleA, StyleB}(A::AType, B::BType) where {StyleA,StyleB,AType,BType} = 
+        $Typ{StyleA, StyleB}(A::AType, B::BType) where {StyleA,StyleB,AType,BType} =
             $Typ{StyleA,StyleB,AType,BType}(A,B)
 
-        $Typ(A::AType, B::BType) where {AType,BType} = 
+        $Typ(A::AType, B::BType) where {AType,BType} =
             $Typ{typeof(MemoryLayout(AType)),typeof(MemoryLayout(BType)),AType,BType}(A, B)
 
         BroadcastStyle(::Type{<:$Typ}) = ApplyBroadcastStyle()
         broadcastable(M::$Typ) = M
 
-        similar(A::$Typ, ::Type{T}) where T = similar(Array{T}, axes(A))
+        similar(A::$Typ, ::Type{T}, axes) where T = similar(Array{T}, axes)
+        similar(A::$Typ, ::Type{T}) where T = similar(A, T, axes(A))
         similar(A::$Typ) = similar(A, eltype(A))
 
         copy(M::$Typ) = copyto!(similar(M), M)
@@ -25,7 +26,7 @@ end
 size(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractMatrix}) = (size(L.A, 2),size(L.B,2))
 size(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractVector}) = (size(L.A, 2),)
 axes(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractMatrix}) = (axes(L.A, 2),axes(L.B,2))
-axes(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractVector}) = (axes(L.A, 2),)    
+axes(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractVector}) = (axes(L.A, 2),)
 length(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractVector}) =size(L.A, 2)
 
 size(L::Rdiv) = (size(L.A, 1),size(L.B,1))
@@ -50,6 +51,7 @@ check_ldiv_axes(A, B) =
 
 check_rdiv_axes(A, B) =
     axes(A,2) == axes(B,2) || throw(DimensionMismatch("Second axis of A, $(axes(A,2)), and second axis of B, $(axes(B,2)) must match"))
+
 
 
 function instantiate(L::Ldiv)
@@ -104,7 +106,7 @@ macro lazyldiv(Typ)
         Base.:\(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(A,x))
 
         Base.:\(x::AbstractMatrix, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))
-        Base.:\(x::Diagonal, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))        
+        Base.:\(x::Diagonal, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))
 
         Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
 
@@ -112,7 +114,7 @@ macro lazyldiv(Typ)
         Base.:/(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(A,x))
 
         Base.:/(x::AbstractMatrix, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
-        Base.:/(x::Diagonal, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))        
+        Base.:/(x::Diagonal, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
 
         Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
     end)
