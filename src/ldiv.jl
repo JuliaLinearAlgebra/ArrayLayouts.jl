@@ -72,7 +72,8 @@ end
 @inline _ldiv!(dest, A::Transpose{<:Any,<:Factorization}, B) = ldiv!(dest, A, B)
 @inline _ldiv!(dest, A::Adjoint{<:Any,<:Factorization}, B) = ldiv!(dest, A, B)
 
-
+@inline ldiv(A, B) = materialize(Ldiv(A,B))
+@inline rdiv(A, B) = materialize(Rdiv(A,B))
 
 @inline materialize!(M::Ldiv) = _ldiv!(M.A, M.B)
 @inline materialize!(M::Rdiv) = materialize!(Lmul(M.B', M.A'))'
