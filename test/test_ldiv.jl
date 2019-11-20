@@ -7,10 +7,11 @@ import ArrayLayouts: ApplyBroadcastStyle
         b = randn(5)
         M = Ldiv(A,b)
 
+        @test ndims(M) == 1
         @test size(M) == (5,)
         @test similar(M) isa Vector{Float64}
         @test materialize(M) isa Vector{Float64}
-        @test all(materialize(M) .=== (A\b))
+        @test all(materialize(M) .=== (A\b) .=== ldiv(A,b))
 
         @test Base.BroadcastStyle(typeof(Ldiv(A,b))) isa ApplyBroadcastStyle
 
@@ -99,6 +100,8 @@ import ArrayLayouts: ApplyBroadcastStyle
             B = randn(5,5)
             M = Rdiv(A,B)
 
+            @test eltype(M) == Float64
+            @test ndims(M) == 2
             @test size(M) == (3,5)
             @test axes(M) == (Base.OneTo(3),Base.OneTo(5))
             @test similar(M) isa Matrix{Float64}
@@ -109,17 +112,17 @@ import ArrayLayouts: ApplyBroadcastStyle
         D = Diagonal(randn(5))
         F = Eye(5)
         A = randn(5,5)
-        @test copy(Ldiv(D,F)) == D \ F
-        @test copy(Ldiv(F,D)) == F \ D
-        @test copy(Ldiv(D,A)) ≈ D \ A
-        @test copy(Ldiv(A,D)) == A \ D
-        @test copy(Ldiv(F,A)) ≈ F \ A
-        @test copy(Ldiv(A,F)) == A \ F
+        @test copy(Ldiv(D,F)) == ldiv(D,F) == D \ F
+        @test ldiv(F,D) == F \ D
+        @test ldiv(D,A) ≈ D \ A
+        @test ldiv(A,D) == A \ D
+        @test ldiv(F,A) ≈ F \ A
+        @test ldiv(A,F) == A \ F
 
-        @test copy(Rdiv(D,F)) == D / F
-        @test copy(Rdiv(F,D)) == F / D
-        @test copy(Rdiv(A,D)) ≈ A / D
-        @test copy(Rdiv(A,F)) == A / F
+        @test copy(Rdiv(D,F)) == rdiv(D,F) == D / F
+        @test rdiv(F,D) == F / D
+        @test rdiv(A,D) ≈ A / D
+        @test rdiv(A,F) == A / F
     end
 end
 

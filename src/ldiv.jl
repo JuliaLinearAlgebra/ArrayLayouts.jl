@@ -23,15 +23,6 @@ for Typ in (:Ldiv, :Rdiv)
     end
 end
 
-@inline size(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractMatrix}) = (size(L.A, 2),size(L.B,2))
-@inline size(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractVector}) = (size(L.A, 2),)
-@inline axes(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractMatrix}) = (axes(L.A, 2),axes(L.B,2))
-@inline axes(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractVector}) = (axes(L.A, 2),)
-@inline length(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractVector}) =size(L.A, 2)
-
-@inline size(L::Rdiv) = (size(L.A, 1),size(L.B,1))
-@inline axes(L::Rdiv) = (axes(L.A, 1),axes(L.B,1))
-
 @inline _ldivaxes(::Tuple{}, ::Tuple{}) = ()
 @inline _ldivaxes(::Tuple{}, Bax::Tuple) = Bax
 @inline _ldivaxes(::Tuple{<:Any}, ::Tuple{<:Any}) = ()
@@ -41,7 +32,15 @@ end
 
 @inline ldivaxes(A, B) = _ldivaxes(axes(A), axes(B))
 
-@inline ndims(L::Ldiv) = ndims(last(L.args))
+@inline axes(L::Ldiv) = ldivaxes(L.A, L.B)
+@inline size(L::Ldiv) = map(length, axes(L))
+@inline length(L::Ldiv{<:Any,<:Any,<:Any,<:AbstractVector}) =size(L.A, 2)
+
+@inline size(L::Rdiv) = (size(L.A, 1),size(L.B,1))
+@inline axes(L::Rdiv) = (axes(L.A, 1),axes(L.B,1))
+
+@inline ndims(L::Ldiv) = ndims(L.B)
+@inline ndims(L::Rdiv) = 2
 @inline eltype(M::Ldiv) = promote_type(Base.promote_op(inv, eltype(M.A)), eltype(M.B))
 @inline eltype(M::Rdiv) = promote_type(eltype(M.A), Base.promote_op(inv, eltype(M.B)))
 
