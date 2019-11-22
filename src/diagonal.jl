@@ -1,6 +1,6 @@
 
-rowsupport(::DiagonalLayout, _, k) = minimum(k):maximum(k)
-colsupport(::DiagonalLayout, _, j) = minimum(j):maximum(j)
+rowsupport(::DiagonalLayout, _, k) = isempty(k) ? (1:0) : minimum(k):maximum(k)
+colsupport(::DiagonalLayout, _, j) = isempty(j) ? (1:0) : minimum(j):maximum(j)
 
 ###
 # Lmul
