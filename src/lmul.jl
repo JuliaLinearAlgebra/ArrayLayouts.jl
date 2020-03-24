@@ -63,7 +63,7 @@ materialize!(M::Rmul) = rmul!(M.A,M.B)
 
 
 
-macro lazylmul(Typ)
+macro layoutlmul(Typ)
     esc(quote
         LinearAlgebra.lmul!(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize!(ArrayLayouts.Lmul(A,x))
         LinearAlgebra.lmul!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Lmul(A,x))
@@ -73,4 +73,7 @@ macro lazylmul(Typ)
 end
 
 
-
+@layoutlmul UpperTriangular{T, <:LayoutMatrix{T}} where T
+@layoutlmul UnitUpperTriangular{T, <:LayoutMatrix{T}} where T
+@layoutlmul LowerTriangular{T, <:LayoutMatrix{T}} where T
+@layoutlmul UnitLowerTriangular{T, <:LayoutMatrix{T}} where T

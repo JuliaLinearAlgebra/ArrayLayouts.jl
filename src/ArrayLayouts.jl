@@ -50,13 +50,19 @@ export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, lmul,
         DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor,
         DiagonalLayout, ScalarLayout, SymTridiagonalLayout, HermitianLayout, SymmetricLayout, TriangularLayout, 
         UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout,
-        colsupport, rowsupport, lazy_getindex, QLayout
+        colsupport, rowsupport, layout_getindex, QLayout, LayoutArray, LayoutMatrix, LayoutVector
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle}) 
     @assert length(bc.args) == 1
     copyto!(dest, first(bc.args))
 end
+
+# Subtypes of LayoutArray default to 
+# ArrayLayouts routines
+abstract type LayoutArray{T,N} <: AbstractArray{T,N} end
+const LayoutMatrix{T} = LayoutArray{T,2}
+const LayoutVector{T} = LayoutArray{T,1}
 
 include("memorylayout.jl")
 include("muladd.jl")
@@ -70,7 +76,7 @@ include("factorizations.jl")
 @inline sub_materialize(L, V) = sub_materialize(L, V, axes(V))
 @inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(typeof(V)), V)
 
-@inline lazy_getindex(A, I...) = sub_materialize(view(A, I...))
+@inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
 
 zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
 function zero!(A::AbstractArray{<:AbstractArray}) 

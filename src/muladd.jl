@@ -406,7 +406,7 @@ end
 
 mul(A::AbstractArray, B::AbstractArray) = materialize(MulAdd(A,B))
 
-macro lazymul(Typ)
+macro layoutmul(Typ)
     ret = quote
         LinearAlgebra.mul!(dest::AbstractVector, A::$Typ, b::AbstractVector) =
             ArrayLayouts.mul!(dest,A,b)
@@ -462,3 +462,5 @@ macro lazymul(Typ)
 
     esc(ret)
 end
+
+@layoutmul LayoutMatrix

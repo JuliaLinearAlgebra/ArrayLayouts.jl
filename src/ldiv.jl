@@ -97,7 +97,7 @@ const BlasMatRdivMat{styleA, styleB, T<:BlasFloat} = MatRdivMat{styleA, styleB, 
 # end
 
 
-macro lazyldiv(Typ)
+macro layoutldiv(Typ)
     esc(quote
         LinearAlgebra.ldiv!(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
         LinearAlgebra.ldiv!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
@@ -121,3 +121,9 @@ macro lazyldiv(Typ)
         Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
     end)
 end
+
+@layoutldiv LayoutMatrix
+@layoutldiv UpperTriangular{T, <:LayoutMatrix{T}} where T
+@layoutldiv UnitUpperTriangular{T, <:LayoutMatrix{T}} where T
+@layoutldiv LowerTriangular{T, <:LayoutMatrix{T}} where T
+@layoutldiv UnitLowerTriangular{T, <:LayoutMatrix{T}} where T
