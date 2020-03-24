@@ -78,6 +78,14 @@ include("factorizations.jl")
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
 
+@inline getindex(A::LayoutMatrix, kr::Colon, jr::Colon) = layout_getindex(A, kr, jr)
+@inline getindex(A::LayoutMatrix, kr::Colon, jr::AbstractUnitRange) = layout_getindex(A, kr, jr)
+@inline getindex(A::LayoutMatrix, kr::AbstractUnitRange, jr::Colon) = layout_getindex(A, kr, jr)
+@inline getindex(A::LayoutMatrix, kr::AbstractUnitRange, jr::AbstractUnitRange) = layout_getindex(A, kr, jr)
+@inline getindex(A::LayoutMatrix, kr::AbstractVector, jr::AbstractVector) = layout_getindex(A, kr, jr)
+@inline getindex(A::LayoutMatrix, kr::Colon, jr::AbstractVector) = layout_getindex(A, kr, jr)
+@inline getindex(A::LayoutMatrix, kr::AbstractVector, jr::Colon) = layout_getindex(A, kr, jr)
+
 zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
 function zero!(A::AbstractArray{<:AbstractArray}) 
     for a in A

@@ -63,7 +63,9 @@ end
     Rdiv(instantiate(L.A), instantiate(L.B))
 end
 
-@inline _ldiv!(A, B) = ldiv!(factorize(A), B)
+__ldiv!(::Mat, ::Mat, B) where Mat = error("Overload ldiv! for $Mat")
+__ldiv!(_, F, B) = ldiv!(F, B)
+@inline _ldiv!(A, B) = __ldiv!(A, factorize(A), B)
 @inline _ldiv!(A::Factorization, B) = ldiv!(A, B)
 
 @inline _ldiv!(dest, A, B) = ldiv!(dest, factorize(A), B)
