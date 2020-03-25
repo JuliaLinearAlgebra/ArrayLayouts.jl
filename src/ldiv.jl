@@ -63,7 +63,9 @@ end
     Rdiv(instantiate(L.A), instantiate(L.B))
 end
 
-@inline _ldiv!(A, B) = ldiv!(factorize(A), B)
+__ldiv!(::Mat, ::Mat, B) where Mat = error("Overload ldiv! for $Mat")
+__ldiv!(_, F, B) = ldiv!(F, B)
+@inline _ldiv!(A, B) = __ldiv!(A, factorize(A), B)
 @inline _ldiv!(A::Factorization, B) = ldiv!(A, B)
 
 @inline _ldiv!(dest, A, B) = ldiv!(dest, factorize(A), B)
@@ -97,7 +99,7 @@ const BlasMatRdivMat{styleA, styleB, T<:BlasFloat} = MatRdivMat{styleA, styleB, 
 # end
 
 
-macro lazyldiv(Typ)
+macro _layoutldiv(Typ)
     esc(quote
         LinearAlgebra.ldiv!(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
         LinearAlgebra.ldiv!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
@@ -121,3 +123,14 @@ macro lazyldiv(Typ)
         Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
     end)
 end
+
+macro layoutldiv(Typ)
+    esc(quote
+        ArrayLayouts.@_layoutldiv $Typ
+        ArrayLayouts.@_layoutldiv UpperTriangular{T, <:$Typ{T}} where T
+        ArrayLayouts.@_layoutldiv UnitUpperTriangular{T, <:$Typ{T}} where T
+        ArrayLayouts.@_layoutldiv LowerTriangular{T, <:$Typ{T}} where T
+        ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:$Typ{T}} where T
+    end)
+end
+

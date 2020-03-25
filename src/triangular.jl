@@ -212,7 +212,7 @@ function materialize!(M::MatLdivVec{<:TriangularLayout{'L','N'}})
     b
 end
 
-function materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L','U'}})
+function materialize!(M::MatLdivVec{<:TriangularLayout{'L','U'}})
     A,b = M.A,M.B
     require_one_based_indexing(A, b)
     n = size(A, 2)
