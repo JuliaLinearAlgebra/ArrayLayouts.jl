@@ -462,5 +462,3 @@ macro layoutmul(Typ)
 
     esc(ret)
 end
-
-@layoutmul LayoutMatrix

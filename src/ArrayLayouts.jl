@@ -78,13 +78,25 @@ include("factorizations.jl")
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
 
-@inline getindex(A::LayoutMatrix, kr::Colon, jr::Colon) = layout_getindex(A, kr, jr)
-@inline getindex(A::LayoutMatrix, kr::Colon, jr::AbstractUnitRange) = layout_getindex(A, kr, jr)
-@inline getindex(A::LayoutMatrix, kr::AbstractUnitRange, jr::Colon) = layout_getindex(A, kr, jr)
-@inline getindex(A::LayoutMatrix, kr::AbstractUnitRange, jr::AbstractUnitRange) = layout_getindex(A, kr, jr)
-@inline getindex(A::LayoutMatrix, kr::AbstractVector, jr::AbstractVector) = layout_getindex(A, kr, jr)
-@inline getindex(A::LayoutMatrix, kr::Colon, jr::AbstractVector) = layout_getindex(A, kr, jr)
-@inline getindex(A::LayoutMatrix, kr::AbstractVector, jr::Colon) = layout_getindex(A, kr, jr)
+
+
+macro layoutmatrix(Typ)
+    esc(quote
+        ArrayLayouts.@layoutldiv $Typ
+        ArrayLayouts.@layoutmul $Typ
+        ArrayLayouts.@layoutlmul $Typ
+
+        @inline Base.getindex(A::$Typ, kr::Colon, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline Base.getindex(A::$Typ, kr::Colon, jr::AbstractUnitRange) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline Base.getindex(A::$Typ, kr::AbstractUnitRange, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline Base.getindex(A::$Typ, kr::AbstractUnitRange, jr::AbstractUnitRange) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline Base.getindex(A::$Typ, kr::AbstractVector, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline Base.getindex(A::$Typ, kr::Colon, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline Base.getindex(A::$Typ, kr::AbstractVector, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
+    end)
+end
+
+@layoutmatrix LayoutMatrix
 
 zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
 function zero!(A::AbstractArray{<:AbstractArray}) 
