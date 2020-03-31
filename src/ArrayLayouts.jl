@@ -33,7 +33,7 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcas
                         materialize!, eltypes
 
 import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, Abuf, Bbuf, Cbuf, dot, factorize, qr, lu, cholesky, 
-                        norm2, norm1, normInf, normMinusInf
+                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!
 
 import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
@@ -85,6 +85,7 @@ macro layoutmatrix(Typ)
         ArrayLayouts.@layoutldiv $Typ
         ArrayLayouts.@layoutmul $Typ
         ArrayLayouts.@layoutlmul $Typ
+        ArrayLayouts.@layoutfactorizations $Typ
 
         @inline Base.getindex(A::$Typ, kr::Colon, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
         @inline Base.getindex(A::$Typ, kr::Colon, jr::AbstractUnitRange) = ArrayLayouts.layout_getindex(A, kr, jr)

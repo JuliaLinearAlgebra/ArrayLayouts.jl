@@ -25,3 +25,26 @@ function copyto!(dest::AbstractArray, M::Ldiv{QLayout})
 end
 
 materialize!(M::Ldiv{QLayout}) = materialize!(Lmul(M.A',M.B))
+
+_qr(layout, axes, A, args...; kwds...) = Base.invoke(qr, Tuple{AbstractMatrix{eltype(A)}}, A, args...; kwds...)
+_qr!(layout, axes, A, args...; kwds...) = Base.invoke(qr!, Tuple{AbstractMatrix{eltype(A)}}, A, args...; kwds...)
+_lu(layout, axes, A, args...; kwds...) = Base.invoke(lu, Tuple{AbstractMatrix{eltype(A)}}, A, args...; kwds...)
+_lu!(layout, axes, A, args...; kwds...) = Base.invoke(lu!, Tuple{AbstractMatrix{eltype(A)}}, A, args...; kwds...)
+_factorize(layout, axes, A) = Base.invoke(factorize, Tuple{AbstractMatrix{eltype(A)}}, A)
+
+macro _layoutfactorizations(Typ)
+    esc(quote
+        LinearAlgebra.qr(A::$Typ, args...; kwds...) = ArrayLayouts._qr(ArrayLayouts.MemoryLayout(typeof(A)), axes(A), A, args...; kwds...)
+        LinearAlgebra.qr!(A::$Typ, args...; kwds...) = ArrayLayouts._qr!(ArrayLayouts.MemoryLayout(typeof(A)), axes(A), A, args...; kwds...)
+        LinearAlgebra.lu(A::$Typ, args...; kwds...) = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(typeof(A)), axes(A), A, args...; kwds...)
+        LinearAlgebra.lu!(A::$Typ, args...; kwds...) = ArrayLayouts._lu!(ArrayLayouts.MemoryLayout(typeof(A)), axes(A), A, args...; kwds...)
+        LinearAlgebra.factorize(A::$Typ) = ArrayLayouts._factorize(ArrayLayouts.MemoryLayout(typeof(A)), axes(A), A)
+    end)
+end
+
+macro layoutfactorizations(Typ)
+    esc(quote
+        ArrayLayouts.@_layoutfactorizations $Typ
+        ArrayLayouts.@_layoutfactorizations SubArray{<:Any,2,<:$Typ}
+    end)
+end
