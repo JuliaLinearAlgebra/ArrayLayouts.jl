@@ -33,7 +33,7 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcas
                         materialize!, eltypes
 
 import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, Abuf, Bbuf, Cbuf, dot, factorize, qr, lu, cholesky, 
-                        norm2, norm1, normInf, normMinusInf
+                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!
 
 import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
@@ -85,6 +85,7 @@ macro layoutmatrix(Typ)
         ArrayLayouts.@layoutldiv $Typ
         ArrayLayouts.@layoutmul $Typ
         ArrayLayouts.@layoutlmul $Typ
+        ArrayLayouts.@layoutfactorizations $Typ
 
         @inline Base.getindex(A::$Typ, kr::Colon, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
         @inline Base.getindex(A::$Typ, kr::Colon, jr::AbstractUnitRange) = ArrayLayouts.layout_getindex(A, kr, jr)
@@ -97,6 +98,30 @@ macro layoutmatrix(Typ)
 end
 
 @layoutmatrix LayoutMatrix
+
+_copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} = 
+    Base.invoke(copyto!, Tuple{AbstractArray{T,N},AbstractArray{V,N}}, dest, src)
+
+    
+copyto!(dest::LayoutArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = 
+    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+copyto!(dest::AbstractArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = 
+    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+copyto!(dest::LayoutArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N = 
+    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
+    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::LayoutArray{<:Any,N}) where N = 
+    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+copyto!(dest::LayoutArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
+    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) where N = 
+    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
+    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)    
+
+
 
 zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
 function zero!(A::AbstractArray{<:AbstractArray}) 

@@ -63,7 +63,7 @@ end
     Rdiv(instantiate(L.A), instantiate(L.B))
 end
 
-__ldiv!(::Mat, ::Mat, B) where Mat = error("Overload ldiv! for $Mat")
+__ldiv!(::Mat, ::Mat, B) where Mat = error("Overload materialize!(::Ldiv{$(typeof(MemoryLayout(Mat))),$(typeof(MemoryLayout(typeof(B))))})")
 __ldiv!(_, F, B) = ldiv!(F, B)
 @inline _ldiv!(A, B) = __ldiv!(A, factorize(A), B)
 @inline _ldiv!(A::Factorization, B) = ldiv!(A, B)
@@ -131,6 +131,11 @@ macro layoutldiv(Typ)
         ArrayLayouts.@_layoutldiv UnitUpperTriangular{T, <:$Typ{T}} where T
         ArrayLayouts.@_layoutldiv LowerTriangular{T, <:$Typ{T}} where T
         ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:$Typ{T}} where T
+
+        ArrayLayouts.@_layoutldiv UpperTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv UnitUpperTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv LowerTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
     end)
 end
 
