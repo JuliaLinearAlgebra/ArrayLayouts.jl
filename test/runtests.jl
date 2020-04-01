@@ -10,6 +10,7 @@ struct MyMatrix <: LayoutMatrix{Float64}
 end
 
 Base.getindex(A::MyMatrix, k::Int, j::Int) = A.A[k,j]
+Base.setindex!(A::MyMatrix, v, k::Int, j::Int) = setindex!(A.A, v, k, j)
 Base.size(A::MyMatrix) = size(A.A)
 Base.strides(A::MyMatrix) = strides(A.A)
 Base.unsafe_convert(::Type{Ptr{T}}, A::MyMatrix) where T = Base.unsafe_convert(Ptr{T}, A.A)
@@ -25,6 +26,22 @@ MemoryLayout(::Type{MyMatrix}) = DenseColumnMajor()
         @test ldiv!(Tri(A), copy(b)) ≈ ldiv!(Tri(A.A), copy(b))
         @test lmul!(Tri(A), copy(b)) ≈ lmul!(Tri(A.A), copy(b))
     end
+
+    @test copyto!(MyMatrix(Array{Float64}(undef,5,5)), A) == A
+    @test copyto!(Array{Float64}(undef,5,5), A) == A
+    @test copyto!(MyMatrix(Array{Float64}(undef,5,5)), A.A) == A
+    @test copyto!(view(MyMatrix(Array{Float64}(undef,5,5)),1:3,1:3), view(A,1:3,1:3)) == A[1:3,1:3]
+    @test copyto!(view(MyMatrix(Array{Float64}(undef,5,5)),:,:), A) == A
+    @test copyto!(MyMatrix(Array{Float64}(undef,3,3)), view(A,1:3,1:3)) == A[1:3,1:3]
+    @test copyto!(view(MyMatrix(Array{Float64}(undef,5,5)),:,:), A.A) == A
+    @test copyto!(Array{Float64}(undef,3,3), view(A,1:3,1:3)) == A[1:3,1:3]
+
+    @test qr(A).factors ≈ qr(A.A).factors
+    @test qr(A,Val(true)).factors ≈ qr(A.A,Val(true)).factors
+    @test lu(A).factors ≈ lu(A.A).factors
+    @test lu(A,Val(true)).factors ≈ lu(A.A,Val(true)).factors
+    @test_throws ErrorException qr!(A)
+    @test_throws ErrorException lu!(A)    
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
@@ -60,9 +77,10 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     A = randn(5,5)
     B = randn(5,5)
     x = randn(5)
+    U = MyUpperTriangular(A)
 
-    @test lmul!(MyUpperTriangular(A), copy(x)) ≈ MyUpperTriangular(A) * x
-    @test lmul!(MyUpperTriangular(A), copy(B)) ≈ MyUpperTriangular(A) * B
+    @test lmul!(U, copy(x)) ≈ U * x
+    @test lmul!(U, copy(B)) ≈ U * B
 
-    @test_skip lmul!(MyUpperTriangular(A),view(copy(B),collect(1:5),1:5)) ≈ MyUpperTriangular(A) * B
+    @test_skip lmul!(U,view(copy(B),collect(1:5),1:5)) ≈ U * B
 end
