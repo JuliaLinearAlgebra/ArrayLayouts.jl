@@ -140,6 +140,8 @@ in memory is unknown.
 Julia's internal linear algebra machinery will automatically (and invisibly)
 dispatch to BLAS and LAPACK routines if the memory layout is compatible.
 """
+@inline MemoryLayout(A) = MemoryLayout(typeof(A))
+
 @inline MemoryLayout(::Type) = UnknownLayout()
 
 @inline MemoryLayout(::Type{<:Number}) = ScalarLayout()
