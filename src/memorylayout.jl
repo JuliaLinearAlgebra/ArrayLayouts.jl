@@ -18,6 +18,8 @@ abstract type AbstractRowMajor <: AbstractDecreasingStrides end
 struct DenseRowMajor <: AbstractRowMajor end
 struct RowMajor <: AbstractRowMajor end
 struct DecreasingStrides <: AbstractIncreasingStrides end
+struct FirstMajor <: AbstractStridedLayout end
+struct SecondMajor <: AbstractStridedLayout end
 struct StridedLayout <: AbstractStridedLayout end
 struct ScalarLayout <: MemoryLayout end
 
@@ -42,6 +44,32 @@ dispatch to BLAS and LAPACK routines if the memory layout is BLAS compatible and
 the element type is a `Float32`, `Float64`, `ComplexF32`, or `ComplexF64`.
 In this case, one must implement the strided array interface, which requires
 overrides of `strides(A::MyMatrix)` and `unknown_convert(::Type{Ptr{T}}, A::MyMatrix)`.
+
+The complete list of more specialised types is as follows:
+```
+julia> using ArrayLayouts, AbstractTrees
+
+julia> AbstractTrees.children(x::Type) = subtypes(x)
+
+julia> print_tree(AbstractStridedLayout)
+AbstractStridedLayout
+├─ AbstractDecreasingStrides
+│  └─ AbstractRowMajor
+│     ├─ DenseRowMajor
+│     └─ RowMajor
+├─ AbstractIncreasingStrides
+│  ├─ AbstractColumnMajor
+│  │  ├─ ColumnMajor
+│  │  └─ DenseColumnMajor
+│  ├─ DecreasingStrides
+│  └─ IncreasingStrides
+├─ FirstMajor
+├─ SecondMajor
+└─ StridedLayout
+
+julia> Base.show_supertypes(AbstractStridedLayout)
+AbstractStridedLayout <: MemoryLayout <: Any
+```
 """
 AbstractStridedLayout
 
@@ -157,7 +185,7 @@ MemoryLayout(::Type{<:ReshapedArray{T,N,A,DIMS}}) where {T,N,A,DIMS} = reshapedl
 @inline reshapedlayout(::DenseColumnMajor, _) = DenseColumnMajor()
 
 
-@inline MemoryLayout(A::Type{<:SubArray{T,N,P,I}}) where {T,N,P,I} = 
+@inline MemoryLayout(A::Type{<:SubArray{T,N,P,I}}) where {T,N,P,I} =
     sublayout(MemoryLayout(P), I)
 sublayout(_1, _2) = UnknownLayout()
 sublayout(_1, _2, _3)= UnknownLayout()
@@ -255,6 +283,70 @@ transposelayout(::DenseColumnMajor) = DenseRowMajor()
 transposelayout(::DenseRowMajor) = DenseColumnMajor()
 transposelayout(::ConjLayout{ML}) where ML = ConjLayout{typeof(transposelayout(ML()))}()
 adjointlayout(::Type{T}, M::MemoryLayout) where T = transposelayout(conjlayout(T, M))
+
+
+# Layouts of PermutedDimsArrays
+"""
+    FirstMajor()
+
+is returned by `MemoryLayout(A)` for arrays of ndims(A) >= 3 for which `stride(A,1) == 1`,
+but unlike `ColumnMajor()` in that it does not demand that the other strides are monotonic.
+
+Dispatch on `FirstUnion = Union{FirstMajor, AbstractColumnMajor}` to ensure this property.
+
+Base.show_supertypes(ArrayLayouts.FirstMajor)
+"""
+FirstMajor
+
+const FirstUnion = Union{FirstMajor, AbstractColumnMajor}
+
+"""
+    SecondMajor()
+
+is returned by `MemoryLayout(A)` for arrays of ndims(A) >= 3 for which `stride(A,2) == 1`.
+This would be equivalent to `RowMajor()` on a matrix, but should never be produced there.
+"""
+SecondMajor
+
+MemoryLayout(::Type{PermutedDimsArray{T,N,P,Q,S}}) where {T,N,P,Q,S} = permutelayout(MemoryLayout(S), Val(P))
+
+permutelayout(::Any, perm) = UnknownLayout()
+permutelayout(::StridedLayout, perm) = StridedLayout()
+permutelayout(::ConjLayout{ML}, perm) where ML = ConjLayout{typeof(permutelayout(ML(), perm))}()
+
+function permutelayout(layout::T, ::Val{perm}) where {T <: FirstUnion, perm}
+    issorted(perm) && return layout
+    issorted(reverse(perm)) && return reverse(layout)
+    perm[1] == 1 && return FirstMajor()
+    perm[2] == 1 && return SecondMajor()
+    return StridedLayout()
+end
+function permutelayout(layout::T, ::Val{perm}) where {T <: AbstractRowMajor, perm}
+    issorted(perm) && return layout
+    issorted(reverse(perm)) && return reverse(layout)
+    N = length(perm) # == ndims(A)
+    perm[1] == N && return FirstMajor()
+    perm[2] == N && return SecondMajor()
+    return StridedLayout()
+end
+function permutelayout(layout::SecondMajor, ::Val{perm}) where {perm}
+    perm[1] == 2 && return FirstMajor()
+    perm[2] == 2 && return SecondMajor()
+    return StridedLayout()
+end
+function permutelayout(layout::T, ::Val{perm}) where {T <: Union{IncreasingStrides,DecreasingStrides}, perm}
+    issorted(perm) && return layout
+    issorted(reverse(perm)) && return reverse(layout)
+    return StridedLayout()
+end
+
+Base.reverse(::DenseRowMajor) = DenseColumnMajor()
+Base.reverse(::RowMajor) = ColumnMajor()
+Base.reverse(::DenseColumnMajor) = DenseRowMajor()
+Base.reverse(::ColumnMajor) = RowMajor()
+Base.reverse(::IncreasingStrides) = DecreasingStrides()
+Base.reverse(::DecreasingStrides) = IncreasingStrides()
+Base.reverse(::AbstractStridedLayout) = StridedLayout()
 
 
 # MemoryLayout of Symmetric/Hermitian

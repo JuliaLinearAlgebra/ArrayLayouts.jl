@@ -1,9 +1,9 @@
 using ArrayLayouts, LinearAlgebra, FillArrays, Test
 import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayout,
-                        ConjLayout, RowMajor, ColumnMajor, UnknownLayout,
+                        ConjLayout, RowMajor, ColumnMajor, FirstMajor, SecondMajor,
                         SymmetricLayout, HermitianLayout, UpperTriangularLayout,
                         UnitUpperTriangularLayout, LowerTriangularLayout,
-                        UnitLowerTriangularLayout, ScalarLayout,
+                        UnitLowerTriangularLayout, ScalarLayout, UnknownLayout,
                         hermitiandata, symmetricdata, FillLayout, ZerosLayout,
                         DiagonalLayout, colsupport, rowsupport
 
@@ -177,5 +177,49 @@ struct FooNumber <: Number end
         @test rowsupport(UpperTriangular(A),3) ≡ 3:5
         @test colsupport(LowerTriangular(A),3) ≡ 3:5
         @test rowsupport(LowerTriangular(A),3) ≡ Base.OneTo(3)
+    end
+
+    @testset "PermutedDimsArray" begin
+        ArrayLayouts.MemoryLayout(A) = MemoryLayout(typeof(A)) # pending other PR...
+
+        A = [1.0 2; 3 4]
+        @test MemoryLayout(PermutedDimsArray(A, (1,2))) == DenseColumnMajor()
+        @test MemoryLayout(PermutedDimsArray(A, (2,1))) == DenseRowMajor()
+        @test MemoryLayout(transpose(PermutedDimsArray(A, (2,1)))) == DenseColumnMajor()
+        @test MemoryLayout(adjoint(PermutedDimsArray(A, (2,1)))) == DenseColumnMajor()
+        B = [1.0+im 2; 3 4]
+        @test MemoryLayout(PermutedDimsArray(B, (2,1))) == DenseRowMajor()
+        @test MemoryLayout(transpose(PermutedDimsArray(B, (2,1)))) == DenseColumnMajor()
+        @test MemoryLayout(adjoint(PermutedDimsArray(B, (2,1)))) == ConjLayout{DenseColumnMajor}()
+
+        C = view(ones(10,20,30), 2:9, 3:18, 4:27);
+        @test MemoryLayout(C) == ColumnMajor()
+        @test MemoryLayout(PermutedDimsArray(C, (1,2,3))) == ColumnMajor()
+        @test MemoryLayout(PermutedDimsArray(C, (1,3,2))) == FirstMajor()
+
+        @test MemoryLayout(PermutedDimsArray(C, (3,1,2))) == SecondMajor()
+        @test MemoryLayout(PermutedDimsArray(C, (2,1,3))) == SecondMajor()
+
+        @test MemoryLayout(PermutedDimsArray(C, (3,2,1))) == RowMajor()
+        @test MemoryLayout(PermutedDimsArray(C, (2,3,1))) == StridedLayout()
+
+        D = ones(10,20,30,40);
+        @test MemoryLayout(D) == DenseColumnMajor()
+        @test MemoryLayout(PermutedDimsArray(D, (1,2,3,4))) == DenseColumnMajor()
+        @test MemoryLayout(PermutedDimsArray(D, (1,4,3,2))) == FirstMajor()
+
+        @test MemoryLayout(PermutedDimsArray(D, (4,1,3,2))) == SecondMajor()
+        @test MemoryLayout(PermutedDimsArray(D, (2,1,4,3))) == SecondMajor()
+
+        @test MemoryLayout(PermutedDimsArray(D, (4,3,2,1))) == DenseRowMajor()
+        @test MemoryLayout(PermutedDimsArray(D, (4,2,1,3))) == StridedLayout()
+
+        issorted((1,2,3,4))
+        @test_skip 0 == @allocated issorted((1,2,3,4))
+        reverse((1,2,3,4))
+        @test_skip 0 == @allocated reverse((1,2,3,4))
+        revD = PermutedDimsArray(D, (4,3,2,1));
+        MemoryLayout(revD)
+        @test 0 == @allocated MemoryLayout(revD)
     end
 end
