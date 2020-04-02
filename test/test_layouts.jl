@@ -13,7 +13,7 @@ struct FooNumber <: Number end
 @testset "MemoryLayout" begin
     @testset "Trivial" begin
         @test MemoryLayout(3.141) == MemoryLayout(Float64) == MemoryLayout(Int) == MemoryLayout(FooNumber) == ScalarLayout()
-        @test MemoryLayout(FooBar(3)) == MemoryLayout(FooBar) == UnknownLayout()
+        @test MemoryLayout(FooBar()) == MemoryLayout(FooBar) == UnknownLayout()
 
         A = randn(6)
         @test MemoryLayout(typeof(A)) == MemoryLayout(typeof(Base.ReshapedArray(A,(2,3),()))) == 
