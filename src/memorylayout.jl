@@ -287,11 +287,11 @@ adjointlayout(::Type{T}, M::MemoryLayout) where T = transposelayout(conjlayout(T
 """
     UnitStride{D}()
 
-is returned by `MemoryLayout(A)` for arrays of ndims(A) >= 3 for which `stride(A,D) == 1`.
+is returned by `MemoryLayout(A)` for arrays of `ndims(A) >= 3` which have `stride(A,D) == 1`.
 
 `UnitStride{1}` is weaker than `ColumnMajor` in that it does not demand that the other
-strides are increasing, hence is is not a subtype of `AbstractIncreasingStrides`.
-To ensure that `stride(A,D) == 1`, you may dispatch on `Union{UnitStride{1}, AbstractColumnMajor}`
+strides are increasing, hence it is not a subtype of `AbstractIncreasingStrides`.
+To ensure that `stride(A,1) == 1`, you may dispatch on `Union{UnitStride{1}, AbstractColumnMajor}`
 to allow for both options. (With complex numbers, you may also need their `ConjLayout` versions.)
 
 Likewise, both `UnitStride{ndims(A)}` and `AbstractRowMajor` have `stride(A, ndims(A)) == 1`.
@@ -308,7 +308,7 @@ function permutelayout(layout::AbstractColumnMajor, ::Val{perm}) where {perm}
     issorted(perm) && return layout
     issorted(reverse(perm)) && return reverse(layout)
     tup = ntuple(length(perm)) do D
-        perm[D] == 1 && return UnitStride{D}()
+        perm[D] == 1 ? UnitStride{D}() : nothing
     end
     only(filter(x -> x isa MemoryLayout, tup))
 end
@@ -317,17 +317,17 @@ function permutelayout(layout::AbstractRowMajor, ::Val{perm}) where {perm}
     issorted(reverse(perm)) && return reverse(layout)
     N = length(perm) # == ndims(A)
     tup = ntuple(N) do D
-        perm[D] == N && return UnitStride{D}()
+        perm[D] == N ? UnitStride{D}() : nothing
     end
     only(filter(x -> x isa MemoryLayout, tup))
 end
 function permutelayout(layout::UnitStride{D0}, ::Val{perm}) where {D0, perm}
     tup = ntuple(length(perm)) do D
-        perm[D] == D0 && return UnitStride{D}()
+        perm[D] == D0 ? UnitStride{D}() : nothing
     end
     only(filter(x -> x isa MemoryLayout, tup))
 end
-function permutelayout(layout::T, ::Val{perm}) where {T <: Union{IncreasingStrides,DecreasingStrides}, perm}
+function permutelayout(layout::Union{IncreasingStrides,DecreasingStrides}, ::Val{perm}) where {perm}
     issorted(perm) && return layout
     issorted(reverse(perm)) && return reverse(layout)
     return StridedLayout()

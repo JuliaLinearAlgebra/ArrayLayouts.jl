@@ -39,7 +39,7 @@ import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
 import FillArrays: AbstractFill, getindex_value
 
-import Compat: Compat # 3.1, for Base.filter(f, ::Tuple)
+import Compat: only # Compat v3.1, for Base.filter(f, ::Tuple)
 
 if VERSION < v"1.2-"
     import Base: has_offset_axes
