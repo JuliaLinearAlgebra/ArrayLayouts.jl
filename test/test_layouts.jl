@@ -201,6 +201,10 @@ struct FooNumber <: Number end
         @test MemoryLayout(PermutedDimsArray(C, (3,2,1))) == RowMajor()
         @test MemoryLayout(PermutedDimsArray(C, (2,3,1))) == UnitStride{3}()
 
+        revC = PermutedDimsArray(C, (3,2,1));
+        @test MemoryLayout(PermutedDimsArray(revC, (3,2,1))) == ColumnMajor()
+        @test MemoryLayout(PermutedDimsArray(revC, (3,1,2))) == UnitStride{1}()
+
         D = ones(10,20,30,40);
         @test MemoryLayout(D) == DenseColumnMajor()
         @test MemoryLayout(PermutedDimsArray(D, (1,2,3,4))) == DenseColumnMajor()
@@ -212,11 +216,19 @@ struct FooNumber <: Number end
         @test MemoryLayout(PermutedDimsArray(D, (4,3,2,1))) == DenseRowMajor()
         @test MemoryLayout(PermutedDimsArray(D, (4,2,1,3))) == UnitStride{3}()
 
+        twoD = PermutedDimsArray(D, (3,1,2,4));
+        MemoryLayout(PermutedDimsArray(twoD, (2,1,4,3))) == UnitStride{1}()
+
+        revD = PermutedDimsArray(D, (4,3,2,1));
+        MemoryLayout(PermutedDimsArray(revD, (4,3,2,1))) == DenseColumnMajor()
+        MemoryLayout(PermutedDimsArray(revD, (4,2,3,1))) == UnitStride{1}()
+
+
         issorted((1,2,3,4))
-        @test_skip 0 == @allocated issorted((1,2,3,4)) # fails on Julia 1.4, in tests
+        # Fails on Julia 1.4, in tests. Could use BenchmarkTools.@ballocated instead.
+        @test_skip 0 == @allocated issorted((1,2,3,4))
         reverse((1,2,3,4))
         @test_skip 0 == @allocated reverse((1,2,3,4))
-        revD = PermutedDimsArray(D, (4,3,2,1));
         MemoryLayout(revD)
         @test 0 == @allocated MemoryLayout(revD)
     end
