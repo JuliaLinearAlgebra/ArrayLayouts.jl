@@ -1,6 +1,6 @@
 using ArrayLayouts, LinearAlgebra, FillArrays, Test
 import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayout,
-                        ConjLayout, RowMajor, ColumnMajor, FirstMajor, SecondMajor,
+                        ConjLayout, RowMajor, ColumnMajor, UnitStride,
                         SymmetricLayout, HermitianLayout, UpperTriangularLayout,
                         UnitUpperTriangularLayout, LowerTriangularLayout,
                         UnitLowerTriangularLayout, ScalarLayout, UnknownLayout,
@@ -16,9 +16,9 @@ struct FooNumber <: Number end
         @test MemoryLayout(FooBar()) == MemoryLayout(FooBar) == UnknownLayout()
 
         A = randn(6)
-        @test MemoryLayout(typeof(A)) == MemoryLayout(typeof(Base.ReshapedArray(A,(2,3),()))) == 
+        @test MemoryLayout(typeof(A)) == MemoryLayout(typeof(Base.ReshapedArray(A,(2,3),()))) ==
             MemoryLayout(typeof(reinterpret(Float32,A))) == MemoryLayout(A) == DenseColumnMajor()
-        
+
         @test MemoryLayout(typeof(view(A,1:3))) == DenseColumnMajor()
         @test MemoryLayout(typeof(view(A,Base.OneTo(3)))) == DenseColumnMajor()
         @test MemoryLayout(typeof(view(A,:))) == DenseColumnMajor()
@@ -180,8 +180,6 @@ struct FooNumber <: Number end
     end
 
     @testset "PermutedDimsArray" begin
-        ArrayLayouts.MemoryLayout(A) = MemoryLayout(typeof(A)) # pending other PR...
-
         A = [1.0 2; 3 4]
         @test MemoryLayout(PermutedDimsArray(A, (1,2))) == DenseColumnMajor()
         @test MemoryLayout(PermutedDimsArray(A, (2,1))) == DenseRowMajor()
@@ -195,27 +193,27 @@ struct FooNumber <: Number end
         C = view(ones(10,20,30), 2:9, 3:18, 4:27);
         @test MemoryLayout(C) == ColumnMajor()
         @test MemoryLayout(PermutedDimsArray(C, (1,2,3))) == ColumnMajor()
-        @test MemoryLayout(PermutedDimsArray(C, (1,3,2))) == FirstMajor()
+        @test MemoryLayout(PermutedDimsArray(C, (1,3,2))) == UnitStride{1}()
 
-        @test MemoryLayout(PermutedDimsArray(C, (3,1,2))) == SecondMajor()
-        @test MemoryLayout(PermutedDimsArray(C, (2,1,3))) == SecondMajor()
+        @test MemoryLayout(PermutedDimsArray(C, (3,1,2))) == UnitStride{2}()
+        @test MemoryLayout(PermutedDimsArray(C, (2,1,3))) == UnitStride{2}()
 
         @test MemoryLayout(PermutedDimsArray(C, (3,2,1))) == RowMajor()
-        @test MemoryLayout(PermutedDimsArray(C, (2,3,1))) == StridedLayout()
+        @test MemoryLayout(PermutedDimsArray(C, (2,3,1))) == UnitStride{3}()
 
         D = ones(10,20,30,40);
         @test MemoryLayout(D) == DenseColumnMajor()
         @test MemoryLayout(PermutedDimsArray(D, (1,2,3,4))) == DenseColumnMajor()
-        @test MemoryLayout(PermutedDimsArray(D, (1,4,3,2))) == FirstMajor()
+        @test MemoryLayout(PermutedDimsArray(D, (1,4,3,2))) == UnitStride{1}()
 
-        @test MemoryLayout(PermutedDimsArray(D, (4,1,3,2))) == SecondMajor()
-        @test MemoryLayout(PermutedDimsArray(D, (2,1,4,3))) == SecondMajor()
+        @test MemoryLayout(PermutedDimsArray(D, (4,1,3,2))) == UnitStride{2}()
+        @test MemoryLayout(PermutedDimsArray(D, (2,1,4,3))) == UnitStride{2}()
 
         @test MemoryLayout(PermutedDimsArray(D, (4,3,2,1))) == DenseRowMajor()
-        @test MemoryLayout(PermutedDimsArray(D, (4,2,1,3))) == StridedLayout()
+        @test MemoryLayout(PermutedDimsArray(D, (4,2,1,3))) == UnitStride{3}()
 
         issorted((1,2,3,4))
-        @test_skip 0 == @allocated issorted((1,2,3,4))
+        @test_skip 0 == @allocated issorted((1,2,3,4)) # fails on Julia 1.4, in tests
         reverse((1,2,3,4))
         @test_skip 0 == @allocated reverse((1,2,3,4))
         revD = PermutedDimsArray(D, (4,3,2,1));

@@ -47,7 +47,7 @@ else
 end     
 
 export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, lmul, rmul, ldiv, rdiv, mul, MemoryLayout, AbstractStridedLayout,
-        DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor, FirstUnion,
+        DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor, UnitStride,
         DiagonalLayout, ScalarLayout, SymTridiagonalLayout, HermitianLayout, SymmetricLayout, TriangularLayout, 
         UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout,
         colsupport, rowsupport, layout_getindex, QLayout, LayoutArray, LayoutMatrix, LayoutVector

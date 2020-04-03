@@ -18,8 +18,7 @@ abstract type AbstractRowMajor <: AbstractDecreasingStrides end
 struct DenseRowMajor <: AbstractRowMajor end
 struct RowMajor <: AbstractRowMajor end
 struct DecreasingStrides <: AbstractIncreasingStrides end
-struct FirstMajor <: AbstractStridedLayout end
-struct SecondMajor <: AbstractStridedLayout end
+struct UnitStride{D} <: AbstractStridedLayout end
 struct StridedLayout <: AbstractStridedLayout end
 struct ScalarLayout <: MemoryLayout end
 
@@ -63,9 +62,8 @@ AbstractStridedLayout
 │  │  └─ DenseColumnMajor
 │  ├─ DecreasingStrides
 │  └─ IncreasingStrides
-├─ FirstMajor
-├─ SecondMajor
-└─ StridedLayout
+├─ StridedLayout
+└─ UnitStride
 
 julia> Base.show_supertypes(AbstractStridedLayout)
 AbstractStridedLayout <: MemoryLayout <: Any
@@ -287,26 +285,18 @@ adjointlayout(::Type{T}, M::MemoryLayout) where T = transposelayout(conjlayout(T
 
 # Layouts of PermutedDimsArrays
 """
-    FirstMajor()
+    UnitStride{D}()
 
-is returned by `MemoryLayout(A)` for arrays of ndims(A) >= 3 for which `stride(A,1) == 1`,
-but unlike `ColumnMajor()` in that it does not demand that the other strides are monotonic.
+is returned by `MemoryLayout(A)` for arrays of ndims(A) >= 3 for which `stride(A,D) == 1`.
 
-Dispatch on `FirstUnion = Union{FirstMajor, AbstractColumnMajor}` to ensure this property.
+`UnitStride{1}` is weaker than `ColumnMajor` in that it does not demand that the other
+strides are increasing, hence is is not a subtype of `AbstractIncreasingStrides`.
+To ensure that `stride(A,D) == 1`, you may dispatch on `Union{UnitStride{1}, AbstractColumnMajor}`
+to allow for both options. (With complex numbers, you may also need their `ConjLayout` versions.)
 
-Base.show_supertypes(ArrayLayouts.FirstMajor)
+Likewise, both `UnitStride{ndims(A)}` and `AbstractRowMajor` have `stride(A, ndims(A)) == 1`.
 """
-FirstMajor
-
-const FirstUnion = Union{FirstMajor, AbstractColumnMajor}
-
-"""
-    SecondMajor()
-
-is returned by `MemoryLayout(A)` for arrays of ndims(A) >= 3 for which `stride(A,2) == 1`.
-This would be equivalent to `RowMajor()` on a matrix, but should never be produced there.
-"""
-SecondMajor
+UnitStride
 
 MemoryLayout(::Type{PermutedDimsArray{T,N,P,Q,S}}) where {T,N,P,Q,S} = permutelayout(MemoryLayout(S), Val(P))
 
@@ -314,25 +304,28 @@ permutelayout(::Any, perm) = UnknownLayout()
 permutelayout(::StridedLayout, perm) = StridedLayout()
 permutelayout(::ConjLayout{ML}, perm) where ML = ConjLayout{typeof(permutelayout(ML(), perm))}()
 
-function permutelayout(layout::T, ::Val{perm}) where {T <: FirstUnion, perm}
+function permutelayout(layout::AbstractColumnMajor, ::Val{perm}) where {perm}
     issorted(perm) && return layout
     issorted(reverse(perm)) && return reverse(layout)
-    perm[1] == 1 && return FirstMajor()
-    perm[2] == 1 && return SecondMajor()
-    return StridedLayout()
+    tup = ntuple(length(perm)) do D
+        perm[D] == 1 && return UnitStride{D}()
+    end
+    only(filter(x -> x isa MemoryLayout, tup))
 end
-function permutelayout(layout::T, ::Val{perm}) where {T <: AbstractRowMajor, perm}
+function permutelayout(layout::AbstractRowMajor, ::Val{perm}) where {perm}
     issorted(perm) && return layout
     issorted(reverse(perm)) && return reverse(layout)
     N = length(perm) # == ndims(A)
-    perm[1] == N && return FirstMajor()
-    perm[2] == N && return SecondMajor()
-    return StridedLayout()
+    tup = ntuple(N) do D
+        perm[D] == N && return UnitStride{D}()
+    end
+    only(filter(x -> x isa MemoryLayout, tup))
 end
-function permutelayout(layout::SecondMajor, ::Val{perm}) where {perm}
-    perm[1] == 2 && return FirstMajor()
-    perm[2] == 2 && return SecondMajor()
-    return StridedLayout()
+function permutelayout(layout::UnitStride{D0}, ::Val{perm}) where {D0, perm}
+    tup = ntuple(length(perm)) do D
+        perm[D] == D0 && return UnitStride{D}()
+    end
+    only(filter(x -> x isa MemoryLayout, tup))
 end
 function permutelayout(layout::T, ::Val{perm}) where {T <: Union{IncreasingStrides,DecreasingStrides}, perm}
     issorted(perm) && return layout
