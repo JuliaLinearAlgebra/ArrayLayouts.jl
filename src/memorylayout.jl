@@ -307,25 +307,19 @@ permutelayout(::ConjLayout{ML}, perm) where ML = ConjLayout{typeof(permutelayout
 function permutelayout(layout::AbstractColumnMajor, ::Val{perm}) where {perm}
     issorted(perm) && return layout
     issorted(reverse(perm)) && return reverse(layout)
-    tup = ntuple(length(perm)) do D
-        perm[D] == 1 ? UnitStride{D}() : nothing
-    end
-    only(filter(x -> x isa MemoryLayout, tup))
+    D = sum(ntuple(dim -> perm[dim] == 1 ? dim : 0, length(perm)))
+    return UnitStride{D}()
 end
 function permutelayout(layout::AbstractRowMajor, ::Val{perm}) where {perm}
     issorted(perm) && return layout
     issorted(reverse(perm)) && return reverse(layout)
     N = length(perm) # == ndims(A)
-    tup = ntuple(N) do D
-        perm[D] == N ? UnitStride{D}() : nothing
-    end
-    only(filter(x -> x isa MemoryLayout, tup))
+    D = sum(ntuple(dim -> perm[dim] == N ? dim : 0, N))
+    return UnitStride{D}()
 end
 function permutelayout(layout::UnitStride{D0}, ::Val{perm}) where {D0, perm}
-    tup = ntuple(length(perm)) do D
-        perm[D] == D0 ? UnitStride{D}() : nothing
-    end
-    only(filter(x -> x isa MemoryLayout, tup))
+    D = sum(ntuple(dim -> perm[dim] == D0 ? dim : 0, length(perm)))
+    return UnitStride{D}()
 end
 function permutelayout(layout::Union{IncreasingStrides,DecreasingStrides}, ::Val{perm}) where {perm}
     issorted(perm) && return layout
