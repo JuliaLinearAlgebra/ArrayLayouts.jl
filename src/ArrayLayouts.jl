@@ -26,7 +26,8 @@ import Base: AbstractArray, AbstractMatrix, AbstractVector,
       AbstractArray, AbstractVector, axes, (:), _sub2ind_recurse, broadcast, promote_eltypeof,
       similar, @_gc_preserve_end, @_gc_preserve_begin,
       @nexprs, @ncall, @ntuple, tuple_type_tail,
-      all, any, isbitsunion, issubset, replace_in_print_matrix, replace_with_centered_mark
+      all, any, isbitsunion, issubset, replace_in_print_matrix, replace_with_centered_mark,
+      strides, unsafe_convert
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcasted,
                         combine_eltypes, DefaultArrayStyle, instantiate, materialize,
@@ -63,6 +64,15 @@ end
 abstract type LayoutArray{T,N} <: AbstractArray{T,N} end
 const LayoutMatrix{T} = LayoutArray{T,2}
 const LayoutVector{T} = LayoutArray{T,1}
+
+## TODO: Following are type piracy whch may be removed in Julia v1.5
+_transpose_strides(a) = (a,1)
+_transpose_strides(a,b) = (b,a)
+strides(A::Adjoint) = _transpose_strides(strides(parent(A))...)
+strides(A::Transpose) = _transpose_strides(strides(parent(A))...)
+
+unsafe_convert(::Type{Ptr{T}}, A::Adjoint{<:Real}) where T<:Real = unsafe_convert(Ptr{T}, parent(A))
+unsafe_convert(::Type{Ptr{T}}, A::Transpose) where T = unsafe_convert(Ptr{T}, parent(A))
 
 include("memorylayout.jl")
 include("muladd.jl")

@@ -1,5 +1,5 @@
 using ArrayLayouts, FillArrays, Test
-import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout
+import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul
 
 @testset "Matrix * Vector" begin
     @testset "eltype" begin
@@ -267,6 +267,18 @@ end
         A, x =  [1 2; 3 4] , [[1,2],[3,4]]
         @test muladd!(1.0,A,x,0.0, 1.0*x) == A*x
     end 
+
+    @testset "adjoint" begin
+        A = randn(5,5)
+        V = view(A',1:3,1:3)
+        b = randn(3)
+        @test MemoryLayout(V) isa RowMajor
+        @test MemoryLayout(V') isa ColumnMajor
+        @test strides(V) == (5,1)
+        @test strides(V') == (1,5)
+        @test mul(V, b) == V*b == Matrix(V)*b
+        @test mul(V', b) == V'b == Matrix(V)'*b
+    end
 end
 
 @testset "Lmul/Rmul" begin
