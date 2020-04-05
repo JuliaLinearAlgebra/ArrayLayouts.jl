@@ -541,7 +541,7 @@ rowsupport(_, A, k) = axes(A,2)
 
 gives an iterator containing the possible non-zero entries in the k-th row of A.
 """
-rowsupport(A, k) = rowsupport(MemoryLayout(typeof(A)), A, k)
+rowsupport(A, k) = rowsupport(MemoryLayout(A), A, k)
 rowsupport(A) = rowsupport(A, axes(A,1))
 
 colsupport(_, A, j) = axes(A,1)
@@ -551,7 +551,7 @@ colsupport(_, A, j) = axes(A,1)
 
 gives an iterator containing the possible non-zero entries in the j-th column of A.
 """
-colsupport(A, j) = colsupport(MemoryLayout(typeof(A)), A, j)
+colsupport(A, j) = colsupport(MemoryLayout(A), A, j)
 colsupport(A) = colsupport(A, axes(A,2))
 
 rowsupport(::ZerosLayout, A, _) = 1:0

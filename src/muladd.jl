@@ -257,7 +257,6 @@ end
     end
 end
 
-
 @inline materialize!(M::BlasMatMulVecAdd{<:AbstractColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout}) =
     _gemv!('N', M.α, M.A, M.B, M.β, M.C)
 @inline materialize!(M::BlasMatMulVecAdd{<:AbstractRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout}) =
@@ -396,7 +395,7 @@ end
 
 function MulAdd(A::AbstractArray{T}, B::AbstractVector{V}) where {T,V}
     TV = _mul_eltype(eltype(A), eltype(B))
-    MulAdd(scalarone(TV), A, B, scalarzero(TV), fillzeros(TV,(axes(A,1))))
+    MulAdd(scalarone(TV), A, B, scalarzero(TV), fillzeros(TV,(axes(A,1),)))
 end
 
 function MulAdd(A::AbstractArray{T}, B::AbstractMatrix{V}) where {T,V}
