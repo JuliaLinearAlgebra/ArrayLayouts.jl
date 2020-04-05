@@ -276,8 +276,8 @@ end
         @test MemoryLayout(V') isa ColumnMajor
         @test strides(V) == (5,1)
         @test strides(V') == (1,5)
-        @test mul(V, b) == V*b == Matrix(V)*b
-        @test mul(V', b) == V'b == Matrix(V)'*b
+        @test mul(V, b) ≈ V*b ≈ Matrix(V)*b
+        @test mul(V', b) ≈ V'b ≈ Matrix(V)'*b
     end
 end
 
