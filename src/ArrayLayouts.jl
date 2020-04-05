@@ -26,7 +26,8 @@ import Base: AbstractArray, AbstractMatrix, AbstractVector,
       AbstractArray, AbstractVector, axes, (:), _sub2ind_recurse, broadcast, promote_eltypeof,
       similar, @_gc_preserve_end, @_gc_preserve_begin,
       @nexprs, @ncall, @ntuple, tuple_type_tail,
-      all, any, isbitsunion, issubset, replace_in_print_matrix, replace_with_centered_mark
+      all, any, isbitsunion, issubset, replace_in_print_matrix, replace_with_centered_mark,
+      strides, unsafe_convert
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcasted,
                         combine_eltypes, DefaultArrayStyle, instantiate, materialize,
@@ -64,6 +65,15 @@ abstract type LayoutArray{T,N} <: AbstractArray{T,N} end
 const LayoutMatrix{T} = LayoutArray{T,2}
 const LayoutVector{T} = LayoutArray{T,1}
 
+## TODO: Following are type piracy whch may be removed in Julia v1.5
+_transpose_strides(a) = (a,1)
+_transpose_strides(a,b) = (b,a)
+strides(A::Adjoint) = _transpose_strides(strides(parent(A))...)
+strides(A::Transpose) = _transpose_strides(strides(parent(A))...)
+
+unsafe_convert(::Type{Ptr{T}}, A::Adjoint{<:Real}) where T<:Real = unsafe_convert(Ptr{T}, parent(A))
+unsafe_convert(::Type{Ptr{T}}, A::Transpose) where T = unsafe_convert(Ptr{T}, parent(A))
+
 include("memorylayout.jl")
 include("muladd.jl")
 include("lmul.jl")
@@ -74,7 +84,7 @@ include("factorizations.jl")
 
 @inline sub_materialize(_, V, _) = Array(V)
 @inline sub_materialize(L, V) = sub_materialize(L, V, axes(V))
-@inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(typeof(V)), V)
+@inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(V), V)
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
 
@@ -104,22 +114,22 @@ _copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} 
 
     
 copyto!(dest::LayoutArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::AbstractArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::LayoutArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 
 copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::LayoutArray{<:Any,N}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::LayoutArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)    
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)    
 
 
 

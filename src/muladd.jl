@@ -257,7 +257,6 @@ end
     end
 end
 
-
 @inline materialize!(M::BlasMatMulVecAdd{<:AbstractColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout}) =
     _gemv!('N', M.α, M.A, M.B, M.β, M.C)
 @inline materialize!(M::BlasMatMulVecAdd{<:AbstractRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout}) =
