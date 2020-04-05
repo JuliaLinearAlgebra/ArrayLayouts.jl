@@ -488,7 +488,7 @@ end
     @testset "Diagonal and SymTridiagonal" begin
         A = randn(5,5)
         B = Diagonal(randn(5))
-        @test MemoryLayout(typeof(B)) == DiagonalLayout{DenseColumnMajor}()
+        @test MemoryLayout(B) == DiagonalLayout{DenseColumnMajor}()
         
         @test A*B == materialize!(Rmul(copy(A),B))
         @test B*A == materialize!(Lmul(B,copy(A)))

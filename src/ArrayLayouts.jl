@@ -84,7 +84,7 @@ include("factorizations.jl")
 
 @inline sub_materialize(_, V, _) = Array(V)
 @inline sub_materialize(L, V) = sub_materialize(L, V, axes(V))
-@inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(typeof(V)), V)
+@inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(V), V)
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
 
@@ -114,22 +114,22 @@ _copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} 
 
     
 copyto!(dest::LayoutArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::AbstractArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::LayoutArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 
 copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::LayoutArray{<:Any,N}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::LayoutArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
-    _copyto!(MemoryLayout(typeof(dest)), MemoryLayout(typeof(src)), dest, src)    
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)    
 
 
 

@@ -257,20 +257,17 @@ end
     end
 end
 
-_transpose(A) = transpose(A)
-_transpose(A::SubArray) = view(transpose(parent(A)), reverse(parentindices(A))...)
-
 @inline materialize!(M::BlasMatMulVecAdd{<:AbstractColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout}) =
     _gemv!('N', M.α, M.A, M.B, M.β, M.C)
 @inline materialize!(M::BlasMatMulVecAdd{<:AbstractRowMajor,<:AbstractStridedLayout,<:AbstractStridedLayout}) =
-    _gemv!('T', M.α, _transpose(M.A), M.B, M.β, M.C)
+    _gemv!('T', M.α, transpose(M.A), M.B, M.β, M.C)
 @inline materialize!(M::BlasMatMulVecAdd{<:ConjLayout{<:AbstractRowMajor},<:AbstractStridedLayout,<:AbstractStridedLayout,<:BlasComplex}) =
     _gemv!('C', M.α, M.A', M.B, M.β, M.C)
 
 @inline materialize!(M::BlasVecMulMatAdd{<:AbstractColumnMajor,<:AbstractColumnMajor,<:AbstractColumnMajor}) =
     _gemm!('N', 'N', M.α, M.A, M.B, M.β, M.C)
 @inline materialize!(M::BlasVecMulMatAdd{<:AbstractColumnMajor,<:AbstractRowMajor,<:AbstractColumnMajor}) =
-    _gemm!('N', 'T', M.α, M.A, _transpose(M.B), M.β, M.C)
+    _gemm!('N', 'T', M.α, M.A, transpose(M.B), M.β, M.C)
 @inline materialize!(M::BlasVecMulMatAdd{<:AbstractColumnMajor,<:ConjLayout{<:AbstractRowMajor},<:AbstractColumnMajor,<:BlasComplex}) =
     _gemm!('N', 'C', M.α, M.A, M.B', M.β, M.C)
 
