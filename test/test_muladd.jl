@@ -1,5 +1,7 @@
-using ArrayLayouts, FillArrays, Test
+using ArrayLayouts, FillArrays, Random, Test
 import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul
+
+Random.seed!(0)
 
 @testset "Matrix * Vector" begin
     @testset "eltype" begin
