@@ -27,7 +27,7 @@ import Base: AbstractArray, AbstractMatrix, AbstractVector,
       similar, @_gc_preserve_end, @_gc_preserve_begin,
       @nexprs, @ncall, @ntuple, tuple_type_tail,
       all, any, isbitsunion, issubset, replace_in_print_matrix, replace_with_centered_mark,
-      strides, unsafe_convert
+      strides, unsafe_convert, first_index
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcasted,
                         combine_eltypes, DefaultArrayStyle, instantiate, materialize,
@@ -71,8 +71,24 @@ _transpose_strides(a,b) = (b,a)
 strides(A::Adjoint) = _transpose_strides(strides(parent(A))...)
 strides(A::Transpose) = _transpose_strides(strides(parent(A))...)
 
+"""
+    ConjPtr{T}
+
+represents that the entry is the complex-conjugate of the pointed to entry.
+"""
+struct ConjPtr{T} 
+    ptr::Ptr{T}
+end
+
 unsafe_convert(::Type{Ptr{T}}, A::Adjoint{<:Real}) where T<:Real = unsafe_convert(Ptr{T}, parent(A))
 unsafe_convert(::Type{Ptr{T}}, A::Transpose) where T = unsafe_convert(Ptr{T}, parent(A))
+# work-around issue with complex conjugation of pointer
+unsafe_convert(::Type{Ptr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(ConjPtr{T}, parent(Ac))
+unsafe_convert(::Type{ConjPtr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(Ptr{T}, parent(Ac))    
+function unsafe_convert(::Type{ConjPtr{T}}, V::SubArray{T,2}) where {T,N,P}
+    kr, jr = parentindices(V)
+    unsafe_convert(Ptr{T}, view(parent(V)', jr, kr))
+end
 
 include("memorylayout.jl")
 include("muladd.jl")
