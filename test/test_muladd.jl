@@ -173,6 +173,7 @@ end
         V = view(C', 2:3, 3:4)
         c = randn(2) + im*randn(2)
         @test all(muladd!(1.0+0im,V,c,0.0+0im,similar(c,2)) .=== BLAS.gemv!('C', 1.0+0im, Matrix(V'), c, 0.0+0im, similar(c,2)))
+        @test all(muladd!(1.0+0im,V',c,0.0+0im,similar(c,2)) .=== BLAS.gemv!('N', 1.0+0im, Matrix(V'), c, 0.0+0im, similar(c,2)))
     end
 
     @testset "gemm adjtrans" begin
