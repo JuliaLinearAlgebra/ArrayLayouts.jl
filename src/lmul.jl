@@ -80,3 +80,19 @@ macro layoutlmul(Typ)
         ArrayLayouts.@_layoutlmul UnitLowerTriangular{T, <:$Typ{T}} where T
     end)
 end
+
+macro _layoutrmul(Typ)
+    esc(quote
+        LinearAlgebra.rmul!(A::AbstractMatrix, B::$Typ) = ArrayLayouts.materialize!(ArrayLayouts.Rmul(A, B))
+        LinearAlgebra.rmul!(A::StridedMatrix, B::$Typ) = ArrayLayouts.materialize!(ArrayLayouts.Rmul(A, B))
+    end)
+end
+
+macro layoutrmul(Typ)
+    esc(quote
+        ArrayLayouts.@_layoutrmul UpperTriangular{T, <:$Typ{T}} where T
+        ArrayLayouts.@_layoutrmul UnitUpperTriangular{T, <:$Typ{T}} where T
+        ArrayLayouts.@_layoutrmul LowerTriangular{T, <:$Typ{T}} where T
+        ArrayLayouts.@_layoutrmul UnitLowerTriangular{T, <:$Typ{T}} where T
+    end)
+end
