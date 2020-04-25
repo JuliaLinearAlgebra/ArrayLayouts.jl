@@ -1,13 +1,14 @@
-struct QLayout <: MemoryLayout end
+abstract type AbstractQLayout <: MemoryLayout end
+struct QLayout <: AbstractQLayout end
 
 MemoryLayout(::Type{<:AbstractQ}) = QLayout()
 
-transposelayout(::QLayout) = QLayout()
+adjointlayout(::Type, ::AbstractQLayout) = QLayout()
 
 
-copy(M::Lmul{QLayout}) = copyto!(similar(M), M)
+copy(M::Lmul{<:AbstractQLayout}) = copyto!(similar(M), M)
 
-function copyto!(dest::AbstractArray{T}, M::Lmul{QLayout}) where T
+function copyto!(dest::AbstractArray{T}, M::Lmul{<:AbstractQLayout}) where T
     A,B = M.A,M.B
     if size(dest,1) == size(B,1) 
         copyto!(dest, B)
@@ -18,13 +19,14 @@ function copyto!(dest::AbstractArray{T}, M::Lmul{QLayout}) where T
     materialize!(Lmul(A,dest))
 end
 
-function copyto!(dest::AbstractArray, M::Ldiv{QLayout})
+function copyto!(dest::AbstractArray, M::Ldiv{<:AbstractQLayout})
     A,B = M.A,M.B
     copyto!(dest, B)
     materialize!(Ldiv(A,dest))
 end
 
-materialize!(M::Ldiv{QLayout}) = materialize!(Lmul(M.A',M.B))
+materialize!(M::Lmul{LAY}) where LAY<:AbstractQLayout = error("Overload materialize!(::Lmul{$(LAY)})")
+materialize!(M::Ldiv{<:AbstractQLayout}) = materialize!(Lmul(M.A',M.B))
 
 _qr(layout, axes, A; kwds...) = Base.invoke(qr, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
 _qr(layout, axes, A, pivot::P; kwds...) where P = Base.invoke(qr, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
