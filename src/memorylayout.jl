@@ -18,6 +18,7 @@ abstract type AbstractRowMajor <: AbstractDecreasingStrides end
 struct DenseRowMajor <: AbstractRowMajor end
 struct RowMajor <: AbstractRowMajor end
 struct DecreasingStrides <: AbstractIncreasingStrides end
+struct UnitStride{D} <: AbstractStridedLayout end
 struct StridedLayout <: AbstractStridedLayout end
 struct ScalarLayout <: MemoryLayout end
 
@@ -42,6 +43,31 @@ dispatch to BLAS and LAPACK routines if the memory layout is BLAS compatible and
 the element type is a `Float32`, `Float64`, `ComplexF32`, or `ComplexF64`.
 In this case, one must implement the strided array interface, which requires
 overrides of `strides(A::MyMatrix)` and `unknown_convert(::Type{Ptr{T}}, A::MyMatrix)`.
+
+The complete list of more specialised types is as follows:
+```
+julia> using ArrayLayouts, AbstractTrees
+
+julia> AbstractTrees.children(x::Type) = subtypes(x)
+
+julia> print_tree(AbstractStridedLayout)
+AbstractStridedLayout
+├─ AbstractDecreasingStrides
+│  └─ AbstractRowMajor
+│     ├─ DenseRowMajor
+│     └─ RowMajor
+├─ AbstractIncreasingStrides
+│  ├─ AbstractColumnMajor
+│  │  ├─ ColumnMajor
+│  │  └─ DenseColumnMajor
+│  ├─ DecreasingStrides
+│  └─ IncreasingStrides
+├─ StridedLayout
+└─ UnitStride
+
+julia> Base.show_supertypes(AbstractStridedLayout)
+AbstractStridedLayout <: MemoryLayout <: Any
+```
 """
 AbstractStridedLayout
 
@@ -157,7 +183,7 @@ MemoryLayout(::Type{<:ReshapedArray{T,N,A,DIMS}}) where {T,N,A,DIMS} = reshapedl
 @inline reshapedlayout(::DenseColumnMajor, _) = DenseColumnMajor()
 
 
-@inline MemoryLayout(A::Type{<:SubArray{T,N,P,I}}) where {T,N,P,I} = 
+@inline MemoryLayout(A::Type{<:SubArray{T,N,P,I}}) where {T,N,P,I} =
     sublayout(MemoryLayout(P), I)
 sublayout(_1, _2) = UnknownLayout()
 sublayout(_1, _2, _3)= UnknownLayout()
@@ -255,6 +281,59 @@ transposelayout(::DenseColumnMajor) = DenseRowMajor()
 transposelayout(::DenseRowMajor) = DenseColumnMajor()
 transposelayout(::ConjLayout{ML}) where ML = ConjLayout{typeof(transposelayout(ML()))}()
 adjointlayout(::Type{T}, M::MemoryLayout) where T = transposelayout(conjlayout(T, M))
+
+
+# Layouts of PermutedDimsArrays
+"""
+    UnitStride{D}()
+
+is returned by `MemoryLayout(A)` for arrays of `ndims(A) >= 3` which have `stride(A,D) == 1`.
+
+`UnitStride{1}` is weaker than `ColumnMajor` in that it does not demand that the other
+strides are increasing, hence it is not a subtype of `AbstractIncreasingStrides`.
+To ensure that `stride(A,1) == 1`, you may dispatch on `Union{UnitStride{1}, AbstractColumnMajor}`
+to allow for both options. (With complex numbers, you may also need their `ConjLayout` versions.)
+
+Likewise, both `UnitStride{ndims(A)}` and `AbstractRowMajor` have `stride(A, ndims(A)) == 1`.
+"""
+UnitStride
+
+MemoryLayout(::Type{PermutedDimsArray{T,N,P,Q,S}}) where {T,N,P,Q,S} = permutelayout(MemoryLayout(S), Val(P))
+
+permutelayout(::Any, perm) = UnknownLayout()
+permutelayout(::StridedLayout, perm) = StridedLayout()
+permutelayout(::ConjLayout{ML}, perm) where ML = ConjLayout{typeof(permutelayout(ML(), perm))}()
+
+function permutelayout(layout::AbstractColumnMajor, ::Val{perm}) where {perm}
+    issorted(perm) && return layout
+    issorted(reverse(perm)) && return reverse(layout)
+    D = sum(ntuple(dim -> perm[dim] == 1 ? dim : 0, length(perm)))
+    return UnitStride{D}()
+end
+function permutelayout(layout::AbstractRowMajor, ::Val{perm}) where {perm}
+    issorted(perm) && return layout
+    issorted(reverse(perm)) && return reverse(layout)
+    N = length(perm) # == ndims(A)
+    D = sum(ntuple(dim -> perm[dim] == N ? dim : 0, N))
+    return UnitStride{D}()
+end
+function permutelayout(layout::UnitStride{D0}, ::Val{perm}) where {D0, perm}
+    D = sum(ntuple(dim -> perm[dim] == D0 ? dim : 0, length(perm)))
+    return UnitStride{D}()
+end
+function permutelayout(layout::Union{IncreasingStrides,DecreasingStrides}, ::Val{perm}) where {perm}
+    issorted(perm) && return layout
+    issorted(reverse(perm)) && return reverse(layout)
+    return StridedLayout()
+end
+
+Base.reverse(::DenseRowMajor) = DenseColumnMajor()
+Base.reverse(::RowMajor) = ColumnMajor()
+Base.reverse(::DenseColumnMajor) = DenseRowMajor()
+Base.reverse(::ColumnMajor) = RowMajor()
+Base.reverse(::IncreasingStrides) = DecreasingStrides()
+Base.reverse(::DecreasingStrides) = IncreasingStrides()
+Base.reverse(::AbstractStridedLayout) = StridedLayout()
 
 
 # MemoryLayout of Symmetric/Hermitian
