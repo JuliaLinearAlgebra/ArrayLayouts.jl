@@ -1,5 +1,7 @@
-using ArrayLayouts, Test
+using ArrayLayouts, Random, Test
 import ArrayLayouts: MemoryLayout, @_layoutlmul, triangulardata
+
+Random.seed!(0)
 
 include("test_layouts.jl")
 include("test_muladd.jl")
@@ -83,4 +85,12 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     @test lmul!(U, copy(B)) ≈ U * B
 
     @test_skip lmul!(U,view(copy(B),collect(1:5),1:5)) ≈ U * B
+end
+
+@testset "AbstractQ" begin
+    Q = qr(randn(5,5)).Q
+    b = randn(5)
+    @test MemoryLayout(Q) isa QLayout
+    @test all(materialize!(Lmul(Q,copy(b))) .=== lmul!(Q,copy(b)))
+    @test all(materialize!(Lmul(Q',copy(b))) .=== lmul!(Q',copy(b)))
 end
