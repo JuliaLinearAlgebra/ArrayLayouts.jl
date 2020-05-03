@@ -58,8 +58,8 @@ end
     materialize!(Rmul(dest,M.B))
 end
 
-materialize!(M::Lmul) = lmul!(M.A,M.B)
-materialize!(M::Rmul) = rmul!(M.A,M.B)
+materialize!(M::Lmul) = LinearAlgebra.lmul!(M.A,M.B)
+materialize!(M::Rmul) = LinearAlgebra.rmul!(M.A,M.B)
 
 
 

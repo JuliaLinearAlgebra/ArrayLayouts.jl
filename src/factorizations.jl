@@ -26,8 +26,13 @@ function copyto!(dest::AbstractArray, M::Ldiv{<:AbstractQLayout})
 end
 
 materialize!(M::Lmul{LAY}) where LAY<:AbstractQLayout = error("Overload materialize!(::Lmul{$(LAY)})")
-materialize!(M::Rmul{LAY}) where LAY<:AbstractQLayout = error("Overload materialize!(::Lmul{$(LAY)})")
+materialize!(M::Rmul{LAY}) where LAY<:AbstractQLayout = error("Overload materialize!(::Rmul{$(LAY)})")
+
+materialize!(M::Lmul{QLayout}) = LinearAlgebra.lmul!(M.A, M.B)
+
+
 materialize!(M::Ldiv{<:AbstractQLayout}) = materialize!(Lmul(M.A',M.B))
+
 
 _qr(layout, axes, A; kwds...) = Base.invoke(qr, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
 _qr(layout, axes, A, pivot::P; kwds...) where P = Base.invoke(qr, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
