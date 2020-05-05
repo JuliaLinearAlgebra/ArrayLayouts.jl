@@ -106,6 +106,8 @@ macro _layoutldiv(Typ)
         LinearAlgebra.ldiv!(A::$Typ, x::StridedVector) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
         LinearAlgebra.ldiv!(A::$Typ, x::StridedMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
 
+        LinearAlgebra.ldiv!(A::Factorization, x::$Typ) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
+
         Base.:\(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(A,x))
         Base.:\(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(A,x))
 
@@ -138,4 +140,3 @@ macro layoutldiv(Typ)
         ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
     end)
 end
-
