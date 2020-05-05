@@ -5,13 +5,13 @@ MemoryLayout(::Type{<:LinearAlgebra.QRCompactWY}) = QRCompactWYLayout()
 
 function materialize!(L::Ldiv{QRCompactWYLayout,<:Any,<:Any,<:AbstractVector})
     A,b = L.A, L.B
-    materialize!(Ldiv(UpperTriangular(A.R), view(materialize!(Lmul(adjoint(A.Q), b)), 1:size(A, 2))))
+    ldiv!(UpperTriangular(A.R), view(lmul!(adjoint(A.Q), b), 1:size(A, 2)))
     b
 end
 
 function materialize!(L::Ldiv{QRCompactWYLayout,<:Any,<:Any,<:AbstractMatrix})
     A,B = L.A, L.B
-    materialize!(Ldiv(UpperTriangular(A.R), view(materialize!(Lmul(adjoint(A.Q), B)), 1:size(A, 2), 1:size(B, 2))))
+    ldiv!(UpperTriangular(A.R), view(lmul!(adjoint(A.Q), B), 1:size(A, 2), 1:size(B, 2)))
     B
 end
 
@@ -44,13 +44,13 @@ function copyto!(dest::AbstractArray{T}, M::Lmul{<:AbstractQLayout}) where T
         copyto!(view(dest,1:size(B,1),:), B)
         zero!(@view(dest[size(B,1)+1:end,:]))
     end
-    materialize!(Lmul(A,dest))
+    lmul!(A,dest)
 end
 
 function copyto!(dest::AbstractArray, M::Ldiv{<:AbstractQLayout})
     A,B = M.A,M.B
     copyto!(dest, B)
-    materialize!(Ldiv(A,dest))
+    ldiv!(A,dest)
 end
 
 materialize!(M::Lmul{LAY}) where LAY<:AbstractQLayout = error("Overload materialize!(::Lmul{$(LAY)})")
@@ -220,7 +220,7 @@ function _inv(layout, axes, A)
     S = typeof(zero(T)/one(T))      # dimensionful
     S0 = typeof(zero(T)/oneunit(T)) # dimensionless
     dest = _inv_eye(A, S0, (cols,rows))
-    materialize!(Ldiv(factorize(convert(AbstractMatrix{S}, A)), dest))
+    ldiv!(factorize(convert(AbstractMatrix{S}, A)), dest)
 end
 
 

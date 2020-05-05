@@ -60,23 +60,23 @@ import ArrayLayouts: ApplyBroadcastStyle
         for T in (Float64, ComplexF64)
             A = big.(randn(T,5,5))
             b = big.(randn(T,5))
-            @test materialize!(Ldiv(UpperTriangular(A),copy(b))) ≈ UpperTriangular(A)\b
-            @test materialize!(Ldiv(UnitUpperTriangular(A),copy(b))) ≈ UnitUpperTriangular(A)\b
-            @test materialize!(Ldiv(LowerTriangular(A),copy(b))) ≈ LowerTriangular(A)\b
-            @test materialize!(Ldiv(UnitLowerTriangular(A),copy(b))) ≈ UnitLowerTriangular(A)\b
+            @test ArrayLayouts.ldiv!(UpperTriangular(A),copy(b)) ≈ UpperTriangular(A)\b
+            @test ArrayLayouts.ldiv!(UnitUpperTriangular(A),copy(b)) ≈ UnitUpperTriangular(A)\b
+            @test ArrayLayouts.ldiv!(LowerTriangular(A),copy(b)) ≈ LowerTriangular(A)\b
+            @test ArrayLayouts.ldiv!(UnitLowerTriangular(A),copy(b)) ≈ UnitLowerTriangular(A)\b
 
-            @test materialize!(Ldiv(UpperTriangular(A)',copy(b))) ≈ UpperTriangular(A)'\b
-            @test materialize!(Ldiv(UnitUpperTriangular(A)',copy(b))) ≈ UnitUpperTriangular(A)'\b
-            @test materialize!(Ldiv(LowerTriangular(A)',copy(b))) ≈ LowerTriangular(A)'\b
-            @test materialize!(Ldiv(UnitLowerTriangular(A)',copy(b))) ≈ UnitLowerTriangular(A)'\b
+            @test ArrayLayouts.ldiv!(UpperTriangular(A)',copy(b)) ≈ UpperTriangular(A)'\b
+            @test ArrayLayouts.ldiv!(UnitUpperTriangular(A)',copy(b)) ≈ UnitUpperTriangular(A)'\b
+            @test ArrayLayouts.ldiv!(LowerTriangular(A)',copy(b)) ≈ LowerTriangular(A)'\b
+            @test ArrayLayouts.ldiv!(UnitLowerTriangular(A)',copy(b)) ≈ UnitLowerTriangular(A)'\b
 
-            @test materialize!(Ldiv(transpose(UpperTriangular(A)),copy(b))) ≈ transpose(UpperTriangular(A))\b
-            @test materialize!(Ldiv(transpose(UnitUpperTriangular(A)),copy(b))) ≈ transpose(UnitUpperTriangular(A))\b
-            @test materialize!(Ldiv(transpose(LowerTriangular(A)),copy(b))) ≈ transpose(LowerTriangular(A))\b
-            @test materialize!(Ldiv(transpose(UnitLowerTriangular(A)),copy(b))) ≈ transpose(UnitLowerTriangular(A))\b
+            @test ArrayLayouts.ldiv!(transpose(UpperTriangular(A)),copy(b)) ≈ transpose(UpperTriangular(A))\b
+            @test ArrayLayouts.ldiv!(transpose(UnitUpperTriangular(A)),copy(b)) ≈ transpose(UnitUpperTriangular(A))\b
+            @test ArrayLayouts.ldiv!(transpose(LowerTriangular(A)),copy(b)) ≈ transpose(LowerTriangular(A))\b
+            @test ArrayLayouts.ldiv!(transpose(UnitLowerTriangular(A)),copy(b)) ≈ transpose(UnitLowerTriangular(A))\b
 
             B = big.(randn(T,5,5))
-            @test materialize!(Ldiv(UpperTriangular(A),copy(B))) ≈ UpperTriangular(A)\B
+            @test ArrayLayouts.ldiv!(UpperTriangular(A),copy(B)) ≈ UpperTriangular(A)\B
         end
     end
 

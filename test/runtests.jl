@@ -90,7 +90,7 @@ end
 @testset "AbstractQ" begin
     Q = qr(randn(5,5)).Q
     b = randn(5)
-    @test MemoryLayout(Q) isa QLayout
-    @test all(materialize!(Lmul(Q,copy(b))) .=== lmul!(Q,copy(b)))
-    @test all(materialize!(Lmul(Q',copy(b))) .=== lmul!(Q',copy(b)))
+    @test MemoryLayout(Q) isa ArrayLayouts.QRCompactWYQLayout
+    @test all(ArrayLayouts.lmul!(Q,copy(b)) .=== lmul!(Q,copy(b)))
+    @test all(ArrayLayouts.lmul!(Q',copy(b)) .=== lmul!(Q',copy(b)))
 end
