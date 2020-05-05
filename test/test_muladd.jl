@@ -533,4 +533,11 @@ end
 
     @test materialize(MulAdd(1.0, Eye(5), A, 3.0, C)) == muladd!(1.0, Eye(5), A, 3.0, copy(C)) == A + 3.0C
     @test materialize(MulAdd(1.0, A, Eye(5), 3.0, C)) == muladd!(1.0, A, Eye(5), 3.0, copy(C)) == A + 3.0C
+
+    @testset "Degenerate" begin
+        C = BigFloat.(randn(3,3))
+        @test muladd!(1.0, BigFloat.(randn(3,0)), randn(0,3), 2.0, copy(C) ) == 2C
+        C = BigFloat.(randn(0,0))
+        @test muladd!(1.0, BigFloat.(randn(0,3)), randn(3,0), 2.0, copy(C)) == C
+    end
 end
