@@ -1,7 +1,24 @@
 abstract type AbstractQRLayout <: MemoryLayout end
-struct QRCompactWYLayout <: AbstractQRLayout end
 
-MemoryLayout(::Type{<:LinearAlgebra.QRCompactWY}) = QRCompactWYLayout()
+"""
+   QRCompactWYLayout{SLAY,TLAY}()
+
+represents a Compact-WY QR factorization whose 
+factors are stored with layout SLAY and τ stored with layout TLAY
+"""
+struct QRCompactWYLayout{SLAY,TLAY} <: AbstractQRLayout end
+"""
+    QRPackedLayout{SLAY,TLAY}()
+
+represents a Packed QR factorization whose 
+factors are stored with layout SLAY and τ stored with layout TLAY
+"""
+struct QRPackedLayout{SLAY,TLAY} <: AbstractQRLayout end
+
+MemoryLayout(::Type{<:LinearAlgebra.QRCompactWY{<:Any,MAT}}) where MAT = 
+    QRCompactWYLayout{typeof(MemoryLayout(MAT)),DenseColumnMajor}()
+MemoryLayout(::Type{<:LinearAlgebra.QR{<:Any,MAT}}) where MAT = 
+    QRPackedLayout{typeof(MemoryLayout(MAT)),DenseColumnMajor}()
 
 function materialize!(L::Ldiv{QRCompactWYLayout,<:Any,<:Any,<:AbstractVector})
     A,b = L.A, L.B
@@ -15,14 +32,65 @@ function materialize!(L::Ldiv{QRCompactWYLayout,<:Any,<:Any,<:AbstractMatrix})
     B
 end
 
+# Julia implementation similar to xgelsy
+function materialize!(Ldv::Ldiv{<:QRPackedLayout,<:Any,<:Any,<:AbstractMatrix{T}}) where T
+    A,B = Ldv.A,Ldv.B
+    m, n = size(A)
+    minmn = min(m,n)
+    mB, nB = size(B)
+    lmul!(adjoint(A.Q), view(B, 1:m, :))
+    R = A.R
+    @inbounds begin
+        if n > m # minimum norm solution
+            τ = zeros(T,m)
+            for k = m:-1:1 # Trapezoid to triangular by elementary operation
+                x = view(R, k, [k; m + 1:n])
+                τk = reflector!(x)
+                τ[k] = conj(τk)
+                for i = 1:k - 1
+                    vRi = R[i,k]
+                    for j = m + 1:n
+                        vRi += R[i,j]*x[j - m + 1]'
+                    end
+                    vRi *= τk
+                    R[i,k] -= vRi
+                    for j = m + 1:n
+                        R[i,j] -= vRi*x[j - m + 1]
+                    end
+                end
+            end
+        end
+        ldiv!(UpperTriangular(view(R, :, 1:minmn)), view(B, 1:minmn, :))
+        if n > m # Apply elementary transformation to solution
+            B[m + 1:mB,1:nB] .= zero(T)
+            for j = 1:nB
+                for k = 1:m
+                    vBj = B[k,j]
+                    for i = m + 1:n
+                        vBj += B[i,j]*R[k,i]'
+                    end
+                    vBj *= τ[k]
+                    B[k,j] -= vBj
+                    for i = m + 1:n
+                        B[i,j] -= R[k,i]*vBj
+                    end
+                end
+            end
+        end
+    end
+    return B
+end
+materialize!(Ldv::Ldiv{<:QRPackedLayout,<:Any,<:Any,<:AbstractVector{T}}) where T =
+    ldiv!(Ldv.A, reshape(Ldv.B, length(Ldv.B), 1))[:]
+
+
+
 abstract type AbstractQLayout <: MemoryLayout end
 struct QRPackedQLayout{SLAY,TLAY} <: AbstractQLayout end
 struct AdjQRPackedQLayout{SLAY,TLAY} <: AbstractQLayout end
 struct QRCompactWYQLayout{SLAY,TLAY} <: AbstractQLayout end
 struct AdjQRCompactWYQLayout{SLAY,TLAY} <: AbstractQLayout end
-struct QLayout <: AbstractQLayout end
 
-MemoryLayout(::Type{<:AbstractQ}) = QLayout()
 MemoryLayout(::Type{<:LinearAlgebra.QRPackedQ{<:Any,S}}) where {S,T} = 
     QRPackedQLayout{typeof(MemoryLayout(S)),DenseColumnMajor}()
 MemoryLayout(::Type{<:LinearAlgebra.QRCompactWYQ{<:Any,S}}) where {S,T} = 
@@ -56,7 +124,6 @@ end
 materialize!(M::Lmul{LAY}) where LAY<:AbstractQLayout = error("Overload materialize!(::Lmul{$(LAY)})")
 materialize!(M::Rmul{LAY}) where LAY<:AbstractQLayout = error("Overload materialize!(::Rmul{$(LAY)})")
 
-materialize!(M::Lmul{QLayout}) = LinearAlgebra.lmul!(M.A, M.B)
 materialize!(M::Ldiv{<:AbstractQLayout}) = materialize!(Lmul(M.A',M.B))
 
 materialize!(M::Lmul{<:QRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat = 
