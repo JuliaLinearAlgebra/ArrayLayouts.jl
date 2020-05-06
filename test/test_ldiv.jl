@@ -142,6 +142,10 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
                 @test all(ArrayLayouts.rmul!(copy(B),Q) .=== rmul!(copy(B),Q))
                 @test all(ArrayLayouts.rmul!(copy(B),Q') .=== ArrayLayouts.rdiv!(copy(B),Q) .=== rmul!(copy(B),Q'))
                 @test ArrayLayouts.ldiv!(F,copy(b)) ≈ ldiv!(F,copy(b)) # only approx since we use BLAS.trsv!
+                @test ArrayLayouts.ldiv!(F,copy(B)) ≈ ldiv!(F,copy(B)) # only approx since we use BLAS.trsv!
+
+                @test copyto!(similar(b), Lmul(Q,b)) == Q*b
+                @test copyto!(similar(B), Lmul(Q,B)) == Q*B
             end
         end
 
@@ -161,7 +165,30 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
                 @test all(ArrayLayouts.rmul!(copy(B),Q) .=== rmul!(copy(B),Q))
                 @test ArrayLayouts.rmul!(copy(B),Q') ≈ ArrayLayouts.rdiv!(copy(B),Q) ≈ rmul!(copy(B),Q')
                 @test ArrayLayouts.ldiv!(F,copy(b)) ≈ ldiv!(F,copy(b)) # only approx since we use BLAS.trsv!
+                @test ArrayLayouts.ldiv!(F,copy(B)) ≈ ldiv!(F,copy(B)) # only approx since we use BLAS.trsv!
+
+                @test copyto!(similar(b), Lmul(Q,b)) == Q*b
+                @test copyto!(similar(B), Lmul(Q,B)) == Q*B
             end
+
+            A = BigFloat.(randn(10,10))
+            b = BigFloat.(randn(10))
+            B = BigFloat.(randn(10,10))
+            F = LinearAlgebra.qrfactUnblocked!(copy(A))
+            Q = F.Q
+            @test MemoryLayout(F) isa QRPackedLayout
+            @test MemoryLayout(Q) isa QRPackedQLayout
+            @test ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b))
+            @test ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b))
+            @test ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B))
+            @test ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B))
+            @test ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q)
+            @test ArrayLayouts.rmul!(copy(B),Q') ≈ ArrayLayouts.rdiv!(copy(B),Q) ≈ rmul!(copy(B),Q')
+            @test ArrayLayouts.ldiv!(F,copy(b)) ≈ ldiv!(F,copy(b)) # only approx since we use BLAS.trsv!
+            @test ArrayLayouts.ldiv!(F,copy(B)) ≈ ldiv!(F,copy(B)) # only approx since we use BLAS.trsv!
+
+            @test copyto!(similar(b), Lmul(Q,b)) == Q*b
+            @test copyto!(similar(B), Lmul(Q,B)) == Q*B
         end
     end
 end

@@ -43,7 +43,10 @@ MemoryLayout(::Type{MyMatrix}) = DenseColumnMajor()
     @test lu(A).factors ≈ lu(A.A).factors
     @test lu(A,Val(true)).factors ≈ lu(A.A,Val(true)).factors
     @test_throws ErrorException qr!(A)
-    @test_throws ErrorException lu!(A)    
+    @test_throws ErrorException lu!(A)
+
+    @test qr(A) isa LinearAlgebra.QRCompactWY
+    @test inv(A) ≈ inv(A.A)
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
@@ -87,10 +90,3 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     @test_skip lmul!(U,view(copy(B),collect(1:5),1:5)) ≈ U * B
 end
 
-@testset "AbstractQ" begin
-    Q = qr(randn(5,5)).Q
-    b = randn(5)
-    @test MemoryLayout(Q) isa ArrayLayouts.QRCompactWYQLayout
-    @test all(ArrayLayouts.lmul!(Q,copy(b)) .=== lmul!(Q,copy(b)))
-    @test all(ArrayLayouts.lmul!(Q',copy(b)) .=== lmul!(Q',copy(b)))
-end
