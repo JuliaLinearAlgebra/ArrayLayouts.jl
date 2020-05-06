@@ -109,6 +109,8 @@ function tiled_blasmul!(tile_size, α, A::AbstractMatrix{T}, B::AbstractMatrix{S
     nA == mB || throw(DimensionMismatch("Dimensions must match"))
     size(C) == (mA, nB) || throw(DimensionMismatch("Dimensions must match"))
 
+    (iszero(mA) || iszero(nB)) && return C
+    iszero(nA) && return lmul!(β, C)
 
     @inbounds begin
         sz = (tile_size, tile_size)
@@ -175,6 +177,9 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
     mB, nB = size(B)
     nA == mB || throw(DimensionMismatch("Dimensions must match"))
     size(C) == (mA, nB) || throw(DimensionMismatch("Dimensions must match"))
+
+    (iszero(mA) || iszero(nB)) && return C
+    iszero(nA) && return lmul!(β, C)
 
     @inbounds for k in colsupport(A), j in rowsupport(B)
         z2 = zero(A[k, 1]*B[1, j] + A[k, 1]*B[1, j])

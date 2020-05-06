@@ -47,15 +47,15 @@ end
 end
 
 @inline function materialize!(M::BlasMatLmulMat{<:TriangularLayout{'L',UNIT,<:AbstractRowMajor},
-                                   <:AbstractStridedLayout, T}) where {UNIT,T<:BlasFloat}
+                                                <:AbstractStridedLayout, T}) where {UNIT,T<:BlasFloat}
     A,x = M.A,M.B
     BLAS.trmm!('L', 'U', 'T', UNIT, one(T), transpose(triangulardata(A)), x)
 end
 
 @inline function materialize!(M::BlasMatLmulMat{<:TriangularLayout{'U',UNIT,<:AbstractRowMajor},
-    <:AbstractStridedLayout, T}) where {UNIT,T<:BlasFloat}
-A,x = M.A,M.B
-BLAS.trmm!('L', 'L', 'T', UNIT, one(T), transpose(triangulardata(A)), x)
+                                                <:AbstractStridedLayout, T}) where {UNIT,T<:BlasFloat}
+    A,x = M.A,M.B
+    BLAS.trmm!('L', 'L', 'T', UNIT, one(T), transpose(triangulardata(A)), x)
 end
 
 @inline function materialize!(M::BlasMatLmulMat{<:TriangularLayout{'L',UNIT,<:ConjLayout{<:AbstractRowMajor}},
@@ -66,8 +66,8 @@ end
 
 @inline function materialize!(M::BlasMatLmulMat{<:TriangularLayout{'U',UNIT,<:ConjLayout{<:AbstractRowMajor}},
                                                 <:AbstractStridedLayout, T}) where {UNIT,T<:BlasComplex}
-A,x = M.A,M.B
-BLAS.trmm!('L', 'L', 'C', UNIT, one(T), triangulardata(A)', x)
+    A,x = M.A,M.B
+    BLAS.trmm!('L', 'L', 'C', UNIT, one(T), triangulardata(A)', x)
 end
 
 
@@ -108,7 +108,7 @@ BLAS.trmm!('R', 'L', 'C', UNIT, one(T), triangulardata(A)', x)
 end
 
 
-materialize!(M::MatRmulMat{<:AbstractStridedLayout,<:TriangularLayout}) = rmul!(M.A, M.B)
+materialize!(M::MatRmulMat{<:AbstractStridedLayout,<:TriangularLayout}) = LinearAlgebra.rmul!(M.A, M.B)
 
 
 ########
@@ -119,7 +119,7 @@ materialize!(M::MatRmulMat{<:AbstractStridedLayout,<:TriangularLayout}) = rmul!(
 @inline function copyto!(dest::AbstractArray, M::Ldiv{<:TriangularLayout})
     A, B = M.A, M.B
     dest ≡ B || (dest .= B)
-    materialize!(Ldiv(A, dest))
+    ldiv!(A, dest)
 end
 
 for UNIT in ('U', 'N')
@@ -153,7 +153,7 @@ function materialize!(M::MatLdivMat{<:TriangularLayout})
     A,X = M.A,M.B
     size(A,2) == size(X,1) || thow(DimensionMismatch("Dimensions must match"))
     @views for j in axes(X,2)
-        materialize!(Ldiv(A, X[:,j]))
+        ldiv!(A, X[:,j])
     end
     X
 end

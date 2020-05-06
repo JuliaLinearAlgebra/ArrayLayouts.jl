@@ -245,7 +245,7 @@ end
         B = rand(Int,6,4)
         C = Array{Float64}(undef, 5, 4)
 
-        @test_throws DimensionMismatch materialize!(MulAdd(1.0,A,B,0.0,similar(C,4,4)))
+        @test_throws DimensionMismatch muladd!(1.0,A,B,0.0,similar(C,4,4))
 
         A = randn(Float64,20,22)
         B = randn(ComplexF64,22,24)
@@ -305,7 +305,7 @@ end
             @test similar(L,Int) isa Vector{Int}
             
             @test all(copy(Lmul(UpperTriangular(A),x)) .===
-                        materialize!(Lmul(UpperTriangular(A),copy(x))) .===
+                        ArrayLayouts.lmul!(UpperTriangular(A),copy(x)) .===
                         copyto!(similar(x),Lmul(UpperTriangular(A),x)) .===
                         UpperTriangular(A)*x .===
                         BLAS.trmv!('U', 'N', 'N', A, copy(x)))
@@ -315,24 +315,24 @@ end
             @test all(copyto!(similar(x),Lmul(LowerTriangular(A),x)) .=== 
                         LowerTriangular(A)*x .===
                         BLAS.trmv!('L', 'N', 'N', A, copy(x)))
-            @test all(materialize!(Lmul(UnitLowerTriangular(A),copy(x))) .===
+            @test all(ArrayLayouts.lmul!(UnitLowerTriangular(A),copy(x)) .===
                         UnitLowerTriangular(A)x .===
                         BLAS.trmv!('L', 'N', 'U', A, copy(x)))
 
-            @test all(materialize!(Lmul(UpperTriangular(A)',copy(x))) .===
-                        materialize!(Lmul(LowerTriangular(A'),copy(x))) .===
+            @test all(ArrayLayouts.lmul!(UpperTriangular(A)',copy(x)) .===
+                        ArrayLayouts.lmul!(LowerTriangular(A'),copy(x)) .===
                         UpperTriangular(A)'x .===
                         BLAS.trmv!('U', 'T', 'N', A, copy(x)))
-            @test all(materialize!(Lmul(UnitUpperTriangular(A)',copy(x))) .===
-                        materialize!(Lmul(UnitLowerTriangular(A'),copy(x))) .===
+            @test all(ArrayLayouts.lmul!(UnitUpperTriangular(A)',copy(x)) .===
+                        ArrayLayouts.lmul!(UnitLowerTriangular(A'),copy(x)) .===
                         UnitUpperTriangular(A)'*x .===
                         BLAS.trmv!('U', 'T', 'U', A, copy(x)))
-            @test all(materialize!(Lmul(LowerTriangular(A)',copy(x))) .===
-                        materialize!(Lmul(UpperTriangular(A'),copy(x))) .===
+            @test all(ArrayLayouts.lmul!(LowerTriangular(A)',copy(x)) .===
+                        ArrayLayouts.lmul!(UpperTriangular(A'),copy(x)) .===
                         LowerTriangular(A)'*x .===
                         BLAS.trmv!('L', 'T', 'N', A, copy(x)))
-            @test all(materialize!(Lmul(UnitLowerTriangular(A)',copy(x))) .===
-                        materialize!(Lmul(UnitUpperTriangular(A'),copy(x))) .===
+            @test all(ArrayLayouts.lmul!(UnitLowerTriangular(A)',copy(x)) .===
+                        ArrayLayouts.lmul!(UnitUpperTriangular(A'),copy(x)) .===
                         UnitLowerTriangular(A)'*x .===
                         BLAS.trmv!('L', 'T', 'U', A, copy(x)))
         end
@@ -490,7 +490,7 @@ end
         T = Float64
         A = big.(randn(100,100))
         B = big.(randn(100,100))
-        @test materialize!(Rmul(copy(A),UpperTriangular(B))) == A*UpperTriangular(B)
+        @test ArrayLayouts.rmul!(copy(A),UpperTriangular(B)) == A*UpperTriangular(B)
     end
 
     @testset "Diagonal and SymTridiagonal" begin
@@ -498,8 +498,8 @@ end
         B = Diagonal(randn(5))
         @test MemoryLayout(B) == DiagonalLayout{DenseColumnMajor}()
         
-        @test A*B == materialize!(Rmul(copy(A),B))
-        @test B*A == materialize!(Lmul(B,copy(A)))
+        @test A*B == ArrayLayouts.rmul!(copy(A),B)
+        @test B*A == ArrayLayouts.lmul!(B,copy(A))
     end
 end
 
@@ -528,9 +528,16 @@ end
     B = randn(5,5)
     C = randn(5,5)
     @test materialize(MulAdd(2.0,Diagonal(A),Diagonal(B),3.0,Diagonal(C))) == 
-          materialize!(MulAdd(2.0,Diagonal(A),Diagonal(B),3.0,Diagonal(copy(C)))) == 2.0Diagonal(A)*Diagonal(B) + 3.0*Diagonal(C)
+          muladd!(2.0,Diagonal(A),Diagonal(B),3.0,Diagonal(copy(C))) == 2.0Diagonal(A)*Diagonal(B) + 3.0*Diagonal(C)
     @test_broken materialize(MulAdd(2.0,Diagonal(A),Diagonal(B),3.0,Diagonal(C))) isa Diagonal
 
-    @test materialize(MulAdd(1.0, Eye(5), A, 3.0, C)) == materialize!(MulAdd(1.0, Eye(5), A, 3.0, copy(C))) == A + 3.0C
-    @test materialize(MulAdd(1.0, A, Eye(5), 3.0, C)) == materialize!(MulAdd(1.0, A, Eye(5), 3.0, copy(C))) == A + 3.0C
+    @test materialize(MulAdd(1.0, Eye(5), A, 3.0, C)) == muladd!(1.0, Eye(5), A, 3.0, copy(C)) == A + 3.0C
+    @test materialize(MulAdd(1.0, A, Eye(5), 3.0, C)) == muladd!(1.0, A, Eye(5), 3.0, copy(C)) == A + 3.0C
+
+    @testset "Degenerate" begin
+        C = BigFloat.(randn(3,3))
+        @test muladd!(1.0, BigFloat.(randn(3,0)), randn(0,3), 2.0, copy(C) ) == 2C
+        C = BigFloat.(randn(0,0))
+        @test muladd!(1.0, BigFloat.(randn(0,3)), randn(3,0), 2.0, copy(C)) == C
+    end
 end

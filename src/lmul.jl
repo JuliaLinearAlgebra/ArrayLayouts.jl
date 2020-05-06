@@ -42,20 +42,22 @@ const BlasMatRmulMat{StyleA,StyleB,T<:BlasFloat} = Rmul{StyleA,StyleB,<:Abstract
 axes(M::MatLmulVec) = (axes(M.A,1),)
 
 lmul(A, B) = materialize(Lmul(A, B))
+lmul!(A, B) = materialize!(Lmul(A, B))
+rmul!(A, B) = materialize!(Rmul(A, B))
 
 materialize(L::Lmul) = copy(instantiate(L))
 
-copy(M::Lmul) = materialize!(Lmul(M.A,copy(M.B)))
-copy(M::Rmul) = materialize!(Rmul(copy(M.A),M.B))
+copy(M::Lmul) = lmul!(M.A,copy(M.B))
+copy(M::Rmul) = rmul!(copy(M.A),M.B)
 
 @inline function copyto!(dest::AbstractArray, M::Lmul)
     M.B ≡ dest || copyto!(dest, M.B)
-    materialize!(Lmul(M.A,dest))
+    lmul!(M.A,dest)
 end
 
 @inline function copyto!(dest::AbstractArray, M::Rmul)
     M.A ≡ dest || copyto!(dest, M.A)
-    materialize!(Rmul(dest,M.B))
+    rmul!(dest,M.B)
 end
 
 materialize!(M::Lmul) = LinearAlgebra.lmul!(M.A,M.B)
@@ -65,10 +67,10 @@ materialize!(M::Rmul) = LinearAlgebra.rmul!(M.A,M.B)
 
 macro _layoutlmul(Typ)
     esc(quote
-        LinearAlgebra.lmul!(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize!(ArrayLayouts.Lmul(A,x))
-        LinearAlgebra.lmul!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Lmul(A,x))
-        LinearAlgebra.lmul!(A::$Typ, x::StridedVector) = ArrayLayouts.materialize!(ArrayLayouts.Lmul(A,x))
-        LinearAlgebra.lmul!(A::$Typ, x::StridedMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Lmul(A,x))
+        LinearAlgebra.lmul!(A::$Typ, x::AbstractVector) = ArrayLayouts.lmul!(A,x)
+        LinearAlgebra.lmul!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.lmul!(A,x)
+        LinearAlgebra.lmul!(A::$Typ, x::StridedVector) = ArrayLayouts.lmul!(A,x)
+        LinearAlgebra.lmul!(A::$Typ, x::StridedMatrix) = ArrayLayouts.lmul!(A,x)
     end)
 end
 
@@ -83,8 +85,8 @@ end
 
 macro _layoutrmul(Typ)
     esc(quote
-        LinearAlgebra.rmul!(A::AbstractMatrix, B::$Typ) = ArrayLayouts.materialize!(ArrayLayouts.Rmul(A, B))
-        LinearAlgebra.rmul!(A::StridedMatrix, B::$Typ) = ArrayLayouts.materialize!(ArrayLayouts.Rmul(A, B))
+        LinearAlgebra.rmul!(A::AbstractMatrix, B::$Typ) = ArrayLayouts.rmul!(A, B)
+        LinearAlgebra.rmul!(A::StridedMatrix, B::$Typ) = ArrayLayouts.rmul!(A, B)
     end)
 end
 

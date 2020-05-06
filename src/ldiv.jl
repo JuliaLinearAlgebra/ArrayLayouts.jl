@@ -64,20 +64,28 @@ end
 end
 
 __ldiv!(::Mat, ::Mat, B) where Mat = error("Overload materialize!(::Ldiv{$(typeof(MemoryLayout(Mat))),$(typeof(MemoryLayout(B)))})")
-__ldiv!(_, F, B) = ldiv!(F, B)
+__ldiv!(::Mat, ::Mat, B::LayoutArray) where Mat = error("Overload materialize!(::Ldiv{$(typeof(MemoryLayout(Mat))),$(typeof(MemoryLayout(B)))})")
+__ldiv!(_, F, B) = LinearAlgebra.ldiv!(F, B)
 @inline _ldiv!(A, B) = __ldiv!(A, factorize(A), B)
-@inline _ldiv!(A::Factorization, B) = ldiv!(A, B)
+@inline _ldiv!(A::Factorization, B) = LinearAlgebra.ldiv!(A, B)
+@inline _ldiv!(A::Factorization, B::LayoutArray) = error("Overload materialize!(::Ldiv{$(typeof(MemoryLayout(A))),$(typeof(MemoryLayout(B)))})")
 
 @inline _ldiv!(dest, A, B) = ldiv!(dest, factorize(A), B)
-@inline _ldiv!(dest, A::Factorization, B) = ldiv!(dest, A, B)
-@inline _ldiv!(dest, A::Transpose{<:Any,<:Factorization}, B) = ldiv!(dest, A, B)
-@inline _ldiv!(dest, A::Adjoint{<:Any,<:Factorization}, B) = ldiv!(dest, A, B)
+@inline _ldiv!(dest, A::Factorization, B) = LinearAlgebra.ldiv!(dest, A, B)
+@inline _ldiv!(dest, A::Transpose{<:Any,<:Factorization}, B) = LinearAlgebra.ldiv!(dest, A, B)
+@inline _ldiv!(dest, A::Adjoint{<:Any,<:Factorization}, B) = LinearAlgebra.ldiv!(dest, A, B)
 
 @inline ldiv(A, B) = materialize(Ldiv(A,B))
 @inline rdiv(A, B) = materialize(Rdiv(A,B))
 
+@inline ldiv!(A, B) = materialize!(Ldiv(A,B))
+@inline rdiv!(A, B) = materialize!(Rdiv(A,B))
+
+@inline ldiv!(C, A, B) = copyto!(C, Ldiv(A,B))
+@inline rdiv!(C, A, B) = copyto!(C, Rdiv(A,B))
+
 @inline materialize!(M::Ldiv) = _ldiv!(M.A, M.B)
-@inline materialize!(M::Rdiv) = materialize!(Lmul(M.B', M.A'))'
+@inline materialize!(M::Rdiv) = ldiv!(M.B', M.A')'
 @inline copyto!(dest::AbstractArray, M::Rdiv) = copyto!(dest', Ldiv(M.B', M.A'))'
 
 if VERSION ≥ v"1.1-pre"
@@ -105,6 +113,8 @@ macro _layoutldiv(Typ)
         LinearAlgebra.ldiv!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
         LinearAlgebra.ldiv!(A::$Typ, x::StridedVector) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
         LinearAlgebra.ldiv!(A::$Typ, x::StridedMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
+
+        LinearAlgebra.ldiv!(A::Factorization, x::$Typ) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
 
         Base.:\(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(A,x))
         Base.:\(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(A,x))
@@ -138,4 +148,3 @@ macro layoutldiv(Typ)
         ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
     end)
 end
-
