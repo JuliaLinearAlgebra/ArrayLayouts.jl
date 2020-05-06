@@ -20,13 +20,13 @@ MemoryLayout(::Type{<:LinearAlgebra.QRCompactWY{<:Any,MAT}}) where MAT =
 MemoryLayout(::Type{<:LinearAlgebra.QR{<:Any,MAT}}) where MAT = 
     QRPackedLayout{typeof(MemoryLayout(MAT)),DenseColumnMajor}()
 
-function materialize!(L::Ldiv{QRCompactWYLayout,<:Any,<:Any,<:AbstractVector})
+function materialize!(L::Ldiv{<:QRCompactWYLayout,<:Any,<:Any,<:AbstractVector})
     A,b = L.A, L.B
     ldiv!(UpperTriangular(A.R), view(lmul!(adjoint(A.Q), b), 1:size(A, 2)))
     b
 end
 
-function materialize!(L::Ldiv{QRCompactWYLayout,<:Any,<:Any,<:AbstractMatrix})
+function materialize!(L::Ldiv{<:QRCompactWYLayout,<:Any,<:Any,<:AbstractMatrix})
     A,B = L.A, L.B
     ldiv!(UpperTriangular(A.R), view(lmul!(adjoint(A.Q), B), 1:size(A, 2), 1:size(B, 2)))
     B
@@ -126,11 +126,21 @@ materialize!(M::Rmul{LAY}) where LAY<:AbstractQLayout = error("Overload material
 
 materialize!(M::Ldiv{<:AbstractQLayout}) = materialize!(Lmul(M.A',M.B))
 
-materialize!(M::Lmul{<:QRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat = 
+materialize!(M::Lmul{<:QRPackedQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat = 
     LAPACK.ormqr!('L','N',M.A.factors,M.A.τ,M.B)    
 
-materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat = 
+materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat = 
     LAPACK.gemqrt!('L','N',M.A.factors,M.A.T,M.B)
+
+function materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractRowMajor,<:AbstractMatrix{T},<:AbstractMatrix{T}}) where T<:BlasReal 
+    LAPACK.gemqrt!('R','T',M.A.factors,M.A.T,transpose(M.B))
+    M.B
+end
+function materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:ConjLayout{<:AbstractRowMajor},<:AbstractMatrix{T},<:AbstractMatrix{T}}) where T<:BlasComplex
+    LAPACK.gemqrt!('R','C',M.A.factors,M.A.T,(M.B)')
+    M.B
+end
+
 
 function materialize!(M::Lmul{<:QRPackedQLayout})
     A,B = M.A, M.B
