@@ -150,19 +150,41 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
         end
 
         @testset "QRPacked" begin
-            for T in (Float64, ComplexF64)
-                A = randn(T,10,10)
-                b = randn(T,10)
-                B = randn(T,10,10)
+            @testset "Blas square" begin
+                for T in (Float64, ComplexF64)
+                    A = randn(T,10,10)
+                    b = randn(T,10)
+                    B = randn(T,10,10)
+                    F = LinearAlgebra.qrfactUnblocked!(copy(A))
+                    Q = F.Q
+                    @test MemoryLayout(F) isa QRPackedLayout
+                    @test MemoryLayout(Q) isa QRPackedQLayout
+                    @test all(ArrayLayouts.lmul!(Q,copy(b)) .=== lmul!(Q,copy(b)))
+                    @test all(ArrayLayouts.lmul!(Q',copy(b)) .=== ArrayLayouts.ldiv!(Q,copy(b)) .=== lmul!(Q',copy(b)))
+                    @test all(ArrayLayouts.lmul!(Q,copy(B)) .=== lmul!(Q,copy(B)))
+                    @test all(ArrayLayouts.lmul!(Q',copy(B)) .=== ArrayLayouts.ldiv!(Q,copy(B)) .=== lmul!(Q',copy(B)))
+                    @test all(ArrayLayouts.rmul!(copy(B),Q) .=== rmul!(copy(B),Q))
+                    @test ArrayLayouts.rmul!(copy(B),Q') ≈ ArrayLayouts.rdiv!(copy(B),Q) ≈ rmul!(copy(B),Q')
+                    @test ArrayLayouts.ldiv!(F,copy(b)) ≈ ldiv!(F,copy(b)) # only approx since we use BLAS.trsv!
+                    @test ArrayLayouts.ldiv!(F,copy(B)) ≈ ldiv!(F,copy(B)) # only approx since we use BLAS.trsv!
+
+                    @test copyto!(similar(b), Lmul(Q,b)) == Q*b
+                    @test copyto!(similar(B), Lmul(Q,B)) == Q*B
+                end
+            end
+            @testset "BigFloat" begin
+                A = BigFloat.(randn(10,10))
+                b = BigFloat.(randn(10))
+                B = BigFloat.(randn(10,10))
                 F = LinearAlgebra.qrfactUnblocked!(copy(A))
                 Q = F.Q
                 @test MemoryLayout(F) isa QRPackedLayout
                 @test MemoryLayout(Q) isa QRPackedQLayout
-                @test all(ArrayLayouts.lmul!(Q,copy(b)) .=== lmul!(Q,copy(b)))
-                @test all(ArrayLayouts.lmul!(Q',copy(b)) .=== ArrayLayouts.ldiv!(Q,copy(b)) .=== lmul!(Q',copy(b)))
-                @test all(ArrayLayouts.lmul!(Q,copy(B)) .=== lmul!(Q,copy(B)))
-                @test all(ArrayLayouts.lmul!(Q',copy(B)) .=== ArrayLayouts.ldiv!(Q,copy(B)) .=== lmul!(Q',copy(B)))
-                @test all(ArrayLayouts.rmul!(copy(B),Q) .=== rmul!(copy(B),Q))
+                @test ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b))
+                @test ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b))
+                @test ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B))
+                @test ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B))
+                @test ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q)
                 @test ArrayLayouts.rmul!(copy(B),Q') ≈ ArrayLayouts.rdiv!(copy(B),Q) ≈ rmul!(copy(B),Q')
                 @test ArrayLayouts.ldiv!(F,copy(b)) ≈ ldiv!(F,copy(b)) # only approx since we use BLAS.trsv!
                 @test ArrayLayouts.ldiv!(F,copy(B)) ≈ ldiv!(F,copy(B)) # only approx since we use BLAS.trsv!
@@ -170,25 +192,45 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
                 @test copyto!(similar(b), Lmul(Q,b)) == Q*b
                 @test copyto!(similar(B), Lmul(Q,B)) == Q*B
             end
+            @testset "rectangular" begin
+                for T in (Float64,BigFloat)
+                    A = T.(randn(12,10))
+                    b = T.(randn(12))
+                    B = T.(randn(12,12))
+                    F = LinearAlgebra.qrfactUnblocked!(copy(A))
+                    Q = F.Q
+                    @test all(ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b)))
+                    @test all(ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b)))
+                    @test all(ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B)))
+                    @test all(ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B)))
+                    @test all(ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q))
+                    @test ArrayLayouts.rmul!(copy(B),Q') ≈ ArrayLayouts.rdiv!(copy(B),Q) ≈ rmul!(copy(B),Q')
+                    @test ArrayLayouts.ldiv!(F,copy(b)) ≈ ldiv!(F,copy(b)) # only approx since we use BLAS.trsv!
+                    @test ArrayLayouts.ldiv!(F,copy(B)) ≈ ldiv!(F,copy(B)) # only approx since we use BLAS.trsv!
 
-            A = BigFloat.(randn(10,10))
-            b = BigFloat.(randn(10))
-            B = BigFloat.(randn(10,10))
-            F = LinearAlgebra.qrfactUnblocked!(copy(A))
-            Q = F.Q
-            @test MemoryLayout(F) isa QRPackedLayout
-            @test MemoryLayout(Q) isa QRPackedQLayout
-            @test ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b))
-            @test ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b))
-            @test ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B))
-            @test ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B))
-            @test ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q)
-            @test ArrayLayouts.rmul!(copy(B),Q') ≈ ArrayLayouts.rdiv!(copy(B),Q) ≈ rmul!(copy(B),Q')
-            @test ArrayLayouts.ldiv!(F,copy(b)) ≈ ldiv!(F,copy(b)) # only approx since we use BLAS.trsv!
-            @test ArrayLayouts.ldiv!(F,copy(B)) ≈ ldiv!(F,copy(B)) # only approx since we use BLAS.trsv!
+                    @test_throws BoundsError ArrayLayouts.ldiv!(F,randn(10))
 
-            @test copyto!(similar(b), Lmul(Q,b)) == Q*b
-            @test copyto!(similar(B), Lmul(Q,B)) == Q*B
+                    A = T.(randn(10,12))
+                    b = T.(randn(10))
+                    B = T.(randn(10,10))
+                    F = LinearAlgebra.qrfactUnblocked!(copy(A))
+                    Q = F.Q
+                    @test all(ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b)))
+                    @test all(ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b)))
+                    @test all(ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B)))
+                    @test all(ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B)))
+                    @test all(ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q))
+                    @test ArrayLayouts.rmul!(copy(B),Q') ≈ ArrayLayouts.rdiv!(copy(B),Q) ≈ rmul!(copy(B),Q')
+
+                    @test_throws DimensionMismatch ArrayLayouts.ldiv!(F,copy(b))
+                    @test_throws DimensionMismatch ArrayLayouts.ldiv!(F,copy(B))
+
+                    b = T.(randn(12))
+                    B = T.(randn(12,12))
+                    @test ArrayLayouts.ldiv!(F,copy(b)) ≈ A\b[1:10]
+                    @test ArrayLayouts.ldiv!(F,copy(B)) ≈ A\B[1:10,:]
+                end
+            end
         end
     end
 end

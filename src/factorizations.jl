@@ -39,6 +39,7 @@ function materialize!(Ldv::Ldiv{<:QRPackedLayout,<:Any,<:Any,<:AbstractMatrix{T}
     minmn = min(m,n)
     mB, nB = size(B)
     lmul!(adjoint(A.Q), view(B, 1:m, :))
+    mB ≥ n || throw(DimensionMismatch("Number of rows in B must exceed number of columns in A"))
     R = A.R
     @inbounds begin
         if n > m # minimum norm solution
