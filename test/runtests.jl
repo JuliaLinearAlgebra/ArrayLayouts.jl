@@ -1,4 +1,4 @@
-using ArrayLayouts, Random, Test
+using ArrayLayouts, Random, FillArrays, Test
 import ArrayLayouts: MemoryLayout, @_layoutlmul, triangulardata
 
 Random.seed!(0)
@@ -47,6 +47,22 @@ MemoryLayout(::Type{MyMatrix}) = DenseColumnMajor()
 
     @test qr(A) isa LinearAlgebra.QRCompactWY
     @test inv(A) ≈ inv(A.A)
+
+    Bin = randn(5,5)
+    B = MyMatrix(copy(Bin))
+    muladd!(1.0, A, A, 2.0, B)
+    @test all(B .=== A.A^2 + 2Bin)
+
+    # tiled_blasmul!
+    B = MyMatrix(copy(Bin))
+    muladd!(1.0, Ones(5,5), A, 2.0, B)
+
+    #generic_blasmul!
+    A = BigFloat.(randn(5,5))
+    Bin = BigFloat.(randn(5,5))
+    B = copy(Bin)
+    muladd!(1.0, Ones(5,5), A, 2.0, B)
+    @test B == Ones(5,5)*A + 2.0Bin
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
