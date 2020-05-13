@@ -125,6 +125,8 @@ end
 
 @layoutmatrix LayoutMatrix
 
+getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
+
 _copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} = 
     Base.invoke(copyto!, Tuple{AbstractArray{T,N},AbstractArray{V,N}}, dest, src)
 
