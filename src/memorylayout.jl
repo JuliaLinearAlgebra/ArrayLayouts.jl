@@ -500,6 +500,7 @@ abstract type AbstractBandedLayout <: MemoryLayout end
 
 struct DiagonalLayout{ML} <: AbstractBandedLayout end
 struct SymTridiagonalLayout{ML} <: AbstractBandedLayout end
+struct TridiagonalLayout{ML} <: AbstractBandedLayout end
 
 diagonallayout(_) = DiagonalLayout{UnknownLayout}()
 diagonallayout(::ML) where ML<:AbstractStridedLayout = DiagonalLayout{ML}()
@@ -510,11 +511,19 @@ MemoryLayout(::Type{SymTridiagonal{T,P}}) where {T,P} = SymTridiagonalLayout{typ
 diagonaldata(D::SymTridiagonal) = D.dv
 offdiagonaldata(D::SymTridiagonal) = D.ev
 
+MemoryLayout(::Type{Tridiagonal{T,P}}) where {T,P} = TridiagonalLayout{typeof(MemoryLayout(P))}()
+diagonaldata(D::Tridiagonal) = D.d
+subdiagonaldata(D::Tridiagonal) = D.dl
+supdiagonaldata(D::Tridiagonal) = D.du
+
+
 transposelayout(ml::DiagonalLayout) = ml
 transposelayout(ml::SymTridiagonalLayout) = ml
+transposelayout(ml::TridiagonalLayout) = ml
 transposelayout(ml::ConjLayout{DiagonalLayout}) = ml
 
 adjointlayout(::Type{<:Real}, ml::SymTridiagonalLayout) = ml
+adjointlayout(::Type{<:Real}, ml::TridiagonalLayout) = ml
 
 ###
 # Fill

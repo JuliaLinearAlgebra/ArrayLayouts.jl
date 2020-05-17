@@ -34,7 +34,7 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcas
                         materialize!, eltypes
 
 import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, Abuf, Bbuf, Cbuf, dot, factorize, qr, lu, cholesky, 
-                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!
+                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym
 
 import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
@@ -214,5 +214,39 @@ end
     end
     return A
 end
+
+###
+# printing
+###
+
+layout_replace_in_print_matrix(_, A, i, j, s) = 
+    i in colsupport(A,j) ? s : Base.replace_with_centered_mark(s)
+
+Base.replace_in_print_matrix(A::Union{LayoutMatrix,
+                                      UpperTriangular{<:Any,<:LayoutMatrix},
+                                      UnitUpperTriangular{<:Any,<:LayoutMatrix},
+                                      LowerTriangular{<:Any,<:LayoutMatrix},
+                                      UnitLowerTriangular{<:Any,<:LayoutMatrix},
+                                      AdjOrTrans{<:Any,<:LayoutMatrix},
+                                      HermOrSym{<:Any,<:LayoutMatrix},
+                                      SubArray{<:Any,2,<:LayoutMatrix}}, i::Integer, j::Integer, s::AbstractString) =
+    layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)
+
+layout_print_matrix_row(_, io, X, A, i, cols, sep) =
+    Base.invoke(Base.print_matrix_row, Tuple{IO,AbstractVecOrMat,Vector,Integer,AbstractVector,AbstractString}, 
+                io, X, A, i, cols, sep)
+
+Base.print_matrix_row(io::IO,
+        X::Union{LayoutMatrix,
+        LayoutVector,
+        AbstractTriangular{<:Any,<:LayoutMatrix},
+        AdjOrTrans{<:Any,<:LayoutMatrix},
+        HermOrSym{<:Any,<:LayoutMatrix},
+        SubArray{<:Any,2,<:LayoutMatrix}}, A::Vector,
+        i::Integer, cols::AbstractVector, sep::AbstractString) =
+        layout_print_matrix_row(axes(X), io, X, A, i, cols, sep)
+
+
+
 
 end
