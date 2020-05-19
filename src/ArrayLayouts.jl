@@ -2,7 +2,7 @@ module ArrayLayouts
 using Base, Base.Broadcast, LinearAlgebra, FillArrays
 import LinearAlgebra.BLAS
 
-import Base: AbstractArray, AbstractMatrix, AbstractVector, 
+import Base: AbstractArray, AbstractMatrix, AbstractVector,
         ReinterpretArray, ReshapedArray, AbstractCartesianIndex, Slice,
              RangeIndex, BroadcastStyle, copyto!, length, broadcastable, axes,
              getindex, eltype, tail, IndexStyle, IndexLinear, getproperty,
@@ -33,33 +33,33 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcas
                         combine_eltypes, DefaultArrayStyle, instantiate, materialize,
                         materialize!, eltypes
 
-import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, Abuf, Bbuf, Cbuf, dot, factorize, qr, lu, cholesky, 
+import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, Abuf, Bbuf, Cbuf, dot, factorize, qr, lu, cholesky,
                         norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym
 
 import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
-import FillArrays: AbstractFill, getindex_value
+import FillArrays: AbstractFill, getindex_value, axes_print_matrix_row
 
 if VERSION < v"1.2-"
     import Base: has_offset_axes
     require_one_based_indexing(A...) = !has_offset_axes(A...) || throw(ArgumentError("offset arrays are not supported but got an array with index other than 1"))
 else
-    import Base: require_one_based_indexing    
-end     
+    import Base: require_one_based_indexing
+end
 
 export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, lmul, rmul, ldiv, rdiv, mul, MemoryLayout, AbstractStridedLayout,
         DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor, UnitStride,
-        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, HermitianLayout, SymmetricLayout, TriangularLayout, 
+        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, HermitianLayout, SymmetricLayout, TriangularLayout,
         UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout,
         colsupport, rowsupport, layout_getindex, QLayout, LayoutArray, LayoutMatrix, LayoutVector
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
-@inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle}) 
+@inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle})
     @assert length(bc.args) == 1
     copyto!(dest, first(bc.args))
 end
 
-# Subtypes of LayoutArray default to 
+# Subtypes of LayoutArray default to
 # ArrayLayouts routines
 abstract type LayoutArray{T,N} <: AbstractArray{T,N} end
 const LayoutMatrix{T} = LayoutArray{T,2}
@@ -76,7 +76,7 @@ strides(A::Transpose) = _transpose_strides(strides(parent(A))...)
 
 represents that the entry is the complex-conjugate of the pointed to entry.
 """
-struct ConjPtr{T} 
+struct ConjPtr{T}
     ptr::Ptr{T}
 end
 
@@ -84,7 +84,7 @@ unsafe_convert(::Type{Ptr{T}}, A::Adjoint{<:Real}) where T<:Real = unsafe_conver
 unsafe_convert(::Type{Ptr{T}}, A::Transpose) where T = unsafe_convert(Ptr{T}, parent(A))
 # work-around issue with complex conjugation of pointer
 unsafe_convert(::Type{Ptr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(ConjPtr{T}, parent(Ac))
-unsafe_convert(::Type{ConjPtr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(Ptr{T}, parent(Ac))    
+unsafe_convert(::Type{ConjPtr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(Ptr{T}, parent(Ac))
 function unsafe_convert(::Type{ConjPtr{T}}, V::SubArray{T,2}) where {T,N,P}
     kr, jr = parentindices(V)
     unsafe_convert(Ptr{T}, view(parent(V)', jr, kr))
@@ -127,32 +127,32 @@ end
 
 getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
 
-_copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} = 
+_copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} =
     Base.invoke(copyto!, Tuple{AbstractArray{T,N},AbstractArray{V,N}}, dest, src)
 
-    
-copyto!(dest::LayoutArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = 
+
+copyto!(dest::LayoutArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::AbstractArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = 
+copyto!(dest::AbstractArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::LayoutArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N = 
+copyto!(dest::LayoutArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 
-copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::SubArray{<:Any,N,<:LayoutArray}) where N =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::LayoutArray{<:Any,N}) where N = 
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::LayoutArray{<:Any,N}) where N =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::LayoutArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
+copyto!(dest::LayoutArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) where N = 
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) where N =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = 
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)    
+copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N =
+    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 
 
 
 zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
-function zero!(A::AbstractArray{<:AbstractArray}) 
+function zero!(A::AbstractArray{<:AbstractArray})
     for a in A
         zero!(a)
     end
@@ -219,7 +219,7 @@ end
 # printing
 ###
 
-layout_replace_in_print_matrix(_, A, i, j, s) = 
+layout_replace_in_print_matrix(_, A, i, j, s) =
     i in colsupport(A,j) ? s : Base.replace_with_centered_mark(s)
 
 Base.replace_in_print_matrix(A::Union{LayoutMatrix,
@@ -230,11 +230,7 @@ Base.replace_in_print_matrix(A::Union{LayoutMatrix,
                                       AdjOrTrans{<:Any,<:LayoutMatrix},
                                       HermOrSym{<:Any,<:LayoutMatrix},
                                       SubArray{<:Any,2,<:LayoutMatrix}}, i::Integer, j::Integer, s::AbstractString) =
-    layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)
-
-layout_print_matrix_row(_, io, X, A, i, cols, sep) =
-    Base.invoke(Base.print_matrix_row, Tuple{IO,AbstractVecOrMat,Vector,Integer,AbstractVector,AbstractString}, 
-                io, X, A, i, cols, sep)
+    layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)                
 
 Base.print_matrix_row(io::IO,
         X::Union{LayoutMatrix,
@@ -244,7 +240,7 @@ Base.print_matrix_row(io::IO,
         HermOrSym{<:Any,<:LayoutMatrix},
         SubArray{<:Any,2,<:LayoutMatrix}}, A::Vector,
         i::Integer, cols::AbstractVector, sep::AbstractString) =
-        layout_print_matrix_row(axes(X), io, X, A, i, cols, sep)
+        axes_print_matrix_row(axes(X), io, X, A, i, cols, sep)
 
 
 
