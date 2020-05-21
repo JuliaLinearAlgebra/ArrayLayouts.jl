@@ -238,7 +238,8 @@ Base.print_matrix_row(io::IO,
         AbstractTriangular{<:Any,<:LayoutMatrix},
         AdjOrTrans{<:Any,<:LayoutMatrix},
         HermOrSym{<:Any,<:LayoutMatrix},
-        SubArray{<:Any,2,<:LayoutMatrix}}, A::Vector,
+        SubArray{<:Any,2,<:LayoutMatrix},
+        Diagonal{<:Any,<:LayoutVector}}, A::Vector,
         i::Integer, cols::AbstractVector, sep::AbstractString) =
         axes_print_matrix_row(axes(X), io, X, A, i, cols, sep)
 
