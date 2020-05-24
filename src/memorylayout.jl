@@ -497,9 +497,11 @@ triangulardata(A::SubArray{<:Any,2,<:Any,<:Tuple{<:Union{Slice,Base.OneTo},<:Uni
 
 
 abstract type AbstractBandedLayout <: MemoryLayout end
+abstract type AbstractTridiagonalLayout <: MemoryLayout end
 
 struct DiagonalLayout{ML} <: AbstractBandedLayout end
-struct SymTridiagonalLayout{ML} <: AbstractBandedLayout end
+struct SymTridiagonalLayout{ML} <: AbstractTridiagonalLayout end
+struct TridiagonalLayout{ML} <: AbstractTridiagonalLayout end
 
 diagonallayout(_) = DiagonalLayout{UnknownLayout}()
 diagonallayout(::ML) where ML<:AbstractStridedLayout = DiagonalLayout{ML}()
@@ -508,13 +510,30 @@ diagonaldata(D::Diagonal) = parent(D)
 
 MemoryLayout(::Type{SymTridiagonal{T,P}}) where {T,P} = SymTridiagonalLayout{typeof(MemoryLayout(P))}()
 diagonaldata(D::SymTridiagonal) = D.dv
-offdiagonaldata(D::SymTridiagonal) = D.ev
+supdiagonaldata(D::SymTridiagonal) = D.ev
+subdiagonaldata(D::SymTridiagonal) = D.ev
+
+MemoryLayout(::Type{Tridiagonal{T,P}}) where {T,P} = TridiagonalLayout{typeof(MemoryLayout(P))}()
+diagonaldata(D::Tridiagonal) = D.d
+subdiagonaldata(D::Tridiagonal) = D.dl
+supdiagonaldata(D::Tridiagonal) = D.du
+
 
 transposelayout(ml::DiagonalLayout) = ml
 transposelayout(ml::SymTridiagonalLayout) = ml
+transposelayout(ml::TridiagonalLayout) = ml
 transposelayout(ml::ConjLayout{DiagonalLayout}) = ml
 
 adjointlayout(::Type{<:Real}, ml::SymTridiagonalLayout) = ml
+adjointlayout(::Type{<:Real}, ml::TridiagonalLayout) = ml
+
+subdiagonaldata(D::Transpose) = supdiagonaldata(parent(D))
+supdiagonaldata(D::Transpose) = subdiagonaldata(parent(D))
+diagonaldata(D::Transpose) = diagonaldata(parent(D))
+
+subdiagonaldata(D::Adjoint{<:Real}) = supdiagonaldata(parent(D))
+supdiagonaldata(D::Adjoint{<:Real}) = subdiagonaldata(parent(D))
+diagonaldata(D::Adjoint{<:Real}) = diagonaldata(parent(D))
 
 ###
 # Fill

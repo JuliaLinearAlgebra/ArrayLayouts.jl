@@ -5,7 +5,8 @@ import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayou
                         UnitUpperTriangularLayout, LowerTriangularLayout,
                         UnitLowerTriangularLayout, ScalarLayout, UnknownLayout,
                         hermitiandata, symmetricdata, FillLayout, ZerosLayout,
-                        DiagonalLayout, colsupport, rowsupport
+                        DiagonalLayout, TridiagonalLayout, SymTridiagonalLayout, colsupport, rowsupport,
+                        diagonaldata, subdiagonaldata, supdiagonaldata
 
 struct FooBar end
 struct FooNumber <: Number end
@@ -231,5 +232,20 @@ struct FooNumber <: Number end
         @test_skip 0 == @allocated reverse((1,2,3,4))
         MemoryLayout(revD)
         @test 0 == @allocated MemoryLayout(revD)
+    end
+
+    @testset "Tridiagonal" begin
+        T = Tridiagonal(randn(5),randn(6),randn(5))
+        S = SymTridiagonal(T.d, T.du)
+        @test MemoryLayout(T) isa TridiagonalLayout
+        @test MemoryLayout(Adjoint(T)) isa TridiagonalLayout
+        @test MemoryLayout(Transpose(T)) isa TridiagonalLayout
+        @test MemoryLayout(S) isa SymTridiagonalLayout
+        @test MemoryLayout(Adjoint(S)) isa SymTridiagonalLayout
+        @test MemoryLayout(Transpose(S)) isa SymTridiagonalLayout
+
+        @test diagonaldata(T) == diagonaldata(T') == diagonaldata(S)
+        @test supdiagonaldata(T) == subdiagonaldata(Adjoint(T)) == subdiagonaldata(Transpose(T)) == supdiagonaldata(S) == subdiagonaldata(S)
+        @test subdiagonaldata(T) == supdiagonaldata(Adjoint(T)) == supdiagonaldata(Transpose(T)) == T.dl
     end
 end

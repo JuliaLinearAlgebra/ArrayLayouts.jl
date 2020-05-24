@@ -220,6 +220,14 @@ function materialize!(M::MatMulMatAdd)
     if C ≡ B
         B = copy(B)
     end
+    default_blasmul!(α, A, B, iszero(β) ? false : β, C)
+end
+
+function materialize!(M::MatMulMatAdd{<:AbstractStridedLayout,<:AbstractStridedLayout,<:AbstractStridedLayout})
+    α, A, B, β, C = M.α, M.A, M.B, M.β, M.C
+    if C ≡ B
+        B = copy(B)
+    end
     ts = tile_size(eltype(A), eltype(B), eltype(C))
     if iszero(β) # false is a "strong" zero to wipe out NaNs
         if ts == 0 || !(axes(A) isa NTuple{2,OneTo{Int}}) || !(axes(B) isa NTuple{2,OneTo{Int}}) || !(axes(C) isa NTuple{2,OneTo{Int}})
@@ -379,11 +387,12 @@ function materialize!(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout}})
     M.C
 end
 
-copy(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.A.diag)) .* M.B .+ M.β .* M.C
-copy(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout},<:Any,ZerosLayout}) = (M.α * getindex_value(M.A.diag)) .* M.B
+copy(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.A.diag)) * M.B .+ M.β * M.C
+copy(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout},<:Any,ZerosLayout}) = (M.α * getindex_value(M.A.diag)) * M.B
 copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout}) = M.α*M.A*M.B + M.β*M.C
-copy(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.B.diag)) .* M.A .+ M.β .* M.C
-copy(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout},ZerosLayout}) = (M.α * getindex_value(M.B.diag)) .* M.A
+copy(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.B.diag)) * M.A .+ M.β * M.C
+copy(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout},ZerosLayout}) = (M.α * getindex_value(M.B.diag)) * M.A
+
 
 BroadcastStyle(::Type{<:MulAdd}) = ApplyBroadcastStyle()
 
