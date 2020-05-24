@@ -178,8 +178,10 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
     nA == mB || throw(DimensionMismatch("Dimensions must match"))
     size(C) == (mA, nB) || throw(DimensionMismatch("Dimensions must match"))
 
+    lmul!(β, C)
+
     (iszero(mA) || iszero(nB)) && return C
-    iszero(nA) && return lmul!(β, C)
+    iszero(nA) && return C
 
     @inbounds for k in colsupport(A), j in rowsupport(B,rowsupport(A,k))
         z2 = zero(A[k, 1]*B[1, j] + A[k, 1]*B[1, j])
@@ -187,7 +189,7 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
         @simd for ν = rowsupport(A,k) ∩ colsupport(B,j)
             Ctmp = muladd(A[k, ν],B[ν, j],Ctmp)
         end
-        C[k,j] = muladd(α,Ctmp, β*C[k,j])
+        C[k,j] = muladd(α,Ctmp, C[k,j])
     end
     C
 end

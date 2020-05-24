@@ -497,7 +497,7 @@ triangulardata(A::SubArray{<:Any,2,<:Any,<:Tuple{<:Union{Slice,Base.OneTo},<:Uni
 
 
 abstract type AbstractBandedLayout <: MemoryLayout end
-abstract type AbstractTridiagonalLayout <: MemoryLayout end
+abstract type AbstractTridiagonalLayout <: AbstractBandedLayout end
 
 struct DiagonalLayout{ML} <: AbstractBandedLayout end
 struct SymTridiagonalLayout{ML} <: AbstractTridiagonalLayout end
