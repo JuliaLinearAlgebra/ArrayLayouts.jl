@@ -222,7 +222,8 @@ end
 layout_replace_in_print_matrix(_, A, i, j, s) =
     i in colsupport(A,j) ? s : Base.replace_with_centered_mark(s)
 
-Base.replace_in_print_matrix(A::Union{LayoutMatrix,
+Base.replace_in_print_matrix(A::Union{LayoutVector,
+                                        LayoutMatrix,
                                       UpperTriangular{<:Any,<:LayoutMatrix},
                                       UnitUpperTriangular{<:Any,<:LayoutMatrix},
                                       LowerTriangular{<:Any,<:LayoutMatrix},

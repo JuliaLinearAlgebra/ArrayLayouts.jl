@@ -31,9 +31,10 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
 @testset "LayoutArray" begin
     @testset "LayoutVector" begin
-        A = MyVector(randn(5))
+        A = MyVector([1.,2,3])
         @test A == A.A == Vector(A)
         @test A[1:3] == A.A[1:3]
+        @test stringmime("text/plain", A) == "3-element MyVector:\n 1.0\n 2.0\n 3.0"
     end
 
     @testset "LayoutMatrix" begin
