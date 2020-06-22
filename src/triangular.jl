@@ -118,7 +118,7 @@ materialize!(M::MatRmulMat{<:AbstractStridedLayout,<:TriangularLayout}) = Linear
 
 @inline function copyto!(dest::AbstractArray, M::Ldiv{<:TriangularLayout})
     A, B = M.A, M.B
-    dest ≡ B || (dest .= B)
+    dest ≡ B || copyto!(dest, B)
     ldiv!(A, dest)
 end
 

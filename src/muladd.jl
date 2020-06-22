@@ -194,7 +194,7 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
     C
 end
 
-function default_blasmul!(α, A::AbstractMatrix, B::AbstractVector, β, C::AbstractVector)
+function _default_blasmul!(::IndexLinear, α, A::AbstractMatrix, B::AbstractVector, β, C::AbstractVector)
     mA, nA = size(A)
     mB = length(B)
     nA == mB || throw(DimensionMismatch("Dimensions must match"))
@@ -216,6 +216,30 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractVector, β, C::Abstr
 
     C
 end
+
+function _default_blasmul!(::IndexCartesian, α, A::AbstractMatrix, B::AbstractVector, β, C::AbstractVector)
+    mA, nA = size(A)
+    mB = length(B)
+    nA == mB || throw(DimensionMismatch("Dimensions must match"))
+    length(C) == mA || throw(DimensionMismatch("Dimensions must match"))
+
+    lmul!(β, C)
+    (nA == 0 || mB == 0)  && return C
+
+    z = zero(A[1,1]*B[1] + A[1,1]*B[1])
+
+    @inbounds for k in colsupport(B,1)
+        b = B[k]
+        for i = colsupport(A,k)
+            C[i] += α * A[i,k] * b
+        end
+    end
+
+    C
+end
+
+default_blasmul!(α, A::AbstractMatrix, B::AbstractVector, β, C::AbstractVector) = 
+    _default_blasmul!(Base.IndexStyle(typeof(A)), α, A, B, β, C)
 
 function materialize!(M::MatMulMatAdd)
     α, A, B, β, C = M.α, M.A, M.B, M.β, M.C

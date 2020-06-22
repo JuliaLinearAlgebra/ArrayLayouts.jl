@@ -575,3 +575,7 @@ colsupport(A) = colsupport(A, axes(A,2))
 
 rowsupport(::ZerosLayout, A, _) = 1:0
 colsupport(::ZerosLayout, A, _) = 1:0
+
+colsupport(::Union{SymmetricLayout,HermitianLayout}, A, j) = 
+    first(colsupport(symmetricdata(A),j)):last(rowsupport(symmetricdata(A),j))
+rowsupport(::Union{SymmetricLayout,HermitianLayout}, A, j) = colsupport(A, j)
