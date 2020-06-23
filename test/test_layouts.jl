@@ -6,7 +6,7 @@ import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayou
                         UnitLowerTriangularLayout, ScalarLayout, UnknownLayout,
                         hermitiandata, symmetricdata, FillLayout, ZerosLayout,
                         DiagonalLayout, TridiagonalLayout, SymTridiagonalLayout, colsupport, rowsupport,
-                        diagonaldata, subdiagonaldata, supdiagonaldata
+                        diagonaldata, subdiagonaldata, supdiagonaldata, BidiagonalLayout
 
 struct FooBar end
 struct FooNumber <: Number end
@@ -80,7 +80,42 @@ struct FooNumber <: Number end
         @test MemoryLayout(view(randn(5)',[1,3])) == UnknownLayout()
     end
 
-    @testset "Symmetric/Hermitian MemoryLayout" begin
+    @testset "Bi/Tridiagonal" begin
+        T = Tridiagonal(randn(5),randn(6),randn(5))
+        S = SymTridiagonal(T.d, T.du)
+        Bl = Bidiagonal(T.d, T.dl, :L)
+        Bu = Bidiagonal(T.d, T.du, :U)
+
+        @test MemoryLayout(T) isa TridiagonalLayout
+        @test MemoryLayout(Adjoint(T)) isa TridiagonalLayout
+        @test MemoryLayout(Transpose(T)) isa TridiagonalLayout
+        @test MemoryLayout(S) isa SymTridiagonalLayout
+        @test MemoryLayout(Adjoint(S)) isa SymTridiagonalLayout
+        @test MemoryLayout(Transpose(S)) isa SymTridiagonalLayout
+        @test MemoryLayout(Bl) isa BidiagonalLayout
+        @test MemoryLayout(Adjoint(Bl)) isa BidiagonalLayout
+        @test MemoryLayout(Transpose(Bl)) isa BidiagonalLayout
+        @test MemoryLayout(Bu) isa BidiagonalLayout
+        @test MemoryLayout(Adjoint(Bu)) isa BidiagonalLayout
+        @test MemoryLayout(Transpose(Bu)) isa BidiagonalLayout
+
+        @test diagonaldata(T) == diagonaldata(T') == diagonaldata(S) == diagonaldata(Bl) == diagonaldata(Bu)
+        @test supdiagonaldata(T) == subdiagonaldata(Adjoint(T)) == subdiagonaldata(Transpose(T)) == 
+                    supdiagonaldata(S) == subdiagonaldata(S) == 
+                    supdiagonaldata(Bu) == subdiagonaldata(Adjoint(Bu)) == subdiagonaldata(Transpose(Bu))
+        @test subdiagonaldata(T) == supdiagonaldata(Adjoint(T)) == supdiagonaldata(Transpose(T)) == 
+                subdiagonaldata(Bl) == supdiagonaldata(Adjoint(Bl)) == supdiagonaldata(Transpose(Bl)) ==
+                T.dl
+
+        @test colsupport(T,3) == rowsupport(T,3) == colsupport(S,3) == rowsupport(S,3) == 2:4
+        @test colsupport(T,3:6) == rowsupport(T,3:6) == colsupport(S,3:6) == rowsupport(S,3:6) == 2:6
+        @test colsupport(Bl,3) == rowsupport(Bu,3) == rowsupport(Adjoint(Bl),3) == 3:4
+        @test rowsupport(Bl,3) == colsupport(Bu,3) == colsupport(Adjoint(Bl),3) == 2:3
+        @test colsupport(Bl,3:6) == rowsupport(Bu,3:6) == 3:6
+        @test colsupport(Bu,3:6) == rowsupport(Bl,3:6) == 2:6
+    end
+
+    @testset "Symmetric/Hermitian" begin
         A = [1.0 2; 3 4]
         @test MemoryLayout(Symmetric(A)) == SymmetricLayout{DenseColumnMajor}()
         @test MemoryLayout(Hermitian(A)) == SymmetricLayout{DenseColumnMajor}()
@@ -132,6 +167,23 @@ struct FooNumber <: Number end
         @test hermitiandata(Hermitian(B')) ≡ B'
         @test symmetricdata(Symmetric(transpose(B))) ≡ transpose(B)
         @test hermitiandata(Hermitian(transpose(B))) ≡ transpose(B)
+
+        @testset "Bidiagonal" begin
+            B = Bidiagonal(randn(6),randn(5),:U)
+            Bc = Bidiagonal(randn(6) .+ 0im,randn(5) .+ 1im,:U)
+            S = Symmetric(B)
+            H = Hermitian(B)
+            Sc = Symmetric(Bc)
+            Hc = Hermitian(Bc)
+
+            @test MemoryLayout(S) isa SymTridiagonalLayout
+            @test MemoryLayout(H) isa SymTridiagonalLayout
+            @test MemoryLayout(Sc) isa SymTridiagonalLayout
+            @test MemoryLayout(Hc) isa HermitianLayout
+
+            @test colsupport(S,3) == colsupport(H,3) == colsupport(Sc,3) == colsupport(Hc,3) == 2:4
+            @test rowsupport(S,3) == rowsupport(H,3) == rowsupport(Sc,3) == rowsupport(Hc,3) == 2:4
+        end
      end
 
     @testset "triangular MemoryLayout" begin
@@ -232,20 +284,5 @@ struct FooNumber <: Number end
         @test_skip 0 == @allocated reverse((1,2,3,4))
         MemoryLayout(revD)
         @test 0 == @allocated MemoryLayout(revD)
-    end
-
-    @testset "Tridiagonal" begin
-        T = Tridiagonal(randn(5),randn(6),randn(5))
-        S = SymTridiagonal(T.d, T.du)
-        @test MemoryLayout(T) isa TridiagonalLayout
-        @test MemoryLayout(Adjoint(T)) isa TridiagonalLayout
-        @test MemoryLayout(Transpose(T)) isa TridiagonalLayout
-        @test MemoryLayout(S) isa SymTridiagonalLayout
-        @test MemoryLayout(Adjoint(S)) isa SymTridiagonalLayout
-        @test MemoryLayout(Transpose(S)) isa SymTridiagonalLayout
-
-        @test diagonaldata(T) == diagonaldata(T') == diagonaldata(S)
-        @test supdiagonaldata(T) == subdiagonaldata(Adjoint(T)) == subdiagonaldata(Transpose(T)) == supdiagonaldata(S) == subdiagonaldata(S)
-        @test subdiagonaldata(T) == supdiagonaldata(Adjoint(T)) == supdiagonaldata(Transpose(T)) == T.dl
     end
 end
