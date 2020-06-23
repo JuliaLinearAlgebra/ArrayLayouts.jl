@@ -6,7 +6,7 @@ import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayou
                         UnitLowerTriangularLayout, ScalarLayout, UnknownLayout,
                         hermitiandata, symmetricdata, FillLayout, ZerosLayout,
                         DiagonalLayout, TridiagonalLayout, SymTridiagonalLayout, colsupport, rowsupport,
-                        diagonaldata, subdiagonaldata, supdiagonaldata, BidiagonalLayout
+                        diagonaldata, subdiagonaldata, supdiagonaldata, BidiagonalLayout, bidiagonaluplo
 
 struct FooBar end
 struct FooNumber <: Number end
@@ -99,6 +99,9 @@ struct FooNumber <: Number end
         @test MemoryLayout(Adjoint(Bu)) isa BidiagonalLayout
         @test MemoryLayout(Transpose(Bu)) isa BidiagonalLayout
 
+        @test bidiagonaluplo(Bl) == bidiagonaluplo(Adjoint(Bu)) == 'L'
+        @test bidiagonaluplo(Bu) == bidiagonaluplo(Adjoint(Bl)) == 'U'
+
         @test diagonaldata(T) == diagonaldata(T') == diagonaldata(S) == diagonaldata(Bl) == diagonaldata(Bu)
         @test supdiagonaldata(T) == subdiagonaldata(Adjoint(T)) == subdiagonaldata(Transpose(T)) == 
                     supdiagonaldata(S) == subdiagonaldata(S) == 
@@ -143,6 +146,11 @@ struct FooNumber <: Number end
         @test symmetricdata(Symmetric(transpose(A))) ≡ transpose(A)
         @test symmetricdata(Hermitian(transpose(A))) ≡ transpose(A)
 
+        @test colsupport(Symmetric(A),2) ≡ colsupport(Symmetric(A),1:2) ≡ 
+                rowsupport(Symmetric(A),2) ≡ rowsupport(Symmetric(A),1:2) ≡ 1:2
+                @test colsupport(Hermitian(A),2) ≡ colsupport(Hermitian(A),1:2) ≡ 
+                rowsupport(Hermitian(A),2) ≡ rowsupport(Hermitian(A),1:2) ≡ 1:2
+
         B = [1.0+im 2; 3 4]
         @test MemoryLayout(Symmetric(B)) == SymmetricLayout{DenseColumnMajor}()
         @test MemoryLayout(Hermitian(B)) == HermitianLayout{DenseColumnMajor}()
@@ -180,6 +188,9 @@ struct FooNumber <: Number end
             @test MemoryLayout(H) isa SymTridiagonalLayout
             @test MemoryLayout(Sc) isa SymTridiagonalLayout
             @test MemoryLayout(Hc) isa HermitianLayout
+
+            @test diagonaldata(S) == diagonaldata(B)
+            @test subdiagonaldata(S) == supdiagonaldata(S) == supdiagonaldata(B)
 
             @test colsupport(S,3) == colsupport(H,3) == colsupport(Sc,3) == colsupport(Hc,3) == 2:4
             @test rowsupport(S,3) == rowsupport(H,3) == rowsupport(Sc,3) == rowsupport(Hc,3) == 2:4

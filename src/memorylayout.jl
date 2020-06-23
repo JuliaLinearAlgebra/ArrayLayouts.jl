@@ -552,7 +552,7 @@ diagonaldata(D::Adjoint{<:Real}) = diagonaldata(parent(D))
 
 diagonaldata(S::HermOrSym) = diagonaldata(parent(S))
 subdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
-supdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'U' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
+supdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
 
 ###
 # Fill
