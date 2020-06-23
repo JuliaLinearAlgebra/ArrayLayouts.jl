@@ -500,32 +500,47 @@ abstract type AbstractBandedLayout <: MemoryLayout end
 abstract type AbstractTridiagonalLayout <: AbstractBandedLayout end
 
 struct DiagonalLayout{ML} <: AbstractBandedLayout end
+struct BidiagonalLayout{ML} <: AbstractBandedLayout end
 struct SymTridiagonalLayout{ML} <: AbstractTridiagonalLayout end
 struct TridiagonalLayout{ML} <: AbstractTridiagonalLayout end
 
 diagonallayout(_) = DiagonalLayout{UnknownLayout}()
 diagonallayout(::ML) where ML<:AbstractStridedLayout = DiagonalLayout{ML}()
 MemoryLayout(D::Type{Diagonal{T,P}}) where {T,P} = diagonallayout(MemoryLayout(P))
-diagonaldata(D::Diagonal) = parent(D)
-
+MemoryLayout(::Type{Bidiagonal{T,V}}) where {T,V} = BidiagonalLayout{typeof(MemoryLayout(V))}()
 MemoryLayout(::Type{SymTridiagonal{T,P}}) where {T,P} = SymTridiagonalLayout{typeof(MemoryLayout(P))}()
+MemoryLayout(::Type{Tridiagonal{T,P}}) where {T,P} = TridiagonalLayout{typeof(MemoryLayout(P))}()
+
+bidiagonaluplo(A::Bidiagonal) = A.uplo
+bidiagonaluplo(A::AdjOrTrans) = bidiagonaluplo(parent(A)) == 'L' ? 'U' : 'L'
+
+diagonaldata(D::Diagonal) = parent(D)
+diagonaldata(D::Bidiagonal) = D.dv
 diagonaldata(D::SymTridiagonal) = D.dv
+diagonaldata(D::Tridiagonal) = D.d
+
+supdiagonaldata(D::Bidiagonal) = D.uplo == 'U' ? D.ev : throw(ArgumentError("$D is lower-bidiagonal"))
+subdiagonaldata(D::Bidiagonal) = D.uplo == 'L' ? D.ev : throw(ArgumentError("$D is upper-bidiagonal"))
+
 supdiagonaldata(D::SymTridiagonal) = D.ev
 subdiagonaldata(D::SymTridiagonal) = D.ev
 
-MemoryLayout(::Type{Tridiagonal{T,P}}) where {T,P} = TridiagonalLayout{typeof(MemoryLayout(P))}()
-diagonaldata(D::Tridiagonal) = D.d
 subdiagonaldata(D::Tridiagonal) = D.dl
 supdiagonaldata(D::Tridiagonal) = D.du
 
-
 transposelayout(ml::DiagonalLayout) = ml
+transposelayout(ml::BidiagonalLayout) = ml
 transposelayout(ml::SymTridiagonalLayout) = ml
 transposelayout(ml::TridiagonalLayout) = ml
 transposelayout(ml::ConjLayout{DiagonalLayout}) = ml
 
 adjointlayout(::Type{<:Real}, ml::SymTridiagonalLayout) = ml
 adjointlayout(::Type{<:Real}, ml::TridiagonalLayout) = ml
+adjointlayout(::Type{<:Real}, ml::BidiagonalLayout) = ml
+
+symmetriclayout(B::BidiagonalLayout{ML}) where ML = SymTridiagonalLayout{ML}()
+hermitianlayout(::Type{<:Real}, B::BidiagonalLayout{ML}) where ML = SymTridiagonalLayout{ML}()
+hermitianlayout(_, B::BidiagonalLayout) = HermitianLayout{typeof(B)}()
 
 subdiagonaldata(D::Transpose) = supdiagonaldata(parent(D))
 supdiagonaldata(D::Transpose) = subdiagonaldata(parent(D))
@@ -534,6 +549,10 @@ diagonaldata(D::Transpose) = diagonaldata(parent(D))
 subdiagonaldata(D::Adjoint{<:Real}) = supdiagonaldata(parent(D))
 supdiagonaldata(D::Adjoint{<:Real}) = subdiagonaldata(parent(D))
 diagonaldata(D::Adjoint{<:Real}) = diagonaldata(parent(D))
+
+diagonaldata(S::HermOrSym) = diagonaldata(parent(S))
+subdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
+supdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
 
 ###
 # Fill
@@ -575,3 +594,20 @@ colsupport(A) = colsupport(A, axes(A,2))
 
 rowsupport(::ZerosLayout, A, _) = 1:0
 colsupport(::ZerosLayout, A, _) = 1:0
+
+rowsupport(::DiagonalLayout, _, k) = isempty(k) ? (1:0) : minimum(k):maximum(k)
+colsupport(::DiagonalLayout, _, j) = isempty(j) ? (1:0) : minimum(j):maximum(j)
+
+colsupport(::BidiagonalLayout, A, j) = 
+    bidiagonaluplo(A) == 'L' ? (minimum(j):min(size(A,1),maximum(j)+1)) : (max(minimum(j)-1,1):maximum(j))
+rowsupport(::BidiagonalLayout, A, j) = 
+    bidiagonaluplo(A) == 'U' ? (minimum(j):min(size(A,2),maximum(j)+1)) : (max(minimum(j)-1,1):maximum(j))
+
+colsupport(::AbstractTridiagonalLayout, A, j) = max(minimum(j)-1,1):min(size(A,1),maximum(j)+1)
+rowsupport(::AbstractTridiagonalLayout, A, j) = max(minimum(j)-1,1):min(size(A,2),maximum(j)+1)
+
+colsupport(::SymmetricLayout, A, j) = first(colsupport(symmetricdata(A),j)):last(rowsupport(symmetricdata(A),j))
+rowsupport(::SymmetricLayout, A, j) = colsupport(A, j)
+
+colsupport(::HermitianLayout, A, j) = first(colsupport(hermitiandata(A),j)):last(rowsupport(hermitiandata(A),j))
+rowsupport(::HermitianLayout, A, j) = colsupport(A, j)
