@@ -116,7 +116,7 @@ materialize!(M::MatRmulMat{<:AbstractStridedLayout,<:TriangularLayout}) = Linear
 ########
 
 
-@inline function copyto!(dest::AbstractArray, M::Ldiv{<:TriangularLayout})
+@inline function copyto!(dest::AbstractArray, M::Ldiv{<:Union{TriangularLayout,BidiagonalLayout}})
     A, B = M.A, M.B
     dest ≡ B || copyto!(dest, B)
     ldiv!(A, dest)
@@ -149,7 +149,7 @@ for UNIT in ('U', 'N')
     end
 end
 
-function materialize!(M::MatLdivMat{<:TriangularLayout})
+function materialize!(M::MatLdivMat{<:Union{TriangularLayout,BidiagonalLayout}})
     A,X = M.A,M.B
     size(A,2) == size(X,1) || thow(DimensionMismatch("Dimensions must match"))
     @views for j in axes(X,2)
@@ -228,4 +228,64 @@ function materialize!(M::MatLdivVec{<:TriangularLayout{'L','U'}})
         end
     end
     b
+end
+
+function _bidiag_backsub!(M)
+    A,b = M.A, M.B
+    N = last(colsupport(b,1))
+    dv = diagonaldata(A)
+    ev = supdiagonaldata(A)
+    b[N] = bj1 = dv[N]\b[N]
+    
+    @inbounds for j = (N - 1):-1:1
+        bj  = b[j]
+        bj -= ev[j] * bj1
+        dvj = dv[j]
+        if iszero(dvj)
+            throw(SingularEbception(j))
+        end
+        bj   = dvj\bj
+        b[j] = bj1 = bj
+    end
+    
+    b
+end
+
+function _bidiag_forwardsub!(M)
+    A, b = M.A, M.B
+    dv = diagonaldata(A)
+    ev = subdiagonaldata(A)
+    N = length(b)
+    b[1] = bj1 = dv[1]\b[1]
+    @inbounds for j = 2:N
+        bj  = b[j]
+        bj -= ev[j - 1] * bj1
+        dvj = dv[j]
+        if iszero(dvj)
+            throw(SingularEbception(j))
+        end
+        bj   = dvj\bj
+        b[j] = bj1 = bj
+    end
+    b
+end
+
+#Generic solver using naive substitution, based on LinearAlgebra/src/bidiag.jl
+function materialize!(M::MatLdivVec{<:BidiagonalLayout}) 
+    A,b = M.A,M.B
+    require_one_based_indexing(A, b)
+    N = size(A, 2)
+    if N != length(b)
+        throw(DimensionMismatch("second dimension of A, $N, does not match one of the lengths of x, $(length(x)), or b, $(length(b))"))
+    end
+
+    if N == 0
+        return b
+    end
+
+    if bidiagonaluplo(A) == 'L' #do forward substitution
+        _bidiag_forwardsub!(M)
+    else #do backward substitution
+        _bidiag_backsub!(M)
+    end
 end

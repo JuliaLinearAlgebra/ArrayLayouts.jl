@@ -109,28 +109,35 @@ const BlasMatRdivMat{styleA, styleB, T<:BlasFloat} = MatRdivMat{styleA, styleB, 
 
 macro _layoutldiv(Typ)
     esc(quote
-        LinearAlgebra.ldiv!(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
-        LinearAlgebra.ldiv!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
-        LinearAlgebra.ldiv!(A::$Typ, x::StridedVector) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
-        LinearAlgebra.ldiv!(A::$Typ, x::StridedMatrix) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
+        LinearAlgebra.ldiv!(A::$Typ, x::AbstractVector) = ArrayLayouts.ldiv!(A,x)
+        LinearAlgebra.ldiv!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.ldiv!(A,x)
+        LinearAlgebra.ldiv!(A::$Typ, x::StridedVector) = ArrayLayouts.ldiv!(A,x)
+        LinearAlgebra.ldiv!(A::$Typ, x::StridedMatrix) = ArrayLayouts.ldiv!(A,x)
 
-        LinearAlgebra.ldiv!(A::Factorization, x::$Typ) = ArrayLayouts.materialize!(ArrayLayouts.Ldiv(A,x))
+        LinearAlgebra.ldiv!(A::Factorization, x::$Typ) = ArrayLayouts.ldiv!(A,x)
 
-        Base.:\(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(A,x))
-        Base.:\(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(A,x))
+        Base.:\(A::$Typ, x::AbstractVector) = ArrayLayouts.ldiv(A,x)
+        Base.:\(A::$Typ, x::AbstractMatrix) = ArrayLayouts.ldiv(A,x)
 
-        Base.:\(x::AbstractMatrix, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))
-        Base.:\(x::Diagonal, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))
+        Base.:\(x::AbstractMatrix, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        Base.:\(x::Diagonal, A::$Typ) = ArrayLayouts.ldiv(x,A)
 
-        Base.:\(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Ldiv(x,A))
+        Base.:\(A::Bidiagonal{<:Number}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(A,B)
+        Base.:\(A::Bidiagonal, B::$Typ) = ArrayLayouts.ldiv(A,B)
+        Base.:\(transA::Transpose{<:Number,<:Bidiagonal{<:Number}}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(transA,B)
+        Base.:\(transA::Transpose{<:Any,<:Bidiagonal}, B::$Typ) = ArrayLayouts.ldiv(transA,B)
+        Base.:\(adjA::Adjoint{<:Number,<:Bidiagonal{<:Number}}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(adjA,B)
+        Base.:\(adjA::Adjoint{<:Any,<:Bidiagonal}, B::$Typ) = ArrayLayouts.ldiv(adjA,B)
 
-        Base.:/(A::$Typ, x::AbstractVector) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(A,x))
-        Base.:/(A::$Typ, x::AbstractMatrix) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(A,x))
+        Base.:\(x::$Typ, A::$Typ) = ArrayLayouts.ldiv(x,A)
 
-        Base.:/(x::AbstractMatrix, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
-        Base.:/(x::Diagonal, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
+        Base.:/(A::$Typ, x::AbstractVector) = ArrayLayouts.rdiv(A,x)
+        Base.:/(A::$Typ, x::AbstractMatrix) = ArrayLayouts.rdiv(A,x)
 
-        Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.materialize(ArrayLayouts.Rdiv(x,A))
+        Base.:/(x::AbstractMatrix, A::$Typ) = ArrayLayouts.rdiv(x,A)
+        Base.:/(x::Diagonal, A::$Typ) = ArrayLayouts.rdiv(x,A)
+
+        Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.rdiv(x,A)
     end)
 end
 
@@ -148,3 +155,5 @@ macro layoutldiv(Typ)
         ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
     end)
 end
+
+@_layoutldiv LayoutVector
