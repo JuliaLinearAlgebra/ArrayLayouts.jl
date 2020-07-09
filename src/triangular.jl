@@ -276,7 +276,7 @@ function materialize!(M::MatLdivVec{<:BidiagonalLayout})
     require_one_based_indexing(A, b)
     N = size(A, 2)
     if N != length(b)
-        throw(DimensionMismatch("second dimension of A, $N, does not match one of the lengths of x, $(length(x)), or b, $(length(b))"))
+        throw(DimensionMismatch("second dimension of A, $N, does not match one of the length of b, $(length(b))"))
     end
 
     if N == 0

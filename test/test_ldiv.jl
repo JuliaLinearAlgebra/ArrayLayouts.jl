@@ -233,5 +233,21 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
             end
         end
     end
+
+    @testset "Bidiagonal" begin
+        n = 10
+        L = Bidiagonal(randn(n), randn(n-1), :L)
+        U = Bidiagonal(randn(n), randn(n-1), :U)
+        b = randn(n)
+        B = randn(n,2)
+
+        @test ArrayLayouts.ldiv(L,b) == L \ b
+        @test ArrayLayouts.ldiv(U,b) == U \ b
+        @test ArrayLayouts.ldiv(L,B) == L \ B
+        @test ArrayLayouts.ldiv(U,B) == U \ B
+
+        @test_throws DimensionMismatch ArrayLayouts.ldiv(L,randn(3))
+        @test_throws DimensionMismatch materialize!(Ldiv(L,randn(3)))
+    end
 end
 
