@@ -1,4 +1,4 @@
-using ArrayLayouts, LinearAlgebra, FillArrays, BandedMatrices, Test
+using ArrayLayouts, LinearAlgebra, FillArrays, Test
 import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayout,
                         ConjLayout, RowMajor, ColumnMajor, UnitStride,
                         SymmetricLayout, HermitianLayout, UpperTriangularLayout,
@@ -179,16 +179,21 @@ struct FooNumber <: Number end
     end
 
     @testset "Symmetric of Banded" begin
-        A = BandedMatrix(0=>[1,1,1,1], -1=>[1,1,1])
-        B = BandedMatrix(0=>[im,1,1,1], -1=>[1,1,1])
+        @eval struct BandedMock{T} <: AbstractMatrix{T} end
+        ArrayLayouts.colsupport(A::BandedMock, j) = j:min(j+1, 4)
+        ArrayLayouts.rowsupport(A::BandedMock, j) = max(j-1, 1):j
+        ArrayLayouts.MemoryLayout(::Type{<:BandedMock}) = DenseColumnMajor()
+        Base.size(::BandedMock) = (4, 4)
+
+        A = BandedMock{Float64}()
         
-        for X in (Symmetric(A), Symmetric(B), Hermitian(A), Hermitian(B))
+        for X in (Symmetric(A), Hermitian(A))
             @test colsupport(X, 1) == rowsupport(X, 1) == 1:1
             @test colsupport(X, 2) == rowsupport(X, 2) == 2:2
             @test colsupport(X, 3) == rowsupport(X, 3) == 3:3
             @test colsupport(X, 4) == rowsupport(X, 4) == 4:4
         end
-        for X in (Symmetric(A, :L), Symmetric(B, :L), Hermitian(A, :L), Hermitian(B, :L))
+        for X in (Symmetric(A, :L), Hermitian(A, :L))
             @test colsupport(X, 1) == rowsupport(X, 1) == 1:2
             @test colsupport(X, 2) == rowsupport(X, 2) == 1:3
             @test colsupport(X, 3) == rowsupport(X, 3) == 2:4
