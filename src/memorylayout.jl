@@ -606,11 +606,18 @@ rowsupport(::BidiagonalLayout, A, j) =
 colsupport(::AbstractTridiagonalLayout, A, j) = max(minimum(j)-1,1):min(size(A,1),maximum(j)+1)
 rowsupport(::AbstractTridiagonalLayout, A, j) = max(minimum(j)-1,1):min(size(A,2),maximum(j)+1)
 
-function colsupport(::Union{SymmetricLayout,HermitianLayout}, A, j)
+function colsupport(::SymmetricLayout, A, j)
     if symmetricuplo(A) == 'U'
-        first(colsupport(parent(A),j)):last(rowsupport(parent(A),j))
+        first(colsupport(symmetricdata(A),j)):last(rowsupport(symmetricdata(A),j))
     else
-        first(rowsupport(parent(A),j)):last(colsupport(parent(A),j))
+        first(rowsupport(symmetricdata(A),j)):last(colsupport(symmetricdata(A),j))
+    end
+end
+function colsupport(::HermitianLayout, A, j)
+    if symmetricuplo(A) == 'U'
+        first(colsupport(hermitiandata(A),j)):last(rowsupport(hermitiandata(A),j))
+    else
+        first(rowsupport(hermitiandata(A),j)):last(colsupport(hermitiandata(A),j))
     end
 end
 rowsupport(::Union{SymmetricLayout,HermitianLayout}, A, j) = colsupport(A, j)
