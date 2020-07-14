@@ -72,19 +72,45 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         muladd!(1.0, A, A, 2.0, B)
         @test all(B .=== A.A^2 + 2Bin)
 
-        # tiled_blasmul!
-        B = MyMatrix(copy(Bin))
-        muladd!(1.0, Ones(5,5), A, 2.0, B)
+        @testset "tiled_blasmul!" begin
+            B = MyMatrix(copy(Bin))
+            muladd!(1.0, Ones(5,5), A, 2.0, B)
+        end
 
-        #generic_blasmul!
-        A = BigFloat.(randn(5,5))
-        Bin = BigFloat.(randn(5,5))
-        B = copy(Bin)
-        muladd!(1.0, Ones(5,5), A, 2.0, B)
-        @test B == Ones(5,5)*A + 2.0Bin
+        @testset "generic_blasmul!" begin
+            A = BigFloat.(randn(5,5))
+            Bin = BigFloat.(randn(5,5))
+            B = copy(Bin)
+            muladd!(1.0, Ones(5,5), A, 2.0, B)
+            @test B == Ones(5,5)*A + 2.0Bin
+        end
 
         C = MyMatrix([1 2; 3 4])
         @test stringmime("text/plain", C) == "2×2 MyMatrix:\n 1.0  2.0\n 3.0  4.0"
+
+        @testset "layoutldiv" begin
+            A = MyMatrix(randn(5,5))
+            x = randn(5)
+            X = randn(5,5)
+            t = view(randn(10),[1,3,4,6,7])
+            T = view(randn(10,5),[1,3,4,6,7],:)
+            t̃ = copy(t)
+            T̃ = copy(T)
+            B = Bidiagonal(randn(5),randn(4),:U)
+            @test ldiv!(A, copy(x)) ≈ A\x
+            @test A\t ≈ A\t̃
+            # QR is not general enough
+            @test_broken ldiv!(A, t) ≈ A\t
+            @test ldiv!(A, copy(X)) ≈ A\X
+            @test A\T ≈ A\T̃
+            @test_broken A/T ≈ A/T̃
+            @test_broken ldiv!(A, T) ≈ A\T
+            @test B\A ≈ B\Matrix(A)
+            @test transpose(B)\A ≈ transpose(B)\Matrix(A)
+            @test B'\A ≈ B'\Matrix(A)
+            @test A\A ≈ I
+            @test_broken A/A ≈ I
+        end
     end
 end
 
