@@ -176,26 +176,50 @@ struct FooNumber <: Number end
         @test symmetricdata(Symmetric(transpose(B))) ≡ transpose(B)
         @test hermitiandata(Hermitian(transpose(B))) ≡ transpose(B)
 
-        @testset "Bidiagonal" begin
-            B = Bidiagonal(randn(6),randn(5),:U)
-            Bc = Bidiagonal(randn(6) .+ 0im,randn(5) .+ 1im,:U)
-            S = Symmetric(B)
-            H = Hermitian(B)
-            Sc = Symmetric(Bc)
-            Hc = Hermitian(Bc)
+    end
 
-            @test MemoryLayout(S) isa SymTridiagonalLayout
-            @test MemoryLayout(H) isa SymTridiagonalLayout
-            @test MemoryLayout(Sc) isa SymTridiagonalLayout
-            @test MemoryLayout(Hc) isa HermitianLayout
+    @testset "Symmetric of Banded" begin
+        @eval struct BandedMock{T} <: AbstractMatrix{T} end
+        ArrayLayouts.colsupport(A::BandedMock, j) = j:min(j+1, 4)
+        ArrayLayouts.rowsupport(A::BandedMock, j) = max(j-1, 1):j
+        ArrayLayouts.MemoryLayout(::Type{<:BandedMock}) = DenseColumnMajor()
+        Base.size(::BandedMock) = (4, 4)
 
-            @test diagonaldata(S) == diagonaldata(B)
-            @test subdiagonaldata(S) == supdiagonaldata(S) == supdiagonaldata(B)
-
-            @test colsupport(S,3) == colsupport(H,3) == colsupport(Sc,3) == colsupport(Hc,3) == 2:4
-            @test rowsupport(S,3) == rowsupport(H,3) == rowsupport(Sc,3) == rowsupport(Hc,3) == 2:4
+        A = BandedMock{Float64}()
+        
+        for X in (Symmetric(A), Hermitian(A))
+            @test colsupport(X, 1) == rowsupport(X, 1) == 1:1
+            @test colsupport(X, 2) == rowsupport(X, 2) == 2:2
+            @test colsupport(X, 3) == rowsupport(X, 3) == 3:3
+            @test colsupport(X, 4) == rowsupport(X, 4) == 4:4
         end
-     end
+        for X in (Symmetric(A, :L), Hermitian(A, :L))
+            @test colsupport(X, 1) == rowsupport(X, 1) == 1:2
+            @test colsupport(X, 2) == rowsupport(X, 2) == 1:3
+            @test colsupport(X, 3) == rowsupport(X, 3) == 2:4
+            @test colsupport(X, 4) == rowsupport(X, 4) == 3:4
+        end
+    end
+
+    @testset "Bidiagonal" begin
+        B = Bidiagonal(randn(6),randn(5),:U)
+        Bc = Bidiagonal(randn(6) .+ 0im,randn(5) .+ 1im,:U)
+        S = Symmetric(B)
+        H = Hermitian(B)
+        Sc = Symmetric(Bc)
+        Hc = Hermitian(Bc)
+
+        @test MemoryLayout(S) isa SymTridiagonalLayout
+        @test MemoryLayout(H) isa SymTridiagonalLayout
+        @test MemoryLayout(Sc) isa SymTridiagonalLayout
+        @test MemoryLayout(Hc) isa HermitianLayout
+
+        @test diagonaldata(S) == diagonaldata(B)
+        @test subdiagonaldata(S) == supdiagonaldata(S) == supdiagonaldata(B)
+
+        @test colsupport(S,3) == colsupport(H,3) == colsupport(Sc,3) == colsupport(Hc,3) == 2:4
+        @test rowsupport(S,3) == rowsupport(H,3) == rowsupport(Sc,3) == rowsupport(Hc,3) == 2:4
+    end
 
     @testset "triangular MemoryLayout" begin
         A = [1.0 2; 3 4]
