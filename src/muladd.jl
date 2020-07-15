@@ -444,7 +444,8 @@ function MulAdd(A::AbstractArray{T}, B::AbstractMatrix{V}) where {T,V}
     MulAdd(scalarone(TV), A, B, scalarzero(TV), fillzeros(TV,(axes(A,1),axes(B,2))))
 end
 
-mul(A::AbstractArray, B::AbstractArray) = materialize(MulAdd(A,B))
+@inline _mul(layoutA, layoutB, A, B) = materialize(MulAdd(A,B))
+@inline mul(A::AbstractArray, B::AbstractArray) = _mul(MemoryLayout(A), MemoryLayout(B), A, B)
 
 macro layoutmul(Typ)
     ret = quote
