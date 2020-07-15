@@ -249,5 +249,15 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
         @test_throws DimensionMismatch ArrayLayouts.ldiv(L,randn(3))
         @test_throws DimensionMismatch materialize!(Ldiv(L,randn(3)))
     end
+
+    @testset "Diagonal Ldiv bug (BandedMatrices #188)" begin
+        n = 5
+        B = randn(n,n)
+        D = Diagonal(-collect(1.0:n))
+        @test ArrayLayouts.ldiv!(similar(B), D, B) == D \ B
+        @test ArrayLayouts.ldiv!(similar(B), B, D) == B \ D
+        @test ArrayLayouts.rdiv!(similar(B), B, D) ==  B / D
+        @test_broken ArrayLayouts.rdiv!(similar(B), D, B) ==  D / B
+    end
 end
 
