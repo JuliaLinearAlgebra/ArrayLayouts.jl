@@ -27,6 +27,11 @@ end
 copy(M::Rmul{<:Any,<:DiagonalLayout}) = M.A .* permutedims(M.B.diag)
 copy(M::Rmul{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) =  M.A .* getindex_value(M.B.diag)
 
+function materialize!(M::Ldiv{<:DiagonalLayout})
+    M.B .= M.A.diag .\ M.B
+    M.B
+end
+
 copy(M::Ldiv{<:DiagonalLayout,<:DiagonalLayout}) = Diagonal(inv.(M.A.diag) .* M.B.diag)
 copy(M::Ldiv{<:DiagonalLayout}) = inv.(M.A.diag) .* M.B
 copy(M::Ldiv{<:DiagonalLayout{<:AbstractFillLayout}}) = inv(getindex_value(M.A.diag)) .* M.B
