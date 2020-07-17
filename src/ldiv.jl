@@ -108,7 +108,7 @@ const BlasMatRdivMat{styleA, styleB, T<:BlasFloat} = MatRdivMat{styleA, styleB, 
 
 
 macro _layoutldiv(Typ)
-    esc(quote
+    ret = quote
         LinearAlgebra.ldiv!(A::$Typ, x::AbstractVector) = ArrayLayouts.ldiv!(A,x)
         LinearAlgebra.ldiv!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.ldiv!(A,x)
         LinearAlgebra.ldiv!(A::$Typ, x::StridedVector) = ArrayLayouts.ldiv!(A,x)
@@ -120,6 +120,8 @@ macro _layoutldiv(Typ)
         Base.:\(A::$Typ, x::AbstractMatrix) = ArrayLayouts.ldiv(A,x)
 
         Base.:\(x::AbstractMatrix, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        Base.:\(x::UpperTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        Base.:\(x::LowerTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
         Base.:\(x::Diagonal, A::$Typ) = ArrayLayouts.ldiv(x,A)
 
         Base.:\(A::Bidiagonal{<:Number}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(A,B)
@@ -138,7 +140,20 @@ macro _layoutldiv(Typ)
         Base.:/(x::Diagonal, A::$Typ) = ArrayLayouts.rdiv(x,A)
 
         Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.rdiv(x,A)
-    end)
+    end
+    if Typ ≠ :LayoutVector
+        ret = quote
+            $ret
+            Base.:\(A::$Typ, x::LayoutVector) = ArrayLayouts.ldiv(A,x)
+        end
+    end
+    if Typ ≠ :LayoutMatrix
+        ret = quote
+            $ret
+            Base.:\(A::$Typ, x::LayoutMatrix) = ArrayLayouts.ldiv(A,x)
+        end
+    end
+    esc(ret)
 end
 
 macro layoutldiv(Typ)
