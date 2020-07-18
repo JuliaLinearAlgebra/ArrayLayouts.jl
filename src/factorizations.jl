@@ -81,8 +81,10 @@ function materialize!(Ldv::Ldiv{<:QRPackedLayout,<:Any,<:Any,<:AbstractMatrix{T}
     end
     return B
 end
-materialize!(Ldv::Ldiv{<:QRPackedLayout,<:Any,<:Any,<:AbstractVector{T}}) where T =
-    ldiv!(Ldv.A, reshape(Ldv.B, length(Ldv.B), 1))[:]
+function materialize!(Ldv::Ldiv{<:QRPackedLayout,<:Any,<:Any,<:AbstractVector{T}}) where T
+    ldiv!(Ldv.A, reshape(Ldv.B, length(Ldv.B), 1))
+    Ldv.B
+end
 
 
 

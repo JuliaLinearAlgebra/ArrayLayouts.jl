@@ -398,7 +398,9 @@ materialize!(M::BlasMatMulVecAdd{<:HermitianLayout{<:AbstractRowMajor},<:Abstrac
 # Diagonal
 ####
 
+_mul(::DiagonalLayout{<:OnesLayout}, ::DiagonalLayout{<:OnesLayout}, A, B) = copy_oftype(A, promote_type(eltype(A), eltype(B)))
 _mul(::DiagonalLayout{<:OnesLayout}, _, A, B) = copy_oftype(B, promote_type(eltype(A), eltype(B)))
+_mul(_, ::DiagonalLayout{<:OnesLayout}, A, B) = copy_oftype(A, promote_type(eltype(A), eltype(B)))
 
 # Diagonal multiplication never changes structure
 similar(M::MulAdd{<:DiagonalLayout,<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.B, T, axes)

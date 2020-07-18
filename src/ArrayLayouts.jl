@@ -112,6 +112,7 @@ macro _layoutgetindex(Typ)
         @inline Base.getindex(A::$Typ, kr::AbstractUnitRange, jr::AbstractUnitRange) = ArrayLayouts.layout_getindex(A, kr, jr)
         @inline Base.getindex(A::$Typ, kr::AbstractVector, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
         @inline Base.getindex(A::$Typ, kr::Colon, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline Base.getindex(A::$Typ, kr::Colon, jr::Integer) = ArrayLayouts.layout_getindex(A, kr, jr)
         @inline Base.getindex(A::$Typ, kr::AbstractVector, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
     end)
 end

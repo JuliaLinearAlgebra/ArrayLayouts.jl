@@ -231,6 +231,14 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
                     @test ArrayLayouts.ldiv!(F,copy(B)) ≈ A\B[1:10,:]
                 end
             end
+            @testset "ldiv!" begin
+                A = randn(5,5)
+                F = LinearAlgebra.qrfactUnblocked!(copy(A))
+                b = randn(5)
+                v = view(copy(b),:)
+                @test ArrayLayouts.ldiv!(F, v) === v
+                @test ArrayLayouts.ldiv!(F, view(copy(b),:)) ≈ A \ b
+            end
         end
     end
 
