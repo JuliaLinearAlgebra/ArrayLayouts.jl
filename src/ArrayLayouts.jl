@@ -91,6 +91,7 @@ function unsafe_convert(::Type{ConjPtr{T}}, V::SubArray{T,2}) where {T,N,P}
 end
 
 include("memorylayout.jl")
+include("mul.jl")
 include("muladd.jl")
 include("lmul.jl")
 include("ldiv.jl")

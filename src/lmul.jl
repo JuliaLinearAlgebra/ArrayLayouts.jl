@@ -7,6 +7,8 @@ for Typ in (:Lmul, :Rmul)
 
         $Typ(A::TypeA, B::TypeB) where {TypeA,TypeB} = $Typ{typeof(MemoryLayout(TypeA)),typeof(MemoryLayout(TypeB)),TypeA,TypeB}(A,B)
 
+        $Typ(M::Mul) = $Typ(M.A, M.B)
+
         BroadcastStyle(::Type{<:$Typ}) = ApplyBroadcastStyle()
         broadcastable(M::$Typ) = M
 

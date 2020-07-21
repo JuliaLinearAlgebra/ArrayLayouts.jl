@@ -9,6 +9,8 @@ rowsupport(::TriangularLayout{'L'}, A, j) = isempty(j) ? (1:0) : rowsupport(tria
 # Lmul
 ###
 
+copy(M::Mul{<:AbstractTridiagonalLayout}) = copy(Lmul(M))
+
 @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,<:AbstractColumnMajor},
                                          <:AbstractStridedLayout}) where {UPLO,UNIT}
     A,x = M.A,M.B
@@ -76,6 +78,8 @@ materialize!(M::MatLmulMat{<:TriangularLayout}) = LinearAlgebra.lmul!(M.A, M.B)
 ###
 # Rmul
 ###
+
+copy(M::Mul{<:Any,<:AbstractTridiagonalLayout}) = copy(Rmul(M))
 
 @inline function materialize!(M::BlasMatRmulMat{<:AbstractStridedLayout,
                                                 <:TriangularLayout{UPLO,UNIT,<:AbstractColumnMajor},T}) where {UPLO,UNIT,T<:BlasFloat}

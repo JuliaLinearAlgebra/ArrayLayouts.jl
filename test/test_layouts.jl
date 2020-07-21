@@ -4,7 +4,7 @@ import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayou
                         SymmetricLayout, HermitianLayout, UpperTriangularLayout,
                         UnitUpperTriangularLayout, LowerTriangularLayout,
                         UnitLowerTriangularLayout, ScalarLayout, UnknownLayout,
-                        hermitiandata, symmetricdata, FillLayout, ZerosLayout,
+                        hermitiandata, symmetricdata, FillLayout, ZerosLayout, OnesLayout,
                         DiagonalLayout, TridiagonalLayout, SymTridiagonalLayout, colsupport, rowsupport,
                         diagonaldata, subdiagonaldata, supdiagonaldata, BidiagonalLayout, bidiagonaluplo
 
@@ -253,7 +253,7 @@ struct FooNumber <: Number end
 
     @testset "Fill" begin
         @test MemoryLayout(Fill(1,10)) == FillLayout()
-        @test MemoryLayout(Ones(10)) == FillLayout()
+        @test MemoryLayout(Ones(10)) == OnesLayout()
         @test MemoryLayout(Zeros(10)) == ZerosLayout()
         @test MemoryLayout(view(Fill(1,10),1:3)) == FillLayout()
         @test MemoryLayout(view(Fill(1,10),1:3,1)) == FillLayout()
