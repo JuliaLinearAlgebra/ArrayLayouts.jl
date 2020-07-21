@@ -4,7 +4,7 @@ struct Mul{StyleA, StyleB, AA, BB}
 end
 
 @inline Mul{StyleA,StyleB}(A::AA, B::BB) where {StyleA,StyleB,AA,BB} =
-    Mul{StyleA,StyleB,AA,BB}(α,A,B,β,C)
+    Mul{StyleA,StyleB,AA,BB}(A,B)
 
 @inline Mul(A, B) = Mul{typeof(MemoryLayout(A)), typeof(MemoryLayout(B))}(A, B)
 
