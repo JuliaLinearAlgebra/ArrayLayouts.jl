@@ -271,8 +271,19 @@ conjlayout(::Type{<:Real}, M::MemoryLayout) = M
 
 sublayout(::ConjLayout{ML}, t::Type{<:Tuple}) where ML = ConjLayout{typeof(sublayout(ML(), t))}()
 
+"""
+   DualLayout{ML<:MemoryLayout}()
+
+represents a row-vector that should behave like a dual-vector, that is
+multiplication times a column-vector returns a scalar.
+"""
+struct DualLayout{ML<:MemoryLayout} <: MemoryLayout end
+
 MemoryLayout(::Type{Transpose{T,P}}) where {T,P} = transposelayout(MemoryLayout(P))
 MemoryLayout(::Type{Adjoint{T,P}}) where {T,P} = adjointlayout(T, MemoryLayout(P))
+MemoryLayout(::Type{AdjointAbsVec{T,P}}) where {T,P<:AbstractVector} = DualLayout{typeof(adjointlayout(T,MemoryLayout(P)))}()
+MemoryLayout(::Type{TransposeAbsVec{T,P}}) where {T,P<:AbstractVector} = DualLayout{typeof(transposelayout(MemoryLayout(P)))}()
+
 transposelayout(_) = UnknownLayout()
 transposelayout(::StridedLayout) = StridedLayout()
 transposelayout(::ColumnMajor) = RowMajor()

@@ -106,7 +106,6 @@ copy(M::Lmul{<:AbstractQLayout}) = copyto!(similar(M), M)
 copy(M::Mul{<:AbstractQLayout}) = copy(Lmul(M))
 copy(M::Mul{<:Any,<:AbstractQLayout}) = copy(Rmul(M))
 
-
 function copyto!(dest::AbstractArray{T}, M::Lmul{<:AbstractQLayout}) where T
     A,B = M.A,M.B
     if size(dest,1) == size(B,1) 

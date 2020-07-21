@@ -64,9 +64,49 @@ broadcastable(M::Mul) = M
 # Diagonal
 ####
 
+copy(M::Mul{<:DiagonalLayout{<:AbstractFillLayout},<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.A.diag)) * M.B
+copy(M::Mul{<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.A.diag)) * M.B
+copy(M::Mul{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.B.diag)) * M.A
 copy(M::Mul{<:DiagonalLayout{<:OnesLayout},<:DiagonalLayout{<:OnesLayout}}) = copy_oftype(M.A, eltype(M))
 copy(M::Mul{<:DiagonalLayout{<:OnesLayout}}) = copy_oftype(M.B, eltype(M))
 copy(M::Mul{<:Any,<:DiagonalLayout{<:OnesLayout}}) = copy_oftype(M.A, eltype(M))
+copy(M::Mul{<:DiagonalLayout{<:AbstractFillLayout},<:DiagonalLayout{<:OnesLayout}}) = copy_oftype(M.A, eltype(M))
+copy(M::Mul{<:DiagonalLayout{<:OnesLayout},<:DiagonalLayout{<:AbstractFillLayout}}) = copy_oftype(M.B, eltype(M))
+
+macro veclayoutmul(Typ)
+    ret = quote
+        Base.:*(A::AbstractMatrix, B::$Typ) = ArrayLayouts.mul(A,B)
+        Base.:*(A::Adjoint{<:Any,<:AbstractMatrix{T}}, B::$Typ{S}) where {T,S} = ArrayLayouts.mul(A,B)
+        Base.:*(A::Transpose{<:Any,<:AbstractMatrix{T}}, B::$Typ{S}) where {T,S} = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.AdjointAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.TransposeAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.TransposeAbsVec{T}, B::$Typ{T}) where T<:Real = ArrayLayouts.mul(A,B)
+
+        Base.:*(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.mul(A,B)
+    end
+    for Struc in (:AbstractTriangular, :Diagonal)
+        ret = quote
+            $ret
+
+            Base.:*(A::LinearAlgebra.$Struc, B::$Typ) = ArrayLayouts.mul(A,B)
+        end
+    end
+    for Mod in (:Adjoint, :Transpose)
+        ret = quote
+            $ret
+
+            LinearAlgebra.mul!(dest::AbstractVector, A::$Mod{<:Any,<:$Typ}, b::AbstractVector) =
+                ArrayLayouts.mul!(dest,A,b)
+
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractVector) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::Diagonal) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::LinearAlgebra.AbstractTriangular) = ArrayLayouts.mul(A,B)
+        end
+    end
+
+    esc(ret)
+end
 
 macro layoutmul(Typ)
     ret = quote
@@ -81,6 +121,7 @@ macro layoutmul(Typ)
         Base.:*(A::$Typ, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::$Typ, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
         Base.:*(A::$Typ, B::AbstractVector) = ArrayLayouts.mul(A,B)
+        Base.:*(A::$Typ, B::ArrayLayouts.LayoutVector) = ArrayLayouts.mul(A,B)
         Base.:*(A::AbstractMatrix, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::LinearAlgebra.AdjointAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::LinearAlgebra.TransposeAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
@@ -110,6 +151,7 @@ macro layoutmul(Typ)
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
             Base.:*(A::AbstractMatrix, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractVector) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::ArrayLayouts.LayoutVector) = ArrayLayouts.mul(A,B)
 
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::$Typ) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Typ, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
@@ -125,4 +167,22 @@ macro layoutmul(Typ)
     esc(ret)
 end
 
+@veclayoutmul LayoutVector
 
+
+###
+# Dot
+###
+
+struct Dot{StyleA,StyleB,ATyp,BTyp}
+    A::ATyp
+    B::BTyp
+end
+
+Dot(A::ATyp,B::BTyp) where {ATyp,BTyp} = Dot{typeof(MemoryLayout(ATyp)), typeof(MemoryLayout(BTyp)), ATyp, BTyp}(A, B)
+materialize(d::Dot{<:Any,<:Any,<:AbstractArray,<:AbstractArray}) = Base.invoke(dot, Tuple{AbstractArray,AbstractArray}, d.A, d.B)
+
+copy(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = materialize(Dot(M.A', M.B))
+
+dot(a::LayoutArray, b::AbstractArray) = materialize(Dot(a,b))
+dot(a::SubArray{<:Any,N,<:LayoutArray}, b::AbstractArray) where N = materialize(Dot(a,b))
