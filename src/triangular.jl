@@ -9,7 +9,83 @@ rowsupport(::TriangularLayout{'L'}, A, j) = isempty(j) ? (1:0) : rowsupport(tria
 # Lmul
 ###
 
-copy(M::Mul{<:AbstractTridiagonalLayout}) = copy(Lmul(M))
+copy(M::Mul{<:TriangularLayout}) = copy(Lmul(M))
+
+## Generic triangular multiplication
+function materialize!(M::Lmul{<:TriangularLayout{'U','N'}})
+    A,B = M.A,M.B
+    m, n = size(B, 1), size(B, 2)
+    if m != size(A, 1)
+        throw(DimensionMismatch("right hand side B needs first dimension of size $(size(A,1)), has size $m"))
+    end
+    Adata = triangulardata(A)
+    for j = 1:n
+        for i = 1:m
+            Bij = Adata[i,i]*B[i,j]
+            for k = (i + 1:m) ∩ rowsupport(Adata,i)
+                Bij += Adata[i,k]*B[k,j]
+            end
+            B[i,j] = Bij
+        end
+    end
+    B
+end
+
+function materialize!(M::Lmul{<:TriangularLayout{'U','U'}})
+    A,B = M.A,M.B
+    m, n = size(B, 1), size(B, 2)
+    if m != size(A, 1)
+        throw(DimensionMismatch("right hand side B needs first dimension of size $(size(A,1)), has size $m"))
+    end
+    Adata = triangulardata(A)
+    for j = 1:n
+        for i = 1:m
+            Bij = B[i,j]
+            for k = (i + 1:m) ∩ rowsupport(Adata,i)
+                Bij += Adata[i,k]*B[k,j]
+            end
+            B[i,j] = Bij
+        end
+    end
+    B
+end
+
+function materialize!(M::Lmul{<:TriangularLayout{'L','N'}})
+    A,B = M.A,M.B
+    m, n = size(B, 1), size(B, 2)
+    if m != size(A, 1)
+        throw(DimensionMismatch("right hand side B needs first dimension of size $(size(A,1)), has size $m"))
+    end
+    Adata = triangulardata(A)
+    for j = 1:n
+        for i = m:-1:1
+            Bij = Adata[i,i]*B[i,j]
+            for k = (1:i - 1) ∩ rowsupport(Adata,i)
+                Bij += Adata[i,k]*B[k,j]
+            end
+            B[i,j] = Bij
+        end
+    end
+    B
+end
+function materialize!(M::Lmul{<:TriangularLayout{'L','U'}})
+    A,B = M.A,M.B
+    m, n = size(B, 1), size(B, 2)
+    if m != size(A, 1)
+        throw(DimensionMismatch("right hand side B needs first dimension of size $(size(A,1)), has size $m"))
+    end
+    Adata = triangulardata(A)
+    for j = 1:n
+        for i = m:-1:1
+            Bij = B[i,j]
+            for k = (1:i - 1) ∩ rowsupport(Adata,i)
+                Bij += Adata[i,k]*B[k,j]
+            end
+            B[i,j] = Bij
+        end
+    end
+    B
+end
 
 @inline function materialize!(M::BlasMatLmulVec{<:TriangularLayout{UPLO,UNIT,<:AbstractColumnMajor},
                                          <:AbstractStridedLayout}) where {UPLO,UNIT}
@@ -72,8 +148,6 @@ end
     BLAS.trmm!('L', 'L', 'C', UNIT, one(T), triangulardata(A)', x)
 end
 
-
-materialize!(M::MatLmulMat{<:TriangularLayout}) = LinearAlgebra.lmul!(M.A, M.B)
 
 ###
 # Rmul

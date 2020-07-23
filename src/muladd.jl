@@ -47,12 +47,14 @@ similar(M::MulAdd, ::Type{T}, axes) where {T,N} = similar(Array{T}, axes)
 similar(M::MulAdd, ::Type{T}) where T = similar(M, T, axes(M))
 similar(M::MulAdd) = similar(M, eltype(M))
 
-
-function instantiate(M::MulAdd)
+function checkdimensions(M::MulAdd)
     @boundscheck check_mul_axes(M.α, M.A, M.B)
     @boundscheck check_mul_axes(M.β, M.C)
     @boundscheck axes(M.A,1) == axes(M.C,1) || throw(DimensionMismatch("First axis of A, $(axes(M.A,1)), and first axis of C, $(axes(M.C,1)) must match"))
     @boundscheck axes(M.B,2) == axes(M.C,2) || throw(DimensionMismatch("Second axis of B, $(axes(M.B,2)), and second axis of C, $(axes(M.C,2)) must match"))
+end
+@propagate_inbounds function instantiate(M::MulAdd)
+    checkdimensions(M)
     M
 end
 
@@ -395,11 +397,13 @@ similar(M::MulAdd{<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.B, T, 
 similar(M::MulAdd{<:Any,<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.A, T, axes)
 # equivalent to rescaling
 function materialize!(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout}})
+    checkdimensions(M)
     M.C .= (M.α * getindex_value(M.A.diag)) .* M.B .+ M.β .* M.C
     M.C
 end
 
 function materialize!(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout}})
+    checkdimensions(M)
     M.C .= M.α .* M.A .* getindex_value(M.B.diag) .+ M.β .* M.C
     M.C
 end
