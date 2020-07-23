@@ -64,14 +64,9 @@ broadcastable(M::Mul) = M
 # Diagonal
 ####
 
-copy(M::Mul{<:DiagonalLayout{<:AbstractFillLayout},<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.A.diag)) * M.B
-copy(M::Mul{<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.A.diag)) * M.B
-copy(M::Mul{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.B.diag)) * M.A
-copy(M::Mul{<:DiagonalLayout{<:OnesLayout},<:DiagonalLayout{<:OnesLayout}}) = copy_oftype(M.A, eltype(M))
-copy(M::Mul{<:DiagonalLayout{<:OnesLayout}}) = copy_oftype(M.B, eltype(M))
-copy(M::Mul{<:Any,<:DiagonalLayout{<:OnesLayout}}) = copy_oftype(M.A, eltype(M))
-copy(M::Mul{<:DiagonalLayout{<:AbstractFillLayout},<:DiagonalLayout{<:OnesLayout}}) = copy_oftype(M.A, eltype(M))
-copy(M::Mul{<:DiagonalLayout{<:OnesLayout},<:DiagonalLayout{<:AbstractFillLayout}}) = copy_oftype(M.B, eltype(M))
+copy(M::Mul{<:DiagonalLayout,<:DiagonalLayout}) = Diagonal(diagonaldata(M.A) .* diagonaldata(M.B))
+copy(M::Mul{<:DiagonalLayout}) = Diagonal(diagonaldata(M.A) .* M.B)
+copy(M::Mul{<:Any,<:DiagonalLayout}) = Diagonal(M.A .* permutedims(diagonaldata(M.B)))
 
 macro veclayoutmul(Typ)
     ret = quote
