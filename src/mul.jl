@@ -64,10 +64,6 @@ broadcastable(M::Mul) = M
 # Diagonal
 ####
 
-copy(M::Mul{<:DiagonalLayout,<:DiagonalLayout}) = Diagonal(diagonaldata(M.A) .* diagonaldata(M.B))
-copy(M::Mul{<:DiagonalLayout}) = Diagonal(diagonaldata(M.A) .* M.B)
-copy(M::Mul{<:Any,<:DiagonalLayout}) = Diagonal(M.A .* permutedims(diagonaldata(M.B)))
-
 macro veclayoutmul(Typ)
     ret = quote
         Base.:*(A::AbstractMatrix, B::$Typ) = ArrayLayouts.mul(A,B)

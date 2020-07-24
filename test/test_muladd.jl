@@ -498,8 +498,8 @@ Random.seed!(0)
             B = Diagonal(randn(5))
             @test MemoryLayout(B) == DiagonalLayout{DenseColumnMajor}()
             
-            @test A*B == ArrayLayouts.rmul!(copy(A),B)
-            @test B*A == ArrayLayouts.lmul!(B,copy(A))
+            @test A*B == ArrayLayouts.rmul!(copy(A),B) == ArrayLayouts.mul(A,B)
+            @test B*A == ArrayLayouts.lmul!(B,copy(A)) == ArrayLayouts.mul(B,A) 
         end
     end
 
