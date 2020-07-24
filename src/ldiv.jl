@@ -44,6 +44,9 @@ end
 @inline eltype(M::Ldiv) = promote_type(Base.promote_op(inv, eltype(M.A)), eltype(M.B))
 @inline eltype(M::Rdiv) = promote_type(eltype(M.A), Base.promote_op(inv, eltype(M.B)))
 
+# Lazy getindex
+getindex(L::Ldiv{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}, k::Integer) = copyto!(similar(L), L)[k]
+getindex(L::Ldiv{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}, k::Integer,j::Integer) = Ldiv(L.A, L.B[:,j])[k]
 
 check_ldiv_axes(A, B) =
     axes(A,1) == axes(B,1) || throw(DimensionMismatch("First axis of A, $(axes(A,1)), and first axis of B, $(axes(B,1)) must match"))

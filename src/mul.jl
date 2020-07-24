@@ -20,6 +20,28 @@ length(M::Mul) = prod(size(M))
 size(M::Mul) = map(length,axes(M))
 axes(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}) = (axes(M.A,1),)
 axes(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}) = (axes(M.A,1),axes(M.B,2))
+axes(M::Mul) = error("Overload axes(::$(typeof(M)))")
+
+function getindex(M::Mul, k::Integer)
+    A,B = M.A, M.B
+    ret = zero(eltype(M))
+    for j = rowsupport(A, k) ∩ colsupport(B,1)
+        ret += A[k,j] * B[j]
+    end
+    ret
+end
+
+function getindex(M::Mul, k::Integer, j::Integer)
+    A,B = M.A,M.B
+    ret = zero(eltype(M))
+    @inbounds for ℓ in (rowsupport(A,k) ∩ colsupport(B,j))
+        ret += A[k,ℓ] * B[ℓ,j]
+    end
+    ret
+end
+
+getindex(M::Mul, k::CartesianIndex{1}) = M[convert(Int, k)]
+getindex(M::Mul, kj::CartesianIndex{2}) = M[kj[1], kj[2]]
 
 """
    mulreduce(M::Mul)
@@ -56,10 +78,10 @@ function instantiate(M::Mul)
 end
 
 materialize(M::Mul) = copy(instantiate(M))
-@inline mul(A::AbstractArray, B::AbstractArray) = copy(Mul(A,B))
+@inline mul(A, B) = copy(Mul(A,B))
 
 copy(M::Mul) = copy(mulreduce(M))
-@inline copyto!(dest::AbstractArray, M::Mul) = copyto!(dest, mulreduce(M))
+@inline copyto!(dest, M::Mul) = copyto!(dest, mulreduce(M))
 mul!(dest::AbstractArray, A::AbstractArray, B::AbstractArray) = copyto!(dest, Mul(A,B))
 
 

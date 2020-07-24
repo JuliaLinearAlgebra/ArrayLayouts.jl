@@ -22,16 +22,11 @@ end
 @inline MulAdd(α, A::AA, B::BB, β, C::CC) where {AA,BB,CC} = 
     MulAdd{typeof(MemoryLayout(AA)), typeof(MemoryLayout(BB)), typeof(MemoryLayout(CC))}(α, A, B, β, C)
 
-function MulAdd(A::AbstractArray{T}, B::AbstractVector{V}) where {T,V}
-    TV = _mul_eltype(eltype(A), eltype(B))
-    MulAdd(scalarone(TV), A, B, scalarzero(TV), fillzeros(TV,(axes(A,1),)))
+MulAdd(A, B) = MulAdd(Mul(A, B))
+function MulAdd(M::Mul)
+    TV = eltype(M)
+    MulAdd(scalarone(TV), M.A, M.B, scalarzero(TV), fillzeros(TV,axes(M)))
 end
-
-function MulAdd(A::AbstractArray{T}, B::AbstractMatrix{V}) where {T,V}
-    TV = _mul_eltype(eltype(A), eltype(B))
-    MulAdd(scalarone(TV), A, B, scalarzero(TV), fillzeros(TV,(axes(A,1),axes(B,2))))
-end
-MulAdd(M::Mul) = MulAdd(M.A, M.B)
 
 @inline eltype(::MulAdd{StyleA,StyleB,StyleC,T,AA,BB,CC}) where {StyleA,StyleB,StyleC,T,AA,BB,CC} =
      promote_type(_mul_eltype(T, eltype(AA), eltype(BB)), _mul_eltype(T, eltype(CC)))
