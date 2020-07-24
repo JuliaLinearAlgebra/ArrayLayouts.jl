@@ -49,8 +49,8 @@ rmul!(A, B) = materialize!(Rmul(A, B))
 
 materialize(L::Lmul) = copy(instantiate(L))
 
-copy(M::Lmul) = lmul!(M.A,copy(M.B))
-copy(M::Rmul) = rmul!(copy(M.A),M.B)
+copy(M::Lmul) = lmul!(M.A, copyto!(similar(M), M.B))
+copy(M::Rmul) = rmul!(copyto!(similar(M), M.A), M.B)
 
 @inline function copyto!(dest::AbstractArray, M::Lmul)
     M.B ≡ dest || copyto!(dest, M.B)

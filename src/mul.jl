@@ -47,14 +47,9 @@ function instantiate(M::Mul)
 end
 
 materialize(M::Mul) = copy(instantiate(M))
-copy(M::Mul) = copy(MulAdd(M))
-
 @inline mul(A::AbstractArray, B::AbstractArray) = copy(Mul(A,B))
-function copyto!(dest::AbstractArray, M::Mul)
-    TVW = promote_type(eltype(dest), eltype(M))
-    muladd!(scalarone(TVW), M.A, M.B, scalarzero(TVW), dest)
-end
-
+copy(M::Mul) = copy(MulAdd(M))
+@inline copyto!(dest::AbstractArray, M::Mul) = copyto!(dest, MulAdd(M))
 mul!(dest::AbstractArray, A::AbstractArray, B::AbstractArray) = copyto!(dest, Mul(A,B))
 
 

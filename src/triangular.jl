@@ -10,6 +10,13 @@ rowsupport(::TriangularLayout{'L'}, A, j) = isempty(j) ? (1:0) : rowsupport(tria
 ###
 
 copy(M::Mul{<:TriangularLayout}) = copy(Lmul(M))
+copy(M::Mul{<:TriangularLayout,<:TriangularLayout}) = copy(Lmul(M))
+
+similar(M::Lmul{<:TriangularLayout{'U'},<:TriangularLayout{'U'}}) = UpperTriangular(Matrix{eltype(M)}(undef, size(M)))
+similar(M::Lmul{<:TriangularLayout{'L'},<:TriangularLayout{'L'}}) = LowerTriangular(Matrix{eltype(M)}(undef, size(M)))
+similar(M::Lmul{<:TriangularLayout{'U','U'},<:TriangularLayout{'U','U'}}) = UnitUpperTriangular(Matrix{eltype(M)}(undef, size(M)))
+similar(M::Lmul{<:TriangularLayout{'L','U'},<:TriangularLayout{'L','U'}}) = UnitLowerTriangular(Matrix{eltype(M)}(undef, size(M)))
+
 
 ## Generic triangular multiplication
 function materialize!(M::Lmul{<:TriangularLayout{'U','N'}})
@@ -153,7 +160,7 @@ end
 # Rmul
 ###
 
-copy(M::Mul{<:Any,<:AbstractTridiagonalLayout}) = copy(Rmul(M))
+copy(M::Mul{<:Any,<:TriangularLayout}) = copy(Rmul(M))
 
 @inline function materialize!(M::BlasMatRmulMat{<:AbstractStridedLayout,
                                                 <:TriangularLayout{UPLO,UNIT,<:AbstractColumnMajor},T}) where {UPLO,UNIT,T<:BlasFloat}

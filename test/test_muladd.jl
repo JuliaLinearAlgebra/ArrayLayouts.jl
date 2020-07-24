@@ -498,8 +498,27 @@ Random.seed!(0)
             B = Diagonal(randn(5))
             @test MemoryLayout(B) == DiagonalLayout{DenseColumnMajor}()
             
-            @test A*B == ArrayLayouts.rmul!(copy(A),B) == ArrayLayouts.mul(A,B)
-            @test B*A == ArrayLayouts.lmul!(B,copy(A)) == ArrayLayouts.mul(B,A) 
+            @test A*B == ArrayLayouts.rmul!(copy(A),B) == mul(A,B)
+            @test B*A == ArrayLayouts.lmul!(B,copy(A)) == mul(B,A) 
+        end
+
+        @testset "tri * tri" begin
+            A = randn(5,5)
+            B = randn(5,5)
+            @test UpperTriangular(A) * UpperTriangular(B) ≈ mul(UpperTriangular(A) , UpperTriangular(B))
+            @test LowerTriangular(A) * LowerTriangular(B) ≈ mul(LowerTriangular(A) , LowerTriangular(B))
+            @test LowerTriangular(A) * UpperTriangular(B) ≈ mul(LowerTriangular(A) , UpperTriangular(B))
+            @test UnitUpperTriangular(A) * UnitUpperTriangular(B) ≈ mul(UnitUpperTriangular(A) , UnitUpperTriangular(B))
+            @test UnitLowerTriangular(A) * UnitLowerTriangular(B) ≈ mul(UnitLowerTriangular(A) , UnitLowerTriangular(B))
+            @test UnitLowerTriangular(A) * UnitUpperTriangular(B) ≈ mul(UnitLowerTriangular(A) , UnitUpperTriangular(B))
+            @test UnitUpperTriangular(A) * UpperTriangular(B) ≈ mul(UnitUpperTriangular(A) , UpperTriangular(B))
+            @test @inferred(mul(UpperTriangular(A) , UpperTriangular(B))) isa UpperTriangular
+            @test @inferred(mul(LowerTriangular(A) , LowerTriangular(B))) isa LowerTriangular
+            @test @inferred(mul(UnitUpperTriangular(A) , UnitUpperTriangular(B))) isa UnitUpperTriangular
+            @test @inferred(mul(UnitLowerTriangular(A) , UnitLowerTriangular(B))) isa UnitLowerTriangular
+            @test @inferred(mul(UpperTriangular(A) , UnitUpperTriangular(B))) isa UpperTriangular
+            @test @inferred(mul(LowerTriangular(A), UpperTriangular(B))) isa Matrix
+            @test @inferred(mul(UnitUpperTriangular(A), LowerTriangular(B))) isa Matrix
         end
     end
 
