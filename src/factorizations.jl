@@ -103,8 +103,8 @@ adjointlayout(::Type, ::QRPackedQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRPac
 adjointlayout(::Type, ::QRCompactWYQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRCompactWYQLayout{SLAY,TLAY}()
 
 copy(M::Lmul{<:AbstractQLayout}) = copyto!(similar(M), M)
-copy(M::Mul{<:AbstractQLayout}) = copy(Lmul(M))
-copy(M::Mul{<:Any,<:AbstractQLayout}) = copy(Rmul(M))
+mulreduce(M::Mul{<:AbstractQLayout}) = Lmul(M)
+mulreduce(M::Mul{<:Any,<:AbstractQLayout}) = Rmul(M)
 
 function copyto!(dest::AbstractArray{T}, M::Lmul{<:AbstractQLayout}) where T
     A,B = M.A,M.B

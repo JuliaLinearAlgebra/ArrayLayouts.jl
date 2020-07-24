@@ -18,11 +18,20 @@ size(M::Mul, p::Int) = size(M)[p]
 axes(M::Mul, p::Int) = axes(M)[p]
 length(M::Mul) = prod(size(M))
 size(M::Mul) = map(length,axes(M))
-axes(M::Mul) = (axes(M.A,1),axes(M.B,2))
+axes(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}) = (axes(M.A,1),)
+axes(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}) = (axes(M.A,1),axes(M.B,2))
 
-similar(M::Mul, ::Type{T}, axes) where {T,N} = similar(Array{T}, axes)
-similar(M::Mul, ::Type{T}) where T = similar(M, T, axes(M))
-similar(M::Mul) = similar(M, eltype(M))
+"""
+   mulreduce(M::Mul)
+
+returns a lower level lazy multiplication object such as `MulAdd`, `Lmul` or `Rmul`.
+The Default is `MulAdd`
+"""
+mulreduce(M::Mul) = MulAdd(M)
+
+similar(M::Mul, ::Type{T}, axes) where {T,N} = similar(mulreduce(M), T, axes)
+similar(M::Mul, ::Type{T}) where T = similar(mulreduce(M), T)
+similar(M::Mul) = similar(mulreduce(M))
 
 check_mul_axes(A) = nothing
 _check_mul_axes(::Number, ::Number) = nothing
@@ -48,16 +57,14 @@ end
 
 materialize(M::Mul) = copy(instantiate(M))
 @inline mul(A::AbstractArray, B::AbstractArray) = copy(Mul(A,B))
-copy(M::Mul) = copy(MulAdd(M))
-@inline copyto!(dest::AbstractArray, M::Mul) = copyto!(dest, MulAdd(M))
+
+copy(M::Mul) = copy(mulreduce(M))
+@inline copyto!(dest::AbstractArray, M::Mul) = copyto!(dest, mulreduce(M))
 mul!(dest::AbstractArray, A::AbstractArray, B::AbstractArray) = copyto!(dest, Mul(A,B))
 
 
 broadcastable(M::Mul) = M
 
-####
-# Diagonal
-####
 
 macro veclayoutmul(Typ)
     ret = quote
@@ -165,10 +172,12 @@ struct Dot{StyleA,StyleB,ATyp,BTyp}
     B::BTyp
 end
 
-Dot(A::ATyp,B::BTyp) where {ATyp,BTyp} = Dot{typeof(MemoryLayout(ATyp)), typeof(MemoryLayout(BTyp)), ATyp, BTyp}(A, B)
-materialize(d::Dot{<:Any,<:Any,<:AbstractArray,<:AbstractArray}) = Base.invoke(dot, Tuple{AbstractArray,AbstractArray}, d.A, d.B)
+@inline Dot(A::ATyp,B::BTyp) where {ATyp,BTyp} = Dot{typeof(MemoryLayout(ATyp)), typeof(MemoryLayout(BTyp)), ATyp, BTyp}(A, B)
+@inline copy(d::Dot{<:Any,<:Any,<:AbstractArray,<:AbstractArray}) = Base.invoke(dot, Tuple{AbstractArray,AbstractArray}, d.A, d.B)
+@inline materialize(d::Dot) = copy(instantiate(d))
+@inline Dot(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = materialize(Dot(M.A', M.B))
+@inline mulreduce(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dot(M)
 
-copy(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = materialize(Dot(M.A', M.B))
+@inline dot(a::LayoutArray, b::AbstractArray) = copy(Dot(a,b))
+@inline dot(a::SubArray{<:Any,N,<:LayoutArray}, b::AbstractArray) where N = materialize(Dot(a,b))
 
-dot(a::LayoutArray, b::AbstractArray) = materialize(Dot(a,b))
-dot(a::SubArray{<:Any,N,<:LayoutArray}, b::AbstractArray) where N = materialize(Dot(a,b))

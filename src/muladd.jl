@@ -418,3 +418,8 @@ scalarzero(::Type{<:AbstractArray{T}}) where T = scalarzero(T)
 
 fillzeros(::Type{T}, ax) where T = Zeros{T}(ax)
 
+###
+# Fill 
+###
+
+copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout}) = M.α*M.A*M.B + M.β*M.C

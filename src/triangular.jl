@@ -9,8 +9,9 @@ rowsupport(::TriangularLayout{'L'}, A, j) = isempty(j) ? (1:0) : rowsupport(tria
 # Lmul
 ###
 
-copy(M::Mul{<:TriangularLayout}) = copy(Lmul(M))
-copy(M::Mul{<:TriangularLayout,<:TriangularLayout}) = copy(Lmul(M))
+mulreduce(M::Mul{<:TriangularLayout}) = Lmul(M)
+mulreduce(M::Mul{<:TriangularLayout,<:TriangularLayout}) = Lmul(M)
+mulreduce(M::Mul{<:Any,<:TriangularLayout}) = Rmul(M)
 
 similar(M::Lmul{<:TriangularLayout{'U'},<:TriangularLayout{'U'}}) = UpperTriangular(Matrix{eltype(M)}(undef, size(M)))
 similar(M::Lmul{<:TriangularLayout{'L'},<:TriangularLayout{'L'}}) = LowerTriangular(Matrix{eltype(M)}(undef, size(M)))
@@ -159,8 +160,6 @@ end
 ###
 # Rmul
 ###
-
-copy(M::Mul{<:Any,<:TriangularLayout}) = copy(Rmul(M))
 
 @inline function materialize!(M::BlasMatRmulMat{<:AbstractStridedLayout,
                                                 <:TriangularLayout{UPLO,UNIT,<:AbstractColumnMajor},T}) where {UPLO,UNIT,T<:BlasFloat}
