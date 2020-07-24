@@ -22,7 +22,7 @@ axes(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}) = (axes(M.A,1),)
 axes(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}) = (axes(M.A,1),axes(M.B,2))
 axes(M::Mul) = error("Overload axes(::$(typeof(M)))")
 
-function getindex(M::Mul, k::Integer)
+function _mul_getindex(M::Mul, k)
     A,B = M.A, M.B
     ret = zero(eltype(M))
     for j = rowsupport(A, k) ∩ colsupport(B,1)
@@ -31,7 +31,7 @@ function getindex(M::Mul, k::Integer)
     ret
 end
 
-function getindex(M::Mul, k::Integer, j::Integer)
+function _mul_getindex(M::Mul, k, j)
     A,B = M.A,M.B
     ret = zero(eltype(M))
     @inbounds for ℓ in (rowsupport(A,k) ∩ colsupport(B,j))
@@ -39,6 +39,9 @@ function getindex(M::Mul, k::Integer, j::Integer)
     end
     ret
 end
+
+getindex(M::Mul, k::Integer, j::Integer) = _mul_getindex(M, k, j)
+getindex(M::Mul, k::Integer) = _mul_getindex(M, k)
 
 getindex(M::Mul, k::CartesianIndex{1}) = M[convert(Int, k)]
 getindex(M::Mul, kj::CartesianIndex{2}) = M[kj[1], kj[2]]
