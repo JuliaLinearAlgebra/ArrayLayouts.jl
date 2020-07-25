@@ -12,7 +12,7 @@ end
 @inline _mul_eltype(A, B) = Base.promote_op(*, A, B)
 @inline _mul_eltype(A, B, C, D...) = _mul_eltype(Base.promote_op(*, A, B), C, D...)
 
-@inline eltype(::Mul{StyleA,StyleB,AA,BB}) where {StyleA,StyleB,AA,BB} = _mul_eltype(eltype(AA), eltype(BB))
+@inline eltype(M::Mul) = _mul_eltype(eltype(M.A), eltype(M.B))
 
 size(M::Mul, p::Int) = size(M)[p]
 axes(M::Mul, p::Int) = axes(M)[p]
@@ -85,6 +85,7 @@ materialize(M::Mul) = copy(instantiate(M))
 
 copy(M::Mul) = copy(mulreduce(M))
 @inline copyto!(dest, M::Mul) = copyto!(dest, mulreduce(M))
+@inline copyto!(dest::AbstractArray, M::Mul) = copyto!(dest, mulreduce(M))
 mul!(dest::AbstractArray, A::AbstractArray, B::AbstractArray) = copyto!(dest, Mul(A,B))
 
 
