@@ -22,7 +22,9 @@ axes(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}) = (axes(M.A,1),)
 axes(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}) = (axes(M.A,1),axes(M.B,2))
 axes(M::Mul) = error("Overload axes(::$(typeof(M)))")
 
-function _mul_getindex(M::Mul, k)
+# The following design is to support QuasiArrays.jl where indices
+# may not be `Int`
+function _getindex(::Type{Tuple{AA}}, M::Mul, (k,)::Tuple{AA}) where AA
     A,B = M.A, M.B
     ret = zero(eltype(M))
     for j = rowsupport(A, k) ∩ colsupport(B,1)
@@ -31,7 +33,7 @@ function _mul_getindex(M::Mul, k)
     ret
 end
 
-function _mul_getindex(M::Mul, k, j)
+function _getindex(::Type{Tuple{AA,BB}}, M::Mul, (k, j)::Tuple{AA,BB}) where {AA,BB}
     A,B = M.A,M.B
     ret = zero(eltype(M))
     @inbounds for ℓ in (rowsupport(A,k) ∩ colsupport(B,j))
@@ -40,11 +42,15 @@ function _mul_getindex(M::Mul, k, j)
     ret
 end
 
-getindex(M::Mul, k::Integer, j::Integer) = _mul_getindex(M, k, j)
-getindex(M::Mul, k::Integer) = _mul_getindex(M, k)
+_getindex(::Type{Int}, M::Mul, k::CartesianIndex{1}) = M[convert(Int, k)]
+_getindex(::Type{NTuple{2,Int}}, M::Mul, kj::CartesianIndex{2}) = M[kj[1], kj[2]]
 
-getindex(M::Mul, k::CartesianIndex{1}) = M[convert(Int, k)]
-getindex(M::Mul, kj::CartesianIndex{2}) = M[kj[1], kj[2]]
+indextype(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}) = Tuple{Int}
+indextype(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}) = NTuple{2,Int}
+indextype(M::Mul{<:Any,<:Any,<:AbstractVector,<:AbstractMatrix}) = NTuple{2,Int}
+
+getindex(M::Mul, k...) = _getindex(indextype(M), M, k)
+
 
 """
    mulreduce(M::Mul)
@@ -63,14 +69,14 @@ _check_mul_axes(::Number, ::Number) = nothing
 _check_mul_axes(::Number, _) = nothing
 _check_mul_axes(_, ::Number) = nothing
 _check_mul_axes(A, B) = axes(A,2) == axes(B,1) || throw(DimensionMismatch("Second axis of A, $(axes(A,2)), and first axis of B, $(axes(B,1)) must match"))
-function check_mul_axes(A, B, C...) 
+function check_mul_axes(A, B, C...)
     _check_mul_axes(A, B)
     check_mul_axes(B, C...)
 end
 
 # we need to special case AbstractQ as it allows non-compatiple multiplication
-function check_mul_axes(A::AbstractQ, B, C...) 
-    axes(A.factors, 1) == axes(B, 1) || axes(A.factors, 2) == axes(B, 1) ||  
+function check_mul_axes(A::AbstractQ, B, C...)
+    axes(A.factors, 1) == axes(B, 1) || axes(A.factors, 2) == axes(B, 1) ||
         throw(DimensionMismatch("First axis of B, $(axes(B,1)) must match either axes of A, $(axes(A))"))
     check_mul_axes(B, C...)
 end
