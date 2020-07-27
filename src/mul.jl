@@ -42,6 +42,9 @@ function _getindex(::Type{Tuple{AA,BB}}, M::Mul, (k, j)::Tuple{AA,BB}) where {AA
     ret
 end
 
+# linear indexing
+_getindex(::Type{NTuple{2,Int}}, M::Mul, k::Tuple{Int}) = M[Base._ind2sub(axes(M), k...)...]
+
 _getindex(::Type{Tuple{Int}}, M::Mul, (k,)::Tuple{CartesianIndex{1}}) = M[convert(Int, k)]
 _getindex(::Type{NTuple{2,Int}}, M::Mul, (kj,)::Tuple{CartesianIndex{2}}) = M[kj[1], kj[2]]
 
