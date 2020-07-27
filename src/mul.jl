@@ -42,9 +42,16 @@ function _getindex(::Type{Tuple{AA,BB}}, M::Mul, (k, j)::Tuple{AA,BB}) where {AA
     ret
 end
 
-_getindex(::Type{Int}, M::Mul, k::CartesianIndex{1}) = M[convert(Int, k)]
-_getindex(::Type{NTuple{2,Int}}, M::Mul, kj::CartesianIndex{2}) = M[kj[1], kj[2]]
+_getindex(::Type{Tuple{Int}}, M::Mul, (k,)::Tuple{CartesianIndex{1}}) = M[convert(Int, k)]
+_getindex(::Type{NTuple{2,Int}}, M::Mul, (kj,)::Tuple{CartesianIndex{2}}) = M[kj[1], kj[2]]
 
+"""
+   indextype(A)
+
+gives the expected index type for an array, or array-like object. For example,
+if it is vector-like it will return `Tuple{Int}`, or if it is matrix-like it will
+return `Tuple{Int,Int}`. Other types may have non-integer based indexing.
+"""
 indextype(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}) = Tuple{Int}
 indextype(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}) = NTuple{2,Int}
 indextype(M::Mul{<:Any,<:Any,<:AbstractVector,<:AbstractMatrix}) = NTuple{2,Int}
@@ -198,7 +205,12 @@ end
 ###
 # Dot
 ###
+"""
+    Dot(A, B)
 
+is a lazy version of `dot(A, B)`, designed to support
+materializing based on `MemoryLayout`.
+"""
 struct Dot{StyleA,StyleB,ATyp,BTyp}
     A::ATyp
     B::BTyp
