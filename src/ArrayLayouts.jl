@@ -82,8 +82,11 @@ struct ConjPtr{T}
     ptr::Ptr{T}
 end
 
-unsafe_convert(::Type{Ptr{T}}, A::Adjoint{<:Real}) where T<:Real = unsafe_convert(Ptr{T}, parent(A))
-unsafe_convert(::Type{Ptr{T}}, A::Transpose) where T = unsafe_convert(Ptr{T}, parent(A))
+if VERSION < v"1.5-"
+    unsafe_convert(::Type{Ptr{T}}, A::Adjoint{<:Real}) where T<:Real = unsafe_convert(Ptr{T}, parent(A))
+    unsafe_convert(::Type{Ptr{T}}, A::Transpose) where T = unsafe_convert(Ptr{T}, parent(A))
+end
+
 # work-around issue with complex conjugation of pointer
 unsafe_convert(::Type{Ptr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(ConjPtr{T}, parent(Ac))
 unsafe_convert(::Type{ConjPtr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(Ptr{T}, parent(Ac))
