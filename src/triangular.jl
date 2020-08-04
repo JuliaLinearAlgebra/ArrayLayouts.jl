@@ -66,7 +66,7 @@ function materialize!(M::Lmul{<:TriangularLayout{'L','N'}})
     end
     Adata = triangulardata(A)
     for j = 1:n
-        for i = m:-1:1
+        for i = reverse(colsupport(A,colsupport(B,j)))
             Bij = Adata[i,i]*B[i,j]
             for k = (1:i - 1) ∩ rowsupport(Adata,i)
                 Bij += Adata[i,k]*B[k,j]

@@ -66,7 +66,7 @@ getindex(M::Mul, k...) = _getindex(indextype(M), M, k)
    mulreduce(M::Mul)
 
 returns a lower level lazy multiplication object such as `MulAdd`, `Lmul` or `Rmul`.
-The Default is `MulAdd`
+The Default is `MulAdd`. Note that the lowered type must overload `copyto!` and `copy`.
 """
 mulreduce(M::Mul) = MulAdd(M)
 
@@ -115,6 +115,7 @@ macro veclayoutmul(Typ)
         Base.:*(A::Transpose{<:Any,<:AbstractMatrix{T}}, B::$Typ{S}) where {T,S} = ArrayLayouts.mul(A,B)
         Base.:*(A::LinearAlgebra.AdjointAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::LinearAlgebra.TransposeAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.AdjointAbsVec{<:Number}, B::$Typ{<:Number}) = ArrayLayouts.mul(A,B)
         Base.:*(A::LinearAlgebra.TransposeAbsVec{T}, B::$Typ{T}) where T<:Real = ArrayLayouts.mul(A,B)
 
         Base.:*(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.mul(A,B)
@@ -220,11 +221,12 @@ struct Dot{StyleA,StyleB,ATyp,BTyp}
 end
 
 @inline Dot(A::ATyp,B::BTyp) where {ATyp,BTyp} = Dot{typeof(MemoryLayout(ATyp)), typeof(MemoryLayout(BTyp)), ATyp, BTyp}(A, B)
-@inline copy(d::Dot{<:Any,<:Any,<:AbstractArray,<:AbstractArray}) = Base.invoke(dot, Tuple{AbstractArray,AbstractArray}, d.A, d.B)
+@inline copy(d::Dot) = Base.invoke(dot, Tuple{AbstractArray,AbstractArray}, d.A, d.B)
 @inline materialize(d::Dot) = copy(instantiate(d))
 @inline Dot(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = materialize(Dot(M.A', M.B))
 @inline mulreduce(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dot(M)
 
 @inline dot(a::LayoutArray, b::AbstractArray) = copy(Dot(a,b))
+@inline dot(a::AbstractArray, b::LayoutArray) = copy(Dot(a,b))
 @inline dot(a::SubArray{<:Any,N,<:LayoutArray}, b::AbstractArray) where N = materialize(Dot(a,b))
 
