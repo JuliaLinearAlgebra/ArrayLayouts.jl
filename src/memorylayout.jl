@@ -520,10 +520,12 @@ tridiagonallayout(_) = TridiagonalLayout{UnknownLayout}()
 symtridiagonallayout(_) = SymTridiagonalLayout{UnknownLayout}()
 diagonallayout(_) = DiagonalLayout{UnknownLayout}()
 
-diagonallayout(::ML) where ML<:AbstractStridedLayout = DiagonalLayout{ML}()
-bidiagonallayout(::ML) where ML<:AbstractStridedLayout = BidiagonalLayout{ML}()
-tridiagonallayout(::ML) where ML<:AbstractStridedLayout = TridiagonalLayout{ML}()
-symtridiagonallayout(::ML) where ML<:AbstractStridedLayout = SymTridiagonalLayout{ML}()
+
+diagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = DiagonalLayout{typeof(lay)}()
+bidiagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = BidiagonalLayout{typeof(lay)}()
+tridiagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = TridiagonalLayout{typeof(lay)}()
+symtridiagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = SymTridiagonalLayout{typeof(lay)}()
+
 
 MemoryLayout(D::Type{Diagonal{T,P}}) where {T,P} = diagonallayout(MemoryLayout(P))
 MemoryLayout(::Type{Bidiagonal{T,V}}) where {T,V} = bidiagonallayout(MemoryLayout(V))

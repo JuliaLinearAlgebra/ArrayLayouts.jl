@@ -18,9 +18,12 @@ size(M::Mul, p::Int) = size(M)[p]
 axes(M::Mul, p::Int) = axes(M)[p]
 length(M::Mul) = prod(size(M))
 size(M::Mul) = map(length,axes(M))
-axes(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}) = (axes(M.A,1),)
-axes(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}) = (axes(M.A,1),axes(M.B,2))
-axes(M::Mul) = error("Overload axes(::$(typeof(M)))")
+
+_mul_axes(A::Tuple{<:Any,<:Any}, ::Tuple{<:Any}) = (A[1],)
+_mul_axes(A::Tuple{<:Any}, B::Tuple{<:Any,<:Any}) = (A[1],B[2])
+_mul_axes(A::Tuple{<:Any,<:Any}, B::Tuple{<:Any,<:Any}) = (A[1],B[2])
+
+axes(M::Mul) = _mul_axes(axes(M.A), axes(M.B))
 
 # The following design is to support QuasiArrays.jl where indices
 # may not be `Int`
@@ -55,9 +58,9 @@ gives the expected index type for an array, or array-like object. For example,
 if it is vector-like it will return `Tuple{Int}`, or if it is matrix-like it will
 return `Tuple{Int,Int}`. Other types may have non-integer based indexing.
 """
-indextype(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}) = Tuple{Int}
-indextype(M::Mul{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}) = NTuple{2,Int}
-indextype(M::Mul{<:Any,<:Any,<:AbstractVector,<:AbstractMatrix}) = NTuple{2,Int}
+indextype(A) = indextype(axes(A))
+
+indextype(axes::Tuple) = Tuple{map(eltype, axes)...}
 
 getindex(M::Mul, k...) = _getindex(indextype(M), M, k)
 
@@ -226,6 +229,7 @@ end
 @inline Dot(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = materialize(Dot(M.A', M.B))
 @inline mulreduce(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dot(M)
 
+@inline dot(a::LayoutArray, b::LayoutArray) = copy(Dot(a,b))
 @inline dot(a::LayoutArray, b::AbstractArray) = copy(Dot(a,b))
 @inline dot(a::AbstractArray, b::LayoutArray) = copy(Dot(a,b))
 @inline dot(a::SubArray{<:Any,N,<:LayoutArray}, b::AbstractArray) where N = materialize(Dot(a,b))
