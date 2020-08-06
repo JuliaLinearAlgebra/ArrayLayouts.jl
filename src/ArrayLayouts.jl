@@ -48,10 +48,11 @@ else
     import Base: require_one_based_indexing
 end
 
-export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, Dot, 
+export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, Dot,
         lmul, rmul, mul, ldiv, rdiv, mul, MemoryLayout, AbstractStridedLayout,
         DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor, UnitStride,
-        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, HermitianLayout, SymmetricLayout, TriangularLayout,
+        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, TridiagonalLayout, BidiagonalLayout,
+        HermitianLayout, SymmetricLayout, TriangularLayout,
         UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout, DualLayout,
         colsupport, rowsupport, layout_getindex, QLayout, LayoutArray, LayoutMatrix, LayoutVector
 
@@ -167,7 +168,7 @@ copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) wher
 copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 # ambiguity from sparsematrix.jl
-copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) = 
+copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
@@ -252,7 +253,7 @@ Base.replace_in_print_matrix(A::Union{LayoutVector,
                                       AdjOrTrans{<:Any,<:LayoutMatrix},
                                       HermOrSym{<:Any,<:LayoutMatrix},
                                       SubArray{<:Any,2,<:LayoutMatrix}}, i::Integer, j::Integer, s::AbstractString) =
-    layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)                
+    layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)
 
 Base.print_matrix_row(io::IO,
         X::Union{LayoutMatrix,

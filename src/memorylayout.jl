@@ -515,12 +515,20 @@ struct BidiagonalLayout{ML} <: AbstractBandedLayout end
 struct SymTridiagonalLayout{ML} <: AbstractTridiagonalLayout end
 struct TridiagonalLayout{ML} <: AbstractTridiagonalLayout end
 
+bidiagonallayout(_) = BidiagonalLayout{UnknownLayout}()
+tridiagonallayout(_) = TridiagonalLayout{UnknownLayout}()
+symtridiagonallayout(_) = SymTridiagonalLayout{UnknownLayout}()
 diagonallayout(_) = DiagonalLayout{UnknownLayout}()
+
 diagonallayout(::ML) where ML<:AbstractStridedLayout = DiagonalLayout{ML}()
+bidiagonallayout(::ML) where ML<:AbstractStridedLayout = BidiagonalLayout{ML}()
+tridiagonallayout(::ML) where ML<:AbstractStridedLayout = TridiagonalLayout{ML}()
+symtridiagonallayout(::ML) where ML<:AbstractStridedLayout = SymTridiagonalLayout{ML}()
+
 MemoryLayout(D::Type{Diagonal{T,P}}) where {T,P} = diagonallayout(MemoryLayout(P))
-MemoryLayout(::Type{Bidiagonal{T,V}}) where {T,V} = BidiagonalLayout{typeof(MemoryLayout(V))}()
-MemoryLayout(::Type{SymTridiagonal{T,P}}) where {T,P} = SymTridiagonalLayout{typeof(MemoryLayout(P))}()
-MemoryLayout(::Type{Tridiagonal{T,P}}) where {T,P} = TridiagonalLayout{typeof(MemoryLayout(P))}()
+MemoryLayout(::Type{Bidiagonal{T,V}}) where {T,V} = bidiagonallayout(MemoryLayout(V))
+MemoryLayout(::Type{SymTridiagonal{T,P}}) where {T,P} = symtridiagonallayout(MemoryLayout(P))
+MemoryLayout(::Type{Tridiagonal{T,P}}) where {T,P} = tridiagonallayout(MemoryLayout(P))
 
 bidiagonaluplo(A::Bidiagonal) = A.uplo
 bidiagonaluplo(A::AdjOrTrans) = bidiagonaluplo(parent(A)) == 'L' ? 'U' : 'L'
