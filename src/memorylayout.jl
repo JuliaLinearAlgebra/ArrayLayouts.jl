@@ -506,6 +506,25 @@ triangulardata(A::Transpose) = Transpose(triangulardata(parent(A)))
 triangulardata(A::SubArray{<:Any,2,<:Any,<:Tuple{<:Union{Slice,Base.OneTo},<:Union{Slice,Base.OneTo}}}) =
     view(triangulardata(parent(A)), parentindices(A)...)
 
+###
+# Fill
+####
+abstract type AbstractFillLayout <: MemoryLayout end
+struct FillLayout <: AbstractFillLayout end
+struct ZerosLayout <: AbstractFillLayout end
+struct OnesLayout <: AbstractFillLayout end
+struct EyeLayout <: MemoryLayout end
+
+MemoryLayout(::Type{<:AbstractFill}) = FillLayout()
+MemoryLayout(::Type{<:Zeros}) = ZerosLayout()
+MemoryLayout(::Type{<:Ones}) = OnesLayout()
+
+# all sub arrays are same
+sublayout(L::AbstractFillLayout, inds::Type) = L
+reshapedlayout(L::AbstractFillLayout, _) = L
+adjointlayout(::Type, L::AbstractFillLayout) = L
+transposelayout(L::AbstractFillLayout) = L
+
 
 abstract type AbstractBandedLayout <: MemoryLayout end
 abstract type AbstractTridiagonalLayout <: AbstractBandedLayout end
@@ -575,24 +594,7 @@ diagonaldata(S::HermOrSym) = diagonaldata(parent(S))
 subdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
 supdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
 
-###
-# Fill
-####
-abstract type AbstractFillLayout <: MemoryLayout end
-struct FillLayout <: AbstractFillLayout end
-struct ZerosLayout <: AbstractFillLayout end
-struct OnesLayout <: AbstractFillLayout end
-struct EyeLayout <: MemoryLayout end
 
-MemoryLayout(::Type{<:AbstractFill}) = FillLayout()
-MemoryLayout(::Type{<:Zeros}) = ZerosLayout()
-MemoryLayout(::Type{<:Ones}) = OnesLayout()
-diagonallayout(::ML) where ML<:AbstractFillLayout = DiagonalLayout{ML}()
-# all sub arrays are same
-sublayout(L::AbstractFillLayout, inds::Type) = L
-reshapedlayout(L::AbstractFillLayout, _) = L
-adjointlayout(::Type, L::AbstractFillLayout) = L
-transposelayout(L::AbstractFillLayout) = L
 
 
 
