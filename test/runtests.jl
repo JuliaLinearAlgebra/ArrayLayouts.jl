@@ -35,6 +35,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test A == A.A == Vector(A)
         @test A[1:3] == A.A[1:3]
         @test stringmime("text/plain", A) == "3-element MyVector:\n 1.0\n 2.0\n 3.0"
+        @test dot(A,A) == dot(A,A.A) == dot(A.A,A) == 14
+        v = view(A,1:3)
+        @test dot(v,A) == dot(v,A.A) == dot(A,v) == dot(A.A,v) == dot(v,v) == 14
     end
 
     @testset "LayoutMatrix" begin

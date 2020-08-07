@@ -1,5 +1,5 @@
 using ArrayLayouts, FillArrays, Random, Test
-import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul
+import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul
 
 Random.seed!(0)
 @testset "Multiplication" begin
@@ -602,5 +602,22 @@ Random.seed!(0)
         @test Q*Q' ≈ mul(Q,Q')
         @test Q'*Q' ≈ mul(Q',Q')
         @test Q'*Q ≈ mul(Q',Q)
+    end
+
+    @testset "Mul" begin
+        A = randn(5,5)
+        b = randn(5)
+        B = randn(5,5)
+        @test Mul(A,b)[1] ≈ Mul(A,b)[CartesianIndex(1)] ≈ (A*b)[1]
+        @test Mul(A,B)[1,1] ≈ Mul(A,B)[CartesianIndex(1,1)] ≈ Mul(A,B)[1] ≈ (A*B)[1,1]
+        @test similar(Mul(A,B)) isa Matrix{Float64}
+        @test similar(Mul(A,B), Int) isa Matrix{Int}
+        @test similar(Mul(A,B), Int, (Base.OneTo(5),)) isa Vector{Int}
+    end
+
+    @testset "Dot" begin
+        a = randn(5)
+        b = randn(5)
+        @test ArrayLayouts.dot(a,b) == mul(a',b) == dot(a,b)
     end
 end

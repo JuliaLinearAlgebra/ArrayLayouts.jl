@@ -224,13 +224,18 @@ struct Dot{StyleA,StyleB,ATyp,BTyp}
 end
 
 @inline Dot(A::ATyp,B::BTyp) where {ATyp,BTyp} = Dot{typeof(MemoryLayout(ATyp)), typeof(MemoryLayout(BTyp)), ATyp, BTyp}(A, B)
-@inline copy(d::Dot) = Base.invoke(dot, Tuple{AbstractArray,AbstractArray}, d.A, d.B)
+@inline copy(d::Dot) = Base.invoke(LinearAlgebra.dot, Tuple{AbstractArray,AbstractArray}, d.A, d.B)
 @inline materialize(d::Dot) = copy(instantiate(d))
-@inline Dot(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = materialize(Dot(M.A', M.B))
+@inline Dot(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dot(M.A', M.B)
 @inline mulreduce(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dot(M)
 
-@inline dot(a::LayoutArray, b::LayoutArray) = copy(Dot(a,b))
-@inline dot(a::LayoutArray, b::AbstractArray) = copy(Dot(a,b))
-@inline dot(a::AbstractArray, b::LayoutArray) = copy(Dot(a,b))
-@inline dot(a::SubArray{<:Any,N,<:LayoutArray}, b::AbstractArray) where N = materialize(Dot(a,b))
+dot(a, b) = materialize(Dot(a, b))
+@inline LinearAlgebra.dot(a::LayoutArray, b::LayoutArray) = dot(a,b)
+@inline LinearAlgebra.dot(a::LayoutArray, b::AbstractArray) = dot(a,b)
+@inline LinearAlgebra.dot(a::AbstractArray, b::LayoutArray) = dot(a,b)
+@inline LinearAlgebra.dot(a::SubArray{<:Any,N,<:LayoutArray}, b::AbstractArray) where N = dot(a,b)
+@inline LinearAlgebra.dot(a::SubArray{<:Any,N,<:LayoutArray}, b::LayoutArray) where N = dot(a,b)
+@inline LinearAlgebra.dot(a::AbstractArray, b::SubArray{<:Any,N,<:LayoutArray}) where N = dot(a,b)
+@inline LinearAlgebra.dot(a::LayoutArray, b::SubArray{<:Any,N,<:LayoutArray}) where N = dot(a,b)
+@inline LinearAlgebra.dot(a::SubArray{<:Any,N,<:LayoutArray}, b::SubArray{<:Any,N,<:LayoutArray}) where N = dot(a,b)
 
