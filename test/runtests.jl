@@ -106,10 +106,12 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test_broken A/T ≈ A/T̃
             @test_broken ldiv!(A, T) ≈ A\T
             @test B\A ≈ B\Matrix(A)
-            @test transpose(B)\A ≈ transpose(B)\Matrix(A)
+            @test transpose(B)\A ≈ transpose(B)\Matrix(A) ≈ Transpose(B)\A ≈ Adjoint(B)\A
             @test B'\A ≈ B'\Matrix(A)
             @test A\A ≈ I
             @test_broken A/A ≈ I
+            @test A\MyVector(x) ≈ A\x
+            @test A\MyMatrix(X) ≈ A\X
         end
     end
 end

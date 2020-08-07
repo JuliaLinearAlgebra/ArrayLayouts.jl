@@ -5,7 +5,11 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
     @testset "Float64 \\ *" begin
         A = randn(5,5)
         b = randn(5)
+        B = randn(5,5)
         M = Ldiv(A,b)
+
+        @test M[1] ≈ (A\b)[1]
+        @test Ldiv(A,B)[1,1] ≈ (A\B)[1,1]
 
         @test ndims(M) == 1
         @test size(M) == (5,)

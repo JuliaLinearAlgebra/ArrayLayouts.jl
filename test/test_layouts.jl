@@ -78,6 +78,12 @@ struct FooNumber <: Number end
         @test MemoryLayout(VBt) == RowMajor()
 
         @test MemoryLayout(view(randn(5)',[1,3])) == UnknownLayout()
+
+        @testset "DualLayout" begin
+            a = randn(5)
+            @test MemoryLayout(a') isa DualLayout{DenseRowMajor}
+            @test MemoryLayout(transpose(a)) isa DualLayout{DenseRowMajor}
+        end
     end
 
     @testset "Bi/Tridiagonal" begin
@@ -264,8 +270,8 @@ struct FooNumber <: Number end
         @test MemoryLayout(view(Fill(1,10),[1,3,2])) == FillLayout()
         @test MemoryLayout(reshape(Fill(1,10),2,5)) == FillLayout()
         @test MemoryLayout(Fill(1+0im,10)') == DualLayout{FillLayout}()
-        @test MemoryLayout(Fill(1+0im,10,2)') == FillLayout()
-        @test MemoryLayout(transpose(Fill(1+0im,10,2))) == FillLayout()
+        @test MemoryLayout(Adjoint(Fill(1+0im,10,2))) == FillLayout()
+        @test MemoryLayout(Transpose(Fill(1+0im,10,2))) == FillLayout()
     end
 
     @testset "Triangular col/rowsupport" begin
