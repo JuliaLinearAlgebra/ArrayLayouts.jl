@@ -304,7 +304,8 @@ Random.seed!(0)
                 @test similar(L) isa Vector{Float64}
                 @test similar(L,Int) isa Vector{Int}
                 
-                @test all(copy(Lmul(UpperTriangular(A),x)) .===
+                @test all(mul(UpperTriangular(A),x) .=== 
+                            copy(Lmul(UpperTriangular(A),x)) .===
                             ArrayLayouts.lmul!(UpperTriangular(A),copy(x)) .===
                             copyto!(similar(x),Lmul(UpperTriangular(A),x)) .===
                             UpperTriangular(A)*x .===
@@ -335,6 +336,9 @@ Random.seed!(0)
                             ArrayLayouts.lmul!(UnitUpperTriangular(A'),copy(x)) .===
                             UnitLowerTriangular(A)'*x .===
                             BLAS.trmv!('L', 'T', 'U', A, copy(x)))
+
+                @test_throws DimensionMismatch mul(UpperTriangular(A), randn(5))
+                @test_throws DimensionMismatch ArrayLayouts.lmul!(UpperTriangular(A), randn(5))
             end
 
             @testset "Float * Complex vector"  begin
@@ -453,6 +457,20 @@ Random.seed!(0)
                     @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), B)) ≈ transpose(UnitLowerTriangular(A))B)                
                 end
             end
+
+            @testset "BigFloat" begin
+                A = BigFloat.(randn(10,10))
+                b = BigFloat.(randn(10))
+                @test mul(UpperTriangular(A), b) == UpperTriangular(A)*b
+                @test mul(UnitUpperTriangular(A), b) == UnitUpperTriangular(A)*b
+                @test mul(LowerTriangular(A), b) == LowerTriangular(A)*b
+                @test mul(UnitLowerTriangular(A), b) == UnitLowerTriangular(A)*b
+                @test_throws DimensionMismatch mul(UpperTriangular(A), randn(5))
+                @test_throws DimensionMismatch ArrayLayouts.lmul!(UpperTriangular(A), randn(5))
+                @test_throws DimensionMismatch ArrayLayouts.lmul!(UnitUpperTriangular(A), randn(5))
+                @test_throws DimensionMismatch ArrayLayouts.lmul!(LowerTriangular(A), randn(5))
+                @test_throws DimensionMismatch ArrayLayouts.lmul!(UnitLowerTriangular(A), randn(5))
+            end
         end
 
         @testset "tri Rmul" begin
@@ -469,7 +487,7 @@ Random.seed!(0)
                 @test similar(R,Int) isa Matrix{Int}
                 
                 R2 = deepcopy(R)
-                @test all(BLAS.trmm('R', 'U', 'N', 'N', one(T), B, A) .=== copyto!(similar(R2), R2) .=== materialize!(R))
+                @test all(mul(A, UpperTriangular(B)) .=== BLAS.trmm('R', 'U', 'N', 'N', one(T), B, A) .=== copyto!(similar(R2), R2) .=== materialize!(R))
                 @test R.A ≠ A
                 @test all(BLAS.trmm('R', 'U', 'T', 'N', one(T), B, A) .=== copy(Rmul(A, transpose(UpperTriangular(B)))) .=== A*transpose(UpperTriangular(B)))
                 @test all(BLAS.trmm('R', 'U', 'N', 'U', one(T), B, A) .=== copy(Rmul(A, UnitUpperTriangular(B))).=== A*UnitUpperTriangular(B))
@@ -500,6 +518,7 @@ Random.seed!(0)
             
             @test A*B == ArrayLayouts.rmul!(copy(A),B) == mul(A,B)
             @test B*A == ArrayLayouts.lmul!(B,copy(A)) == mul(B,A) 
+            @test B*B == ArrayLayouts.lmul!(B, copy(B)) == mul(B, B)
         end
 
         @testset "tri * tri" begin
@@ -567,5 +586,21 @@ Random.seed!(0)
             c = similar(b,2)
             @test muladd!(1.0, A, b, 0.0, c) == A*b
         end
+    end
+
+    @testset "Q" begin
+        Q = qr(randn(5,5)).Q
+        b = randn(5)
+        B = randn(5,5)
+        @test Q*b == ArrayLayouts.lmul!(Q, copy(b)) == mul(Q,b)
+        @test Q*B == ArrayLayouts.lmul!(Q, copy(B)) == mul(Q,B)
+        @test B*Q == ArrayLayouts.rmul!(copy(B), Q) == mul(B,Q)
+        @test Q*Q ≈ mul(Q,Q)
+        @test Q'*b == ArrayLayouts.lmul!(Q', copy(b)) == mul(Q',b)
+        @test Q'*B == ArrayLayouts.lmul!(Q', copy(B)) == mul(Q',B)
+        @test B*Q' == ArrayLayouts.rmul!(copy(B), Q') == mul(B,Q')
+        @test Q*Q' ≈ mul(Q,Q')
+        @test Q'*Q' ≈ mul(Q',Q')
+        @test Q'*Q ≈ mul(Q',Q)
     end
 end

@@ -116,6 +116,10 @@ struct FooNumber <: Number end
         @test rowsupport(Bl,3) == colsupport(Bu,3) == colsupport(Adjoint(Bl),3) == 2:3
         @test colsupport(Bl,3:6) == rowsupport(Bu,3:6) == 3:6
         @test colsupport(Bu,3:6) == rowsupport(Bl,3:6) == 2:6
+
+        @test MemoryLayout(Bidiagonal(view(randn(10),[1,2,3]), view(randn(10),[1,2]), :U)) isa BidiagonalLayout{UnknownLayout}
+        @test MemoryLayout(SymTridiagonal(view(randn(10),[1,2,3]), view(randn(10),[1,2]))) isa SymTridiagonalLayout{UnknownLayout}
+        @test MemoryLayout(Tridiagonal(view(randn(10),[1,2]), view(randn(10),[1,2,3]), view(randn(10),[1,2]))) isa TridiagonalLayout{UnknownLayout}
     end
 
     @testset "Symmetric/Hermitian" begin
@@ -257,6 +261,11 @@ struct FooNumber <: Number end
         @test MemoryLayout(Zeros(10)) == ZerosLayout()
         @test MemoryLayout(view(Fill(1,10),1:3)) == FillLayout()
         @test MemoryLayout(view(Fill(1,10),1:3,1)) == FillLayout()
+        @test MemoryLayout(view(Fill(1,10),[1,3,2])) == FillLayout()
+        @test MemoryLayout(reshape(Fill(1,10),2,5)) == FillLayout()
+        @test MemoryLayout(Fill(1+0im,10)') == DualLayout{FillLayout}()
+        @test MemoryLayout(Fill(1+0im,10,2)') == FillLayout()
+        @test MemoryLayout(transpose(Fill(1+0im,10,2))) == FillLayout()
     end
 
     @testset "Triangular col/rowsupport" begin

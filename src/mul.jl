@@ -100,7 +100,7 @@ function instantiate(M::Mul)
 end
 
 materialize(M::Mul) = copy(instantiate(M))
-@inline mul(A, B) = copy(Mul(A,B))
+@inline mul(A, B) = materialize(Mul(A,B))
 
 copy(M::Mul) = copy(mulreduce(M))
 @inline copyto!(dest, M::Mul) = copyto!(dest, mulreduce(M))
