@@ -168,10 +168,12 @@ copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) wher
 copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 # ambiguity from sparsematrix.jl
-copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) =
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) =
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
+if VERSION ≥ v"1.5"
+    copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) =
+        _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
+    copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) =
+        _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
+end
 
 zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
 function zero!(A::AbstractArray{<:AbstractArray})
