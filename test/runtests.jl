@@ -29,13 +29,23 @@ Base.strides(A::MyVector) = strides(A.A)
 Base.unsafe_convert(::Type{Ptr{T}}, A::MyVector) where T = Base.unsafe_convert(Ptr{T}, A.A)
 MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
+# These need to test dispatch reduces to ArrayLayouts.mul, etc.
 @testset "LayoutArray" begin
     @testset "LayoutVector" begin
         A = MyVector([1.,2,3])
+        B = randn(3,3)
+        b = randn(3)
+
         @test A == A.A == Vector(A)
         @test A[1:3] == A.A[1:3]
         @test stringmime("text/plain", A) == "3-element MyVector:\n 1.0\n 2.0\n 3.0"
-        @test dot(A,A) == dot(A,A.A) == dot(A.A,A) == 14
+        @test B*A ≈ B*A.A
+        @test B'*A ≈ B'*A.A
+        @test transpose(B)*A ≈ transpose(B)*A.A
+        @test b'A ≈ transpose(b)A ≈ A'b ≈ transpose(A)b ≈ b'A.A
+        @test qr(B).Q*A ≈ qr(B).Q*A.A
+
+        @test A'A == transpose(A)A == dot(A,A) == dot(A,A.A) == dot(A.A,A) == 14
         v = view(A,1:3)
         @test dot(v,A) == dot(v,A.A) == dot(A,v) == dot(A.A,v) == dot(v,v) == 14
     end

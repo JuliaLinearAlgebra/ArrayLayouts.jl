@@ -608,11 +608,28 @@ Random.seed!(0)
         A = randn(5,5)
         b = randn(5)
         B = randn(5,5)
-        @test Mul(A,b)[1] ≈ Mul(A,b)[CartesianIndex(1)] ≈ (A*b)[1]
-        @test Mul(A,B)[1,1] ≈ Mul(A,B)[CartesianIndex(1,1)] ≈ Mul(A,B)[1] ≈ (A*B)[1,1]
-        @test similar(Mul(A,B)) isa Matrix{Float64}
-        @test similar(Mul(A,B), Int) isa Matrix{Int}
-        @test similar(Mul(A,B), Int, (Base.OneTo(5),)) isa Vector{Int}
+        
+        M = Mul(A,b)
+        @test size(M) == (size(M,1),) == (5,)
+        @test length(M) == 5
+        @test axes(M) == (axes(M,1),) == (Base.OneTo(5),)
+        @test M[1] ≈ M[CartesianIndex(1)] ≈ (A*b)[1]
+        @test ArrayLayouts.mul!(similar(b), A, b) ≈ A*b
+
+        M = Mul(A,B)
+        @test size(M) == (size(M,1),size(M,2)) == (5,5)
+        @test length(M) == 25
+        @test axes(M) == (axes(M,1),axes(M,2)) == (Base.OneTo(5),Base.OneTo(5))
+        @test M[1,1] ≈ M[CartesianIndex(1,1)] ≈ M[1] ≈ (A*B)[1,1]
+        @test similar(M) isa Matrix{Float64}
+        @test similar(M, Int) isa Matrix{Int}
+        @test similar(M, Int, (Base.OneTo(5),)) isa Vector{Int}
+
+        M = Mul(b, b')
+        @test size(M) == (size(M,1),size(M,2)) == (5,5)
+        @test length(M) == 25
+        @test axes(M) == (axes(M,1),axes(M,2)) == (Base.OneTo(5),Base.OneTo(5))
+        @test M[1,1] ≈ M[CartesianIndex(1,1)] ≈ M[1] ≈ (b*b')[1,1]
     end
 
     @testset "Dot" begin

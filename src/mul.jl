@@ -120,6 +120,8 @@ macro veclayoutmul(Typ)
         Base.:*(A::LinearAlgebra.TransposeAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::LinearAlgebra.AdjointAbsVec{<:Number}, B::$Typ{<:Number}) = ArrayLayouts.mul(A,B)
         Base.:*(A::LinearAlgebra.TransposeAbsVec{T}, B::$Typ{T}) where T<:Real = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.TransposeAbsVec{T,<:$Typ{T}}, B::$Typ{T}) where T<:Real = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.TransposeAbsVec{T,<:$Typ{T}}, B::AbstractVector{T}) where T<:Real = ArrayLayouts.mul(A,B)
 
         Base.:*(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.mul(A,B)
     end
@@ -130,7 +132,7 @@ macro veclayoutmul(Typ)
             Base.:*(A::LinearAlgebra.$Struc, B::$Typ) = ArrayLayouts.mul(A,B)
         end
     end
-    for Mod in (:Adjoint, :Transpose)
+    for Mod in (:AdjointAbsVec, :TransposeAbsVec)
         ret = quote
             $ret
 
@@ -139,6 +141,9 @@ macro veclayoutmul(Typ)
 
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractVector) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Number,<:$Typ}, B::AbstractVector{<:Number}) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::$Typ) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Number,<:$Typ}, B::$Typ{<:Number}) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::Diagonal) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::LinearAlgebra.AbstractTriangular) = ArrayLayouts.mul(A,B)
         end
