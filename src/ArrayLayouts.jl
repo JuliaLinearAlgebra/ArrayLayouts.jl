@@ -1,5 +1,5 @@
 module ArrayLayouts
-using Base, Base.Broadcast, LinearAlgebra, FillArrays
+using Base, Base.Broadcast, LinearAlgebra, FillArrays, SparseArrays
 import LinearAlgebra.BLAS
 
 import Base: AbstractArray, AbstractMatrix, AbstractVector,
@@ -33,8 +33,9 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcas
                         combine_eltypes, DefaultArrayStyle, instantiate, materialize,
                         materialize!, eltypes
 
-import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, Abuf, Bbuf, Cbuf, dot, factorize, qr, lu, cholesky,
-                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym
+import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, Abuf, Bbuf, Cbuf, factorize, qr, lu, cholesky,
+                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym, copy_oftype,
+                        AdjointAbsVec, TransposeAbsVec
 
 import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
@@ -47,10 +48,12 @@ else
     import Base: require_one_based_indexing
 end
 
-export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, lmul, rmul, ldiv, rdiv, mul, MemoryLayout, AbstractStridedLayout,
+export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, Dot,
+        lmul, rmul, mul, ldiv, rdiv, mul, MemoryLayout, AbstractStridedLayout,
         DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor, UnitStride,
-        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, HermitianLayout, SymmetricLayout, TriangularLayout,
-        UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout,
+        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, TridiagonalLayout, BidiagonalLayout,
+        HermitianLayout, SymmetricLayout, TriangularLayout,
+        UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout, DualLayout,
         colsupport, rowsupport, layout_getindex, QLayout, LayoutArray, LayoutMatrix, LayoutVector
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
@@ -94,6 +97,7 @@ function unsafe_convert(::Type{ConjPtr{T}}, V::SubArray{T,2}) where {T,N,P}
 end
 
 include("memorylayout.jl")
+include("mul.jl")
 include("muladd.jl")
 include("lmul.jl")
 include("ldiv.jl")
@@ -115,6 +119,7 @@ macro _layoutgetindex(Typ)
         @inline Base.getindex(A::$Typ, kr::AbstractUnitRange, jr::AbstractUnitRange) = ArrayLayouts.layout_getindex(A, kr, jr)
         @inline Base.getindex(A::$Typ, kr::AbstractVector, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
         @inline Base.getindex(A::$Typ, kr::Colon, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline Base.getindex(A::$Typ, kr::Colon, jr::Integer) = ArrayLayouts.layout_getindex(A, kr, jr)
         @inline Base.getindex(A::$Typ, kr::AbstractVector, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
     end)
 end
@@ -162,8 +167,13 @@ copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) wher
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
 copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N =
     _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-
-
+# ambiguity from sparsematrix.jl
+if VERSION ≥ v"1.5"
+    copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) =
+        _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
+    copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) =
+        _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
+end
 
 zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
 function zero!(A::AbstractArray{<:AbstractArray})
@@ -245,7 +255,7 @@ Base.replace_in_print_matrix(A::Union{LayoutVector,
                                       AdjOrTrans{<:Any,<:LayoutMatrix},
                                       HermOrSym{<:Any,<:LayoutMatrix},
                                       SubArray{<:Any,2,<:LayoutMatrix}}, i::Integer, j::Integer, s::AbstractString) =
-    layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)                
+    layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)
 
 Base.print_matrix_row(io::IO,
         X::Union{LayoutMatrix,

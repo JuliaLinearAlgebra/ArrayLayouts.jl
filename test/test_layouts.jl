@@ -4,7 +4,7 @@ import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayou
                         SymmetricLayout, HermitianLayout, UpperTriangularLayout,
                         UnitUpperTriangularLayout, LowerTriangularLayout,
                         UnitLowerTriangularLayout, ScalarLayout, UnknownLayout,
-                        hermitiandata, symmetricdata, FillLayout, ZerosLayout,
+                        hermitiandata, symmetricdata, FillLayout, ZerosLayout, OnesLayout,
                         DiagonalLayout, TridiagonalLayout, SymTridiagonalLayout, colsupport, rowsupport,
                         diagonaldata, subdiagonaldata, supdiagonaldata, BidiagonalLayout, bidiagonaluplo
 
@@ -78,6 +78,12 @@ struct FooNumber <: Number end
         @test MemoryLayout(VBt) == RowMajor()
 
         @test MemoryLayout(view(randn(5)',[1,3])) == UnknownLayout()
+
+        @testset "DualLayout" begin
+            a = randn(5)
+            @test MemoryLayout(a') isa DualLayout{DenseRowMajor}
+            @test MemoryLayout(transpose(a)) isa DualLayout{DenseRowMajor}
+        end
     end
 
     @testset "Bi/Tridiagonal" begin
@@ -116,6 +122,10 @@ struct FooNumber <: Number end
         @test rowsupport(Bl,3) == colsupport(Bu,3) == colsupport(Adjoint(Bl),3) == 2:3
         @test colsupport(Bl,3:6) == rowsupport(Bu,3:6) == 3:6
         @test colsupport(Bu,3:6) == rowsupport(Bl,3:6) == 2:6
+
+        @test MemoryLayout(Bidiagonal(view(randn(10),[1,2,3]), view(randn(10),[1,2]), :U)) isa BidiagonalLayout{UnknownLayout}
+        @test MemoryLayout(SymTridiagonal(view(randn(10),[1,2,3]), view(randn(10),[1,2]))) isa SymTridiagonalLayout{UnknownLayout}
+        @test MemoryLayout(Tridiagonal(view(randn(10),[1,2]), view(randn(10),[1,2,3]), view(randn(10),[1,2]))) isa TridiagonalLayout{UnknownLayout}
     end
 
     @testset "Symmetric/Hermitian" begin
@@ -253,10 +263,15 @@ struct FooNumber <: Number end
 
     @testset "Fill" begin
         @test MemoryLayout(Fill(1,10)) == FillLayout()
-        @test MemoryLayout(Ones(10)) == FillLayout()
+        @test MemoryLayout(Ones(10)) == OnesLayout()
         @test MemoryLayout(Zeros(10)) == ZerosLayout()
         @test MemoryLayout(view(Fill(1,10),1:3)) == FillLayout()
         @test MemoryLayout(view(Fill(1,10),1:3,1)) == FillLayout()
+        @test MemoryLayout(view(Fill(1,10),[1,3,2])) == FillLayout()
+        @test MemoryLayout(reshape(Fill(1,10),2,5)) == FillLayout()
+        @test MemoryLayout(Fill(1+0im,10)') == DualLayout{FillLayout}()
+        @test MemoryLayout(Adjoint(Fill(1+0im,10,2))) == FillLayout()
+        @test MemoryLayout(Transpose(Fill(1+0im,10,2))) == FillLayout()
     end
 
     @testset "Triangular col/rowsupport" begin

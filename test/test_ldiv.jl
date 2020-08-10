@@ -5,7 +5,11 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
     @testset "Float64 \\ *" begin
         A = randn(5,5)
         b = randn(5)
+        B = randn(5,5)
         M = Ldiv(A,b)
+
+        @test M[1] ≈ (A\b)[1]
+        @test Ldiv(A,B)[1,1] ≈ (A\B)[1,1]
 
         @test ndims(M) == 1
         @test size(M) == (5,)
@@ -230,6 +234,14 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
                     @test ArrayLayouts.ldiv!(F,copy(b)) ≈ A\b[1:10]
                     @test ArrayLayouts.ldiv!(F,copy(B)) ≈ A\B[1:10,:]
                 end
+            end
+            @testset "ldiv!" begin
+                A = randn(5,5)
+                F = LinearAlgebra.qrfactUnblocked!(copy(A))
+                b = randn(5)
+                v = view(copy(b),:)
+                @test ArrayLayouts.ldiv!(F, v) === v
+                @test ArrayLayouts.ldiv!(F, view(copy(b),:)) ≈ A \ b
             end
         end
     end

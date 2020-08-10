@@ -1,5 +1,5 @@
 using ArrayLayouts, FillArrays, Random, Test
-import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul
+import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul
 
 Random.seed!(0)
 @testset "Multiplication" begin
@@ -304,7 +304,8 @@ Random.seed!(0)
                 @test similar(L) isa Vector{Float64}
                 @test similar(L,Int) isa Vector{Int}
                 
-                @test all(copy(Lmul(UpperTriangular(A),x)) .===
+                @test all(mul(UpperTriangular(A),x) .=== 
+                            copy(Lmul(UpperTriangular(A),x)) .===
                             ArrayLayouts.lmul!(UpperTriangular(A),copy(x)) .===
                             copyto!(similar(x),Lmul(UpperTriangular(A),x)) .===
                             UpperTriangular(A)*x .===
@@ -335,6 +336,9 @@ Random.seed!(0)
                             ArrayLayouts.lmul!(UnitUpperTriangular(A'),copy(x)) .===
                             UnitLowerTriangular(A)'*x .===
                             BLAS.trmv!('L', 'T', 'U', A, copy(x)))
+
+                @test_throws DimensionMismatch mul(UpperTriangular(A), randn(5))
+                @test_throws DimensionMismatch ArrayLayouts.lmul!(UpperTriangular(A), randn(5))
             end
 
             @testset "Float * Complex vector"  begin
@@ -453,6 +457,20 @@ Random.seed!(0)
                     @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), B)) ≈ transpose(UnitLowerTriangular(A))B)                
                 end
             end
+
+            @testset "BigFloat" begin
+                A = BigFloat.(randn(10,10))
+                b = BigFloat.(randn(10))
+                @test mul(UpperTriangular(A), b) == UpperTriangular(A)*b
+                @test mul(UnitUpperTriangular(A), b) == UnitUpperTriangular(A)*b
+                @test mul(LowerTriangular(A), b) == LowerTriangular(A)*b
+                @test mul(UnitLowerTriangular(A), b) == UnitLowerTriangular(A)*b
+                @test_throws DimensionMismatch mul(UpperTriangular(A), randn(5))
+                @test_throws DimensionMismatch ArrayLayouts.lmul!(UpperTriangular(A), randn(5))
+                @test_throws DimensionMismatch ArrayLayouts.lmul!(UnitUpperTriangular(A), randn(5))
+                @test_throws DimensionMismatch ArrayLayouts.lmul!(LowerTriangular(A), randn(5))
+                @test_throws DimensionMismatch ArrayLayouts.lmul!(UnitLowerTriangular(A), randn(5))
+            end
         end
 
         @testset "tri Rmul" begin
@@ -469,7 +487,7 @@ Random.seed!(0)
                 @test similar(R,Int) isa Matrix{Int}
                 
                 R2 = deepcopy(R)
-                @test all(BLAS.trmm('R', 'U', 'N', 'N', one(T), B, A) .=== copyto!(similar(R2), R2) .=== materialize!(R))
+                @test all(mul(A, UpperTriangular(B)) .=== BLAS.trmm('R', 'U', 'N', 'N', one(T), B, A) .=== copyto!(similar(R2), R2) .=== materialize!(R))
                 @test R.A ≠ A
                 @test all(BLAS.trmm('R', 'U', 'T', 'N', one(T), B, A) .=== copy(Rmul(A, transpose(UpperTriangular(B)))) .=== A*transpose(UpperTriangular(B)))
                 @test all(BLAS.trmm('R', 'U', 'N', 'U', one(T), B, A) .=== copy(Rmul(A, UnitUpperTriangular(B))).=== A*UnitUpperTriangular(B))
@@ -498,8 +516,28 @@ Random.seed!(0)
             B = Diagonal(randn(5))
             @test MemoryLayout(B) == DiagonalLayout{DenseColumnMajor}()
             
-            @test A*B == ArrayLayouts.rmul!(copy(A),B)
-            @test B*A == ArrayLayouts.lmul!(B,copy(A))
+            @test A*B == ArrayLayouts.rmul!(copy(A),B) == mul(A,B)
+            @test B*A == ArrayLayouts.lmul!(B,copy(A)) == mul(B,A) 
+            @test B*B == ArrayLayouts.lmul!(B, copy(B)) == mul(B, B)
+        end
+
+        @testset "tri * tri" begin
+            A = randn(5,5)
+            B = randn(5,5)
+            @test UpperTriangular(A) * UpperTriangular(B) ≈ mul(UpperTriangular(A) , UpperTriangular(B))
+            @test LowerTriangular(A) * LowerTriangular(B) ≈ mul(LowerTriangular(A) , LowerTriangular(B))
+            @test LowerTriangular(A) * UpperTriangular(B) ≈ mul(LowerTriangular(A) , UpperTriangular(B))
+            @test UnitUpperTriangular(A) * UnitUpperTriangular(B) ≈ mul(UnitUpperTriangular(A) , UnitUpperTriangular(B))
+            @test UnitLowerTriangular(A) * UnitLowerTriangular(B) ≈ mul(UnitLowerTriangular(A) , UnitLowerTriangular(B))
+            @test UnitLowerTriangular(A) * UnitUpperTriangular(B) ≈ mul(UnitLowerTriangular(A) , UnitUpperTriangular(B))
+            @test UnitUpperTriangular(A) * UpperTriangular(B) ≈ mul(UnitUpperTriangular(A) , UpperTriangular(B))
+            @test @inferred(mul(UpperTriangular(A) , UpperTriangular(B))) isa UpperTriangular
+            @test @inferred(mul(LowerTriangular(A) , LowerTriangular(B))) isa LowerTriangular
+            @test @inferred(mul(UnitUpperTriangular(A) , UnitUpperTriangular(B))) isa UnitUpperTriangular
+            @test @inferred(mul(UnitLowerTriangular(A) , UnitLowerTriangular(B))) isa UnitLowerTriangular
+            @test @inferred(mul(UpperTriangular(A) , UnitUpperTriangular(B))) isa UpperTriangular
+            @test @inferred(mul(LowerTriangular(A), UpperTriangular(B))) isa Matrix
+            @test @inferred(mul(UnitUpperTriangular(A), LowerTriangular(B))) isa Matrix
         end
     end
 
@@ -548,5 +586,55 @@ Random.seed!(0)
             c = similar(b,2)
             @test muladd!(1.0, A, b, 0.0, c) == A*b
         end
+    end
+
+    @testset "Q" begin
+        Q = qr(randn(5,5)).Q
+        b = randn(5)
+        B = randn(5,5)
+        @test Q*b == ArrayLayouts.lmul!(Q, copy(b)) == mul(Q,b)
+        @test Q*B == ArrayLayouts.lmul!(Q, copy(B)) == mul(Q,B)
+        @test B*Q == ArrayLayouts.rmul!(copy(B), Q) == mul(B,Q)
+        @test Q*Q ≈ mul(Q,Q)
+        @test Q'*b == ArrayLayouts.lmul!(Q', copy(b)) == mul(Q',b)
+        @test Q'*B == ArrayLayouts.lmul!(Q', copy(B)) == mul(Q',B)
+        @test B*Q' == ArrayLayouts.rmul!(copy(B), Q') == mul(B,Q')
+        @test Q*Q' ≈ mul(Q,Q')
+        @test Q'*Q' ≈ mul(Q',Q')
+        @test Q'*Q ≈ mul(Q',Q)
+    end
+
+    @testset "Mul" begin
+        A = randn(5,5)
+        b = randn(5)
+        B = randn(5,5)
+        
+        M = Mul(A,b)
+        @test size(M) == (size(M,1),) == (5,)
+        @test length(M) == 5
+        @test axes(M) == (axes(M,1),) == (Base.OneTo(5),)
+        @test M[1] ≈ M[CartesianIndex(1)] ≈ (A*b)[1]
+        @test ArrayLayouts.mul!(similar(b), A, b) ≈ A*b
+
+        M = Mul(A,B)
+        @test size(M) == (size(M,1),size(M,2)) == (5,5)
+        @test length(M) == 25
+        @test axes(M) == (axes(M,1),axes(M,2)) == (Base.OneTo(5),Base.OneTo(5))
+        @test M[1,1] ≈ M[CartesianIndex(1,1)] ≈ M[1] ≈ (A*B)[1,1]
+        @test similar(M) isa Matrix{Float64}
+        @test similar(M, Int) isa Matrix{Int}
+        @test similar(M, Int, (Base.OneTo(5),)) isa Vector{Int}
+
+        M = Mul(b, b')
+        @test size(M) == (size(M,1),size(M,2)) == (5,5)
+        @test length(M) == 25
+        @test axes(M) == (axes(M,1),axes(M,2)) == (Base.OneTo(5),Base.OneTo(5))
+        @test M[1,1] ≈ M[CartesianIndex(1,1)] ≈ M[1] ≈ (b*b')[1,1]
+    end
+
+    @testset "Dot" begin
+        a = randn(5)
+        b = randn(5)
+        @test ArrayLayouts.dot(a,b) == mul(a',b) == dot(a,b)
     end
 end

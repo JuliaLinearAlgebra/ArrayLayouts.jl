@@ -271,8 +271,19 @@ conjlayout(::Type{<:Real}, M::MemoryLayout) = M
 
 sublayout(::ConjLayout{ML}, t::Type{<:Tuple}) where ML = ConjLayout{typeof(sublayout(ML(), t))}()
 
+"""
+   DualLayout{ML<:MemoryLayout}()
+
+represents a row-vector that should behave like a dual-vector, that is
+multiplication times a column-vector returns a scalar.
+"""
+struct DualLayout{ML<:MemoryLayout} <: MemoryLayout end
+
 MemoryLayout(::Type{Transpose{T,P}}) where {T,P} = transposelayout(MemoryLayout(P))
 MemoryLayout(::Type{Adjoint{T,P}}) where {T,P} = adjointlayout(T, MemoryLayout(P))
+MemoryLayout(::Type{AdjointAbsVec{T,P}}) where {T,P<:AbstractVector} = DualLayout{typeof(adjointlayout(T,MemoryLayout(P)))}()
+MemoryLayout(::Type{TransposeAbsVec{T,P}}) where {T,P<:AbstractVector} = DualLayout{typeof(transposelayout(MemoryLayout(P)))}()
+
 transposelayout(_) = UnknownLayout()
 transposelayout(::StridedLayout) = StridedLayout()
 transposelayout(::ColumnMajor) = RowMajor()
@@ -495,6 +506,25 @@ triangulardata(A::Transpose) = Transpose(triangulardata(parent(A)))
 triangulardata(A::SubArray{<:Any,2,<:Any,<:Tuple{<:Union{Slice,Base.OneTo},<:Union{Slice,Base.OneTo}}}) =
     view(triangulardata(parent(A)), parentindices(A)...)
 
+###
+# Fill
+####
+abstract type AbstractFillLayout <: MemoryLayout end
+struct FillLayout <: AbstractFillLayout end
+struct ZerosLayout <: AbstractFillLayout end
+struct OnesLayout <: AbstractFillLayout end
+struct EyeLayout <: MemoryLayout end
+
+MemoryLayout(::Type{<:AbstractFill}) = FillLayout()
+MemoryLayout(::Type{<:Zeros}) = ZerosLayout()
+MemoryLayout(::Type{<:Ones}) = OnesLayout()
+
+# all sub arrays are same
+sublayout(L::AbstractFillLayout, inds::Type) = L
+reshapedlayout(L::AbstractFillLayout, _) = L
+adjointlayout(::Type, L::AbstractFillLayout) = L
+transposelayout(L::AbstractFillLayout) = L
+
 
 abstract type AbstractBandedLayout <: MemoryLayout end
 abstract type AbstractTridiagonalLayout <: AbstractBandedLayout end
@@ -504,12 +534,22 @@ struct BidiagonalLayout{ML} <: AbstractBandedLayout end
 struct SymTridiagonalLayout{ML} <: AbstractTridiagonalLayout end
 struct TridiagonalLayout{ML} <: AbstractTridiagonalLayout end
 
+bidiagonallayout(_) = BidiagonalLayout{UnknownLayout}()
+tridiagonallayout(_) = TridiagonalLayout{UnknownLayout}()
+symtridiagonallayout(_) = SymTridiagonalLayout{UnknownLayout}()
 diagonallayout(_) = DiagonalLayout{UnknownLayout}()
-diagonallayout(::ML) where ML<:AbstractStridedLayout = DiagonalLayout{ML}()
+
+
+diagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = DiagonalLayout{typeof(lay)}()
+bidiagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = BidiagonalLayout{typeof(lay)}()
+tridiagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = TridiagonalLayout{typeof(lay)}()
+symtridiagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = SymTridiagonalLayout{typeof(lay)}()
+
+
 MemoryLayout(D::Type{Diagonal{T,P}}) where {T,P} = diagonallayout(MemoryLayout(P))
-MemoryLayout(::Type{Bidiagonal{T,V}}) where {T,V} = BidiagonalLayout{typeof(MemoryLayout(V))}()
-MemoryLayout(::Type{SymTridiagonal{T,P}}) where {T,P} = SymTridiagonalLayout{typeof(MemoryLayout(P))}()
-MemoryLayout(::Type{Tridiagonal{T,P}}) where {T,P} = TridiagonalLayout{typeof(MemoryLayout(P))}()
+MemoryLayout(::Type{Bidiagonal{T,V}}) where {T,V} = bidiagonallayout(MemoryLayout(V))
+MemoryLayout(::Type{SymTridiagonal{T,P}}) where {T,P} = symtridiagonallayout(MemoryLayout(P))
+MemoryLayout(::Type{Tridiagonal{T,P}}) where {T,P} = tridiagonallayout(MemoryLayout(P))
 
 bidiagonaluplo(A::Bidiagonal) = A.uplo
 bidiagonaluplo(A::AdjOrTrans) = bidiagonaluplo(parent(A)) == 'L' ? 'U' : 'L'
@@ -554,22 +594,7 @@ diagonaldata(S::HermOrSym) = diagonaldata(parent(S))
 subdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
 supdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
 
-###
-# Fill
-####
-abstract type AbstractFillLayout <: MemoryLayout end
-struct FillLayout <: AbstractFillLayout end
-struct ZerosLayout <: AbstractFillLayout end
-struct EyeLayout <: MemoryLayout end
 
-MemoryLayout(::Type{<:AbstractFill}) = FillLayout()
-MemoryLayout(::Type{<:Zeros}) = ZerosLayout()
-diagonallayout(::ML) where ML<:AbstractFillLayout = DiagonalLayout{ML}()
-# all sub arrays are same
-sublayout(L::AbstractFillLayout, inds::Type) = L
-reshapedlayout(L::AbstractFillLayout, _) = L
-adjointlayout(::Type, L::AbstractFillLayout) = L
-transposelayout(L::AbstractFillLayout) = L
 
 
 

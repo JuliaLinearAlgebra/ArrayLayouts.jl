@@ -44,6 +44,9 @@ end
 @inline eltype(M::Ldiv) = promote_type(Base.promote_op(inv, eltype(M.A)), eltype(M.B))
 @inline eltype(M::Rdiv) = promote_type(eltype(M.A), Base.promote_op(inv, eltype(M.B)))
 
+# Lazy getindex
+getindex(L::Ldiv{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}, k::Integer) = copyto!(similar(L), L)[k]
+getindex(L::Ldiv{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}, k::Integer,j::Integer) = Ldiv(L.A, L.B[:,j])[k]
 
 check_ldiv_axes(A, B) =
     axes(A,1) == axes(B,1) || throw(DimensionMismatch("First axis of A, $(axes(A,1)), and first axis of B, $(axes(B,1)) must match"))
@@ -108,7 +111,7 @@ const BlasMatRdivMat{styleA, styleB, T<:BlasFloat} = MatRdivMat{styleA, styleB, 
 
 
 macro _layoutldiv(Typ)
-    esc(quote
+    ret = quote
         LinearAlgebra.ldiv!(A::$Typ, x::AbstractVector) = ArrayLayouts.ldiv!(A,x)
         LinearAlgebra.ldiv!(A::$Typ, x::AbstractMatrix) = ArrayLayouts.ldiv!(A,x)
         LinearAlgebra.ldiv!(A::$Typ, x::StridedVector) = ArrayLayouts.ldiv!(A,x)
@@ -120,6 +123,8 @@ macro _layoutldiv(Typ)
         Base.:\(A::$Typ, x::AbstractMatrix) = ArrayLayouts.ldiv(A,x)
 
         Base.:\(x::AbstractMatrix, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        Base.:\(x::UpperTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        Base.:\(x::LowerTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
         Base.:\(x::Diagonal, A::$Typ) = ArrayLayouts.ldiv(x,A)
 
         Base.:\(A::Bidiagonal{<:Number}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(A,B)
@@ -138,7 +143,20 @@ macro _layoutldiv(Typ)
         Base.:/(x::Diagonal, A::$Typ) = ArrayLayouts.rdiv(x,A)
 
         Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.rdiv(x,A)
-    end)
+    end
+    if Typ ≠ :LayoutVector
+        ret = quote
+            $ret
+            Base.:\(A::$Typ, x::LayoutVector) = ArrayLayouts.ldiv(A,x)
+        end
+    end
+    if Typ ≠ :LayoutMatrix
+        ret = quote
+            $ret
+            Base.:\(A::$Typ, x::LayoutMatrix) = ArrayLayouts.ldiv(A,x)
+        end
+    end
+    esc(ret)
 end
 
 macro layoutldiv(Typ)

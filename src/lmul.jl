@@ -7,6 +7,8 @@ for Typ in (:Lmul, :Rmul)
 
         $Typ(A::TypeA, B::TypeB) where {TypeA,TypeB} = $Typ{typeof(MemoryLayout(TypeA)),typeof(MemoryLayout(TypeB)),TypeA,TypeB}(A,B)
 
+        $Typ(M::Mul) = $Typ(M.A, M.B)
+
         BroadcastStyle(::Type{<:$Typ}) = ApplyBroadcastStyle()
         broadcastable(M::$Typ) = M
 
@@ -47,18 +49,23 @@ rmul!(A, B) = materialize!(Rmul(A, B))
 
 materialize(L::Lmul) = copy(instantiate(L))
 
-copy(M::Lmul) = lmul!(M.A,copy(M.B))
-copy(M::Rmul) = rmul!(copy(M.A),M.B)
+copy(M::Lmul) = lmul!(M.A, copyto!(similar(M), M.B))
+copy(M::Rmul) = rmul!(copyto!(similar(M), M.A), M.B)
 
-@inline function copyto!(dest::AbstractArray, M::Lmul)
+@inline function _lmul_copyto!(dest, M)
     M.B ≡ dest || copyto!(dest, M.B)
     lmul!(M.A,dest)
 end
 
-@inline function copyto!(dest::AbstractArray, M::Rmul)
+@inline function _rmul_copyto!(dest, M::Rmul)
     M.A ≡ dest || copyto!(dest, M.A)
     rmul!(dest,M.B)
 end
+
+copyto!(dest, M::Lmul) = _lmul_copyto!(dest, M)
+copyto!(dest::AbstractArray, M::Lmul) = _lmul_copyto!(dest, M)
+copyto!(dest, M::Rmul) = _rmul_copyto!(dest, M)
+copyto!(dest::AbstractArray, M::Rmul) = _rmul_copyto!(dest, M)
 
 materialize!(M::Lmul) = LinearAlgebra.lmul!(M.A,M.B)
 materialize!(M::Rmul) = LinearAlgebra.rmul!(M.A,M.B)

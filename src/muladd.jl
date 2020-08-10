@@ -22,12 +22,15 @@ end
 @inline MulAdd(α, A::AA, B::BB, β, C::CC) where {AA,BB,CC} = 
     MulAdd{typeof(MemoryLayout(AA)), typeof(MemoryLayout(BB)), typeof(MemoryLayout(CC))}(α, A, B, β, C)
 
-@inline _mul_eltype(A) = A
-@inline _mul_eltype(A, B) = Base.promote_op(*, A, B)
-@inline _mul_eltype(A, B, C, D...) = _mul_eltype(Base.promote_op(*, A, B), C, D...)
+MulAdd(A, B) = MulAdd(Mul(A, B))
+function MulAdd(M::Mul)
+    TV = eltype(M)
+    MulAdd(scalarone(TV), M.A, M.B, scalarzero(TV), fillzeros(TV,axes(M)))
+end
 
 @inline eltype(::MulAdd{StyleA,StyleB,StyleC,T,AA,BB,CC}) where {StyleA,StyleB,StyleC,T,AA,BB,CC} =
      promote_type(_mul_eltype(T, eltype(AA), eltype(BB)), _mul_eltype(T, eltype(CC)))
+
 
 size(M::MulAdd, p::Int) = size(M)[p]
 axes(M::MulAdd, p::Int) = axes(M)[p]
@@ -39,29 +42,14 @@ similar(M::MulAdd, ::Type{T}, axes) where {T,N} = similar(Array{T}, axes)
 similar(M::MulAdd, ::Type{T}) where T = similar(M, T, axes(M))
 similar(M::MulAdd) = similar(M, eltype(M))
 
-check_mul_axes(A) = nothing
-_check_mul_axes(::Number, ::Number) = nothing
-_check_mul_axes(::Number, _) = nothing
-_check_mul_axes(_, ::Number) = nothing
-_check_mul_axes(A, B) = axes(A,2) == axes(B,1) || throw(DimensionMismatch("Second axis of A, $(axes(A,2)), and first axis of B, $(axes(B,1)) must match"))
-function check_mul_axes(A, B, C...) 
-    _check_mul_axes(A, B)
-    check_mul_axes(B, C...)
-end
-
-# we need to special case AbstractQ as it allows non-compatiple multiplication
-function check_mul_axes(A::AbstractQ, B, C...) 
-    axes(A.factors, 1) == axes(B, 1) || axes(A.factors, 2) == axes(B, 1) ||  
-        throw(DimensionMismatch("First axis of B, $(axes(B,1)) must match either axes of A, $(axes(A))"))
-    check_mul_axes(B, C...)
-end
-
-
-function instantiate(M::MulAdd)
+function checkdimensions(M::MulAdd)
     @boundscheck check_mul_axes(M.α, M.A, M.B)
     @boundscheck check_mul_axes(M.β, M.C)
     @boundscheck axes(M.A,1) == axes(M.C,1) || throw(DimensionMismatch("First axis of A, $(axes(M.A,1)), and first axis of C, $(axes(M.C,1)) must match"))
     @boundscheck axes(M.B,2) == axes(M.C,2) || throw(DimensionMismatch("Second axis of B, $(axes(M.B,2)), and second axis of C, $(axes(M.C,2)) must match"))
+end
+@propagate_inbounds function instantiate(M::MulAdd)
+    checkdimensions(M)
     M
 end
 
@@ -404,20 +392,16 @@ similar(M::MulAdd{<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.B, T, 
 similar(M::MulAdd{<:Any,<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.A, T, axes)
 # equivalent to rescaling
 function materialize!(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout}})
+    checkdimensions(M)
     M.C .= (M.α * getindex_value(M.A.diag)) .* M.B .+ M.β .* M.C
     M.C
 end
 
 function materialize!(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout}})
+    checkdimensions(M)
     M.C .= M.α .* M.A .* getindex_value(M.B.diag) .+ M.β .* M.C
     M.C
 end
-
-copy(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.A.diag)) * M.B .+ M.β * M.C
-copy(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout},<:Any,ZerosLayout}) = (M.α * getindex_value(M.A.diag)) * M.B
-copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout}) = M.α*M.A*M.B + M.β*M.C
-copy(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) = (M.α * getindex_value(M.B.diag)) * M.A .+ M.β * M.C
-copy(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout},ZerosLayout}) = (M.α * getindex_value(M.B.diag)) * M.A
 
 
 BroadcastStyle(::Type{<:MulAdd}) = ApplyBroadcastStyle()
@@ -429,77 +413,8 @@ scalarzero(::Type{<:AbstractArray{T}}) where T = scalarzero(T)
 
 fillzeros(::Type{T}, ax) where T = Zeros{T}(ax)
 
-function mul!(dest::AbstractArray{W}, A::AbstractArray{T}, b::AbstractArray{V}) where {T,V,W} 
-    TVW = promote_type(W, _mul_eltype(T,V))
-    muladd!(scalarone(TVW), A, b, scalarzero(TVW), dest)
-end
+###
+# Fill 
+###
 
-function MulAdd(A::AbstractArray{T}, B::AbstractVector{V}) where {T,V}
-    TV = _mul_eltype(eltype(A), eltype(B))
-    MulAdd(scalarone(TV), A, B, scalarzero(TV), fillzeros(TV,(axes(A,1),)))
-end
-
-function MulAdd(A::AbstractArray{T}, B::AbstractMatrix{V}) where {T,V}
-    TV = _mul_eltype(eltype(A), eltype(B))
-    MulAdd(scalarone(TV), A, B, scalarzero(TV), fillzeros(TV,(axes(A,1),axes(B,2))))
-end
-
-@inline _mul(layoutA, layoutB, A, B) = materialize(MulAdd(A,B))
-@inline mul(A::AbstractArray, B::AbstractArray) = _mul(MemoryLayout(A), MemoryLayout(B), A, B)
-
-macro layoutmul(Typ)
-    ret = quote
-        LinearAlgebra.mul!(dest::AbstractVector, A::$Typ, b::AbstractVector) =
-            ArrayLayouts.mul!(dest,A,b)
-
-        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::AbstractMatrix) =
-            ArrayLayouts.mul!(dest,A,b)
-        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::$Typ) =
-            ArrayLayouts.mul!(dest,A,b)
-
-        Base.:*(A::$Typ, B::$Typ) = ArrayLayouts.mul(A,B)
-        Base.:*(A::$Typ, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
-        Base.:*(A::$Typ, B::AbstractVector) = ArrayLayouts.mul(A,B)
-        Base.:*(A::AbstractMatrix, B::$Typ) = ArrayLayouts.mul(A,B)
-        Base.:*(A::LinearAlgebra.AdjointAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
-        Base.:*(A::LinearAlgebra.TransposeAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
-
-        Base.:*(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.lmul(A,B)
-        Base.:*(A::$Typ, B::LinearAlgebra.AbstractQ) = ArrayLayouts.rmul(A,B)
-    end
-    for Struc in (:AbstractTriangular, :Diagonal)
-        ret = quote
-            $ret
-
-            Base.:*(A::LinearAlgebra.$Struc, B::$Typ) = ArrayLayouts.mul(A,B)
-            Base.:*(A::$Typ, B::LinearAlgebra.$Struc) = ArrayLayouts.mul(A,B)
-        end
-    end
-    for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian)
-        ret = quote
-            $ret
-
-            LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::$Mod{<:Any,<:AbstractMatrix}) =
-                ArrayLayouts.mul!(dest,A,b)
-
-            LinearAlgebra.mul!(dest::AbstractVector, A::$Mod{<:Any,<:$Typ}, b::AbstractVector) =
-                ArrayLayouts.mul!(dest,A,b)
-
-            Base.:*(A::$Mod{<:Any,<:$Typ}, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
-            Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
-            Base.:*(A::AbstractMatrix, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
-            Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractVector) = ArrayLayouts.mul(A,B)
-
-            Base.:*(A::$Mod{<:Any,<:$Typ}, B::$Typ) = ArrayLayouts.mul(A,B)
-            Base.:*(A::$Typ, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
-
-            Base.:*(A::$Mod{<:Any,<:$Typ}, B::Diagonal) = ArrayLayouts.mul(A,B)
-            Base.:*(A::Diagonal, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
-
-            Base.:*(A::LinearAlgebra.AbstractTriangular, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
-            Base.:*(A::$Mod{<:Any,<:$Typ}, B::LinearAlgebra.AbstractTriangular) = ArrayLayouts.mul(A,B)
-        end
-    end
-
-    esc(ret)
-end
+copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout}) = M.α*M.A*M.B + M.β*M.C

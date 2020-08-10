@@ -81,8 +81,10 @@ function materialize!(Ldv::Ldiv{<:QRPackedLayout,<:Any,<:Any,<:AbstractMatrix{T}
     end
     return B
 end
-materialize!(Ldv::Ldiv{<:QRPackedLayout,<:Any,<:Any,<:AbstractVector{T}}) where T =
-    ldiv!(Ldv.A, reshape(Ldv.B, length(Ldv.B), 1))[:]
+function materialize!(Ldv::Ldiv{<:QRPackedLayout,<:Any,<:Any,<:AbstractVector{T}}) where T
+    ldiv!(Ldv.A, reshape(Ldv.B, length(Ldv.B), 1))
+    Ldv.B
+end
 
 
 
@@ -101,7 +103,9 @@ adjointlayout(::Type, ::QRPackedQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRPac
 adjointlayout(::Type, ::QRCompactWYQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRCompactWYQLayout{SLAY,TLAY}()
 
 copy(M::Lmul{<:AbstractQLayout}) = copyto!(similar(M), M)
-
+mulreduce(M::Mul{<:AbstractQLayout,<:AbstractQLayout}) = MulAdd(M)
+mulreduce(M::Mul{<:AbstractQLayout}) = Lmul(M)
+mulreduce(M::Mul{<:Any,<:AbstractQLayout}) = Rmul(M)
 
 function copyto!(dest::AbstractArray{T}, M::Lmul{<:AbstractQLayout}) where T
     A,B = M.A,M.B
