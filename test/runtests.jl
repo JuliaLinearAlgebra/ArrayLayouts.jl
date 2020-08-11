@@ -130,7 +130,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
     @testset "l/rmul!" begin
         b = randn(5)
-        @test lmul!(2, MyVector(copy(b))) == rmul!(MyVector(copy(b)), 2) == 2b
+        @test ArrayLayouts.lmul!(2, MyVector(copy(b))) == ArrayLayouts.rmul!(MyVector(copy(b)), 2) == 2b
     end
 end
 
