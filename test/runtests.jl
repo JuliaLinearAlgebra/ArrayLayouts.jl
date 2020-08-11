@@ -127,6 +127,11 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test A\MyMatrix(X) ≈ A\X
         end
     end
+
+    @testset "l/rmul!" begin
+        b = randn(5)
+        @test lmul!(2, MyVector(copy(b))) == rmul!(MyVector(copy(b)), 2) == 2b
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
