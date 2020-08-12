@@ -233,6 +233,7 @@ end
 @inline materialize(d::Dot) = copy(instantiate(d))
 @inline Dot(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dot(M.A', M.B)
 @inline mulreduce(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dot(M)
+@inline eltype(D::Dot) = promote_type(eltype(D.A), eltype(D.B))
 
 dot(a, b) = materialize(Dot(a, b))
 @inline LinearAlgebra.dot(a::LayoutArray, b::LayoutArray) = dot(a,b)
