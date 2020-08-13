@@ -144,6 +144,18 @@ end
 
 @layoutmatrix LayoutMatrix
 
+LinearAlgebra.lmul!(α::Number, A::LayoutArray) = lmul!(α, A)
+LinearAlgebra.lmul!(α::Number, A::Transpose{<:Any,<:LayoutMatrix}) = lmul!(α, A)
+LinearAlgebra.lmul!(α::Number, A::Adjoint{<:Any,<:LayoutMatrix}) = lmul!(α, A)
+LinearAlgebra.lmul!(α::Number, A::Symmetric{<:Any,<:LayoutMatrix}) = lmul!(α, A)
+LinearAlgebra.lmul!(α::Real, A::Hermitian{<:Any,<:LayoutMatrix}) = lmul!(α, A)
+
+LinearAlgebra.rmul!(A::LayoutArray, α::Number) = rmul!(A, α)
+LinearAlgebra.rmul!(A::Transpose{<:Any,<:LayoutMatrix}, α::Number) = rmul!(A, α)
+LinearAlgebra.rmul!(A::Adjoint{<:Any,<:LayoutMatrix}, α::Number) = rmul!(A, α)
+LinearAlgebra.rmul!(A::Symmetric{<:Any,<:LayoutMatrix}, α::Number) = rmul!(A, α)
+LinearAlgebra.rmul!(A::Hermitian{<:Any,<:LayoutMatrix}, α::Real) = rmul!(A, α)
+
 getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
 
 _copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} =
