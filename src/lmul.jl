@@ -73,7 +73,10 @@ materialize!(M::Rmul) = LinearAlgebra.rmul!(M.A,M.B)
 materialize!(M::Lmul{ScalarLayout}) = Base.invoke(LinearAlgebra.lmul!, Tuple{Number,AbstractArray}, M.A, M.B)
 materialize!(M::Rmul{<:Any,ScalarLayout}) = Base.invoke(LinearAlgebra.rmul!, Tuple{AbstractArray,Number}, M.A, M.B)
 
-
+materialize!(M::Lmul{ScalarLayout,<:SymmetricLayout}) = lmul!(M.A, symmetricdata(M.B))
+materialize!(M::Lmul{ScalarLayout,<:HermitianLayout}) = lmul!(M.A, hermitiandata(M.B))
+materialize!(M::Rmul{<:SymmetricLayout,ScalarLayout}) = rmul!(symmetricdata(M.A), M.B)
+materialize!(M::Rmul{<:HermitianLayout,ScalarLayout}) = rmul!(hermitiandata(M.A), M.B)
 
 macro _layoutlmul(Typ)
     esc(quote
