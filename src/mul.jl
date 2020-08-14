@@ -245,3 +245,7 @@ dot(a, b) = materialize(Dot(a, b))
 @inline LinearAlgebra.dot(a::LayoutArray, b::SubArray{<:Any,N,<:LayoutArray}) where N = dot(a,b)
 @inline LinearAlgebra.dot(a::SubArray{<:Any,N,<:LayoutArray}, b::SubArray{<:Any,N,<:LayoutArray}) where N = dot(a,b)
 
+# Temporary until layout 3-arg dot is added. 
+# We go to generic fallback as layout-arrays are structured
+dot(x, A, y) = dot(x, mul(A, y))
+LinearAlgebra.dot(x::AbstractVector, A::LayoutMatrix, y::AbstractVector) = dot(x, A, y)
