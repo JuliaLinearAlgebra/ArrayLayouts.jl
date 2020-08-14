@@ -109,10 +109,25 @@ const BlasMatLdivMat{styleA, styleB, T<:BlasFloat} = MatLdivMat{styleA, styleB, 
 const MatRdivMat{styleA, styleB, T, V} = Rdiv{styleA, styleB, <:AbstractMatrix{T}, <:AbstractMatrix{V}}
 const BlasMatRdivMat{styleA, styleB, T<:BlasFloat} = MatRdivMat{styleA, styleB, T, T}
 
-# function materialize!(L::BlasMatLdivVec{<:AbstractColumnMajor,<:AbstractColumnMajor})
+materialize!(M::Ldiv{ScalarLayout}) = Base.invoke(LinearAlgebra.ldiv!, Tuple{Number,AbstractArray}, M.A, M.B)
+materialize!(M::Rdiv{<:Any,ScalarLayout}) = Base.invoke(LinearAlgebra.rdiv!, Tuple{AbstractArray,Number}, M.A, M.B)
 
-# end
-
+function materialize!(M::Ldiv{ScalarLayout,<:SymmetricLayout})
+    ldiv!(M.A, symmetricdata(M.B))
+    M.B
+end
+function materialize!(M::Ldiv{ScalarLayout,<:HermitianLayout})
+    ldiv!(M.A, hermitiandata(M.B))
+    M.B
+end
+function materialize!(M::Rdiv{<:SymmetricLayout,ScalarLayout})
+    rdiv!(symmetricdata(M.A), M.B)
+    M.A
+end
+function materialize!(M::Rdiv{<:HermitianLayout,ScalarLayout})
+    rdiv!(hermitiandata(M.A), M.B)
+    M.A
+end
 
 macro _layoutldiv(Typ)
     ret = quote

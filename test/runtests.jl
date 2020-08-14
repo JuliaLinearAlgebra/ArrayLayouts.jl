@@ -129,8 +129,18 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
     end
 
     @testset "l/rmul!" begin
-        b = randn(5)
-        @test ArrayLayouts.lmul!(2, MyVector(copy(b))) == ArrayLayouts.rmul!(MyVector(copy(b)), 2) == 2b
+        b = MyVector(randn(5))
+        A = MyMatrix(randn(5,5))
+        @test lmul!(2, deepcopy(b)) == rmul!(deepcopy(b), 2) == 2b
+        @test lmul!(2, deepcopy(A)) == rmul!(deepcopy(A), 2) == 2A
+        @test lmul!(2, deepcopy(A)') == rmul!(deepcopy(A)', 2) == 2A'
+        @test lmul!(2, transpose(deepcopy(A))) == rmul!(transpose(deepcopy(A)), 2) == 2transpose(A)
+        @test lmul!(2, Symmetric(deepcopy(A))) == rmul!(Symmetric(deepcopy(A)), 2) == 2Symmetric(A)
+        @test ldiv!(2, deepcopy(b)) == rdiv!(deepcopy(b), 2) == 2\b
+        @test ldiv!(2, deepcopy(A)) == rdiv!(deepcopy(A), 2) == 2\A
+        @test ldiv!(2, deepcopy(A)') == rdiv!(deepcopy(A)', 2) == 2\A'
+        @test ldiv!(2, transpose(deepcopy(A))) == rdiv!(transpose(deepcopy(A)), 2) == 2\transpose(A)
+        @test ldiv!(2, Symmetric(deepcopy(A))) == rdiv!(Symmetric(deepcopy(A)), 2) == 2\Symmetric(A)
     end
 end
 

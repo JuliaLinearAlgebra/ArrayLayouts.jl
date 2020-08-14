@@ -144,17 +144,14 @@ end
 
 @layoutmatrix LayoutMatrix
 
-LinearAlgebra.lmul!(α::Number, A::LayoutArray) = lmul!(α, A)
-LinearAlgebra.lmul!(α::Number, A::Transpose{<:Any,<:LayoutMatrix}) = lmul!(α, A)
-LinearAlgebra.lmul!(α::Number, A::Adjoint{<:Any,<:LayoutMatrix}) = lmul!(α, A)
-LinearAlgebra.lmul!(α::Number, A::Symmetric{<:Any,<:LayoutMatrix}) = lmul!(α, A)
-LinearAlgebra.lmul!(α::Real, A::Hermitian{<:Any,<:LayoutMatrix}) = lmul!(α, A)
-
-LinearAlgebra.rmul!(A::LayoutArray, α::Number) = rmul!(A, α)
-LinearAlgebra.rmul!(A::Transpose{<:Any,<:LayoutMatrix}, α::Number) = rmul!(A, α)
-LinearAlgebra.rmul!(A::Adjoint{<:Any,<:LayoutMatrix}, α::Number) = rmul!(A, α)
-LinearAlgebra.rmul!(A::Symmetric{<:Any,<:LayoutMatrix}, α::Number) = rmul!(A, α)
-LinearAlgebra.rmul!(A::Hermitian{<:Any,<:LayoutMatrix}, α::Real) = rmul!(A, α)
+for Typ in (:LayoutArray, :(Transpose{<:Any,<:LayoutMatrix}), :(Adjoint{<:Any,<:LayoutMatrix}), :(Symmetric{<:Any,<:LayoutMatrix}), :(Hermitian{<:Any,<:LayoutMatrix}))
+    @eval begin
+        LinearAlgebra.lmul!(α::Number, A::$Typ) = lmul!(α, A)
+        LinearAlgebra.rmul!(A::$Typ, α::Number) = rmul!(A, α)
+        LinearAlgebra.ldiv!(α::Number, A::$Typ) = ldiv!(α, A)
+        LinearAlgebra.rdiv!(A::$Typ, α::Number) = rdiv!(A, α)
+    end
+end
 
 getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
 
