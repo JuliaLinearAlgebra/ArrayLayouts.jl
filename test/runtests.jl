@@ -126,6 +126,12 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test A\MyVector(x) ≈ A\x
             @test A\MyMatrix(X) ≈ A\X
         end
+
+        @testset "dot" begin
+            A = MyMatrix(randn(5,5))
+            b = randn(5)
+            @test dot(b, A, b) ≈ b'*(A*b) ≈ b'A*b
+        end
     end
 
     @testset "l/rmul!" begin
