@@ -45,8 +45,12 @@ end
 @inline eltype(M::Rdiv) = promote_type(eltype(M.A), Base.promote_op(inv, eltype(M.B)))
 
 # Lazy getindex
-getindex(L::Ldiv{<:Any,<:Any,<:AbstractMatrix,<:AbstractVector}, k::Integer) = copyto!(similar(L), L)[k]
-getindex(L::Ldiv{<:Any,<:Any,<:AbstractMatrix,<:AbstractMatrix}, k::Integer,j::Integer) = Ldiv(L.A, L.B[:,j])[k]
+
+getindex(L::Ldiv, k...) = _getindex(indextype(L), L, k)
+concretize(L::AbstractArray) = convert(Array,L)
+concretize(L::Ldiv) = ldiv(concretize(L.A), concretize(L.B))
+_getindex(::Type{Tuple{I}}, L::Ldiv, (k,)::Tuple{I}) where I = concretize(L)[k]
+_getindex(::Type{Tuple{I,J}}, L::Ldiv, (k,j)::Tuple{I,J}) where {I,J} = Ldiv(L.A, L.B[:,j])[k]
 
 check_ldiv_axes(A, B) =
     axes(A,1) == axes(B,1) || throw(DimensionMismatch("First axis of A, $(axes(A,1)), and first axis of B, $(axes(B,1)) must match"))
@@ -105,10 +109,25 @@ const BlasMatLdivMat{styleA, styleB, T<:BlasFloat} = MatLdivMat{styleA, styleB, 
 const MatRdivMat{styleA, styleB, T, V} = Rdiv{styleA, styleB, <:AbstractMatrix{T}, <:AbstractMatrix{V}}
 const BlasMatRdivMat{styleA, styleB, T<:BlasFloat} = MatRdivMat{styleA, styleB, T, T}
 
-# function materialize!(L::BlasMatLdivVec{<:AbstractColumnMajor,<:AbstractColumnMajor})
+materialize!(M::Ldiv{ScalarLayout}) = Base.invoke(LinearAlgebra.ldiv!, Tuple{Number,AbstractArray}, M.A, M.B)
+materialize!(M::Rdiv{<:Any,ScalarLayout}) = Base.invoke(LinearAlgebra.rdiv!, Tuple{AbstractArray,Number}, M.A, M.B)
 
-# end
-
+function materialize!(M::Ldiv{ScalarLayout,<:SymmetricLayout})
+    ldiv!(M.A, symmetricdata(M.B))
+    M.B
+end
+function materialize!(M::Ldiv{ScalarLayout,<:HermitianLayout})
+    ldiv!(M.A, hermitiandata(M.B))
+    M.B
+end
+function materialize!(M::Rdiv{<:SymmetricLayout,ScalarLayout})
+    rdiv!(symmetricdata(M.A), M.B)
+    M.A
+end
+function materialize!(M::Rdiv{<:HermitianLayout,ScalarLayout})
+    rdiv!(hermitiandata(M.A), M.B)
+    M.A
+end
 
 macro _layoutldiv(Typ)
     ret = quote

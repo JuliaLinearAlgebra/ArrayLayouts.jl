@@ -128,6 +128,10 @@ macro layoutgetindex(Typ)
     esc(quote
         ArrayLayouts.@_layoutgetindex $Typ
         ArrayLayouts.@_layoutgetindex LinearAlgebra.AbstractTriangular{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutgetindex LinearAlgebra.Symmetric{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutgetindex LinearAlgebra.Hermitian{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutgetindex LinearAlgebra.Adjoint{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutgetindex LinearAlgebra.Transpose{<:Any,<:$Typ}
     end)
 end
 
@@ -143,6 +147,15 @@ macro layoutmatrix(Typ)
 end
 
 @layoutmatrix LayoutMatrix
+
+for Typ in (:LayoutArray, :(Transpose{<:Any,<:LayoutMatrix}), :(Adjoint{<:Any,<:LayoutMatrix}), :(Symmetric{<:Any,<:LayoutMatrix}), :(Hermitian{<:Any,<:LayoutMatrix}))
+    @eval begin
+        LinearAlgebra.lmul!(α::Number, A::$Typ) = lmul!(α, A)
+        LinearAlgebra.rmul!(A::$Typ, α::Number) = rmul!(A, α)
+        LinearAlgebra.ldiv!(α::Number, A::$Typ) = ldiv!(α, A)
+        LinearAlgebra.rdiv!(A::$Typ, α::Number) = rdiv!(A, α)
+    end
+end
 
 getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
 

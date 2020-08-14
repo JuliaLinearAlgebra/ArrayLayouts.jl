@@ -46,10 +46,10 @@ function _getindex(::Type{Tuple{AA,BB}}, M::Mul, (k, j)::Tuple{AA,BB}) where {AA
 end
 
 # linear indexing
-_getindex(::Type{NTuple{2,Int}}, M::Mul, k::Tuple{Int}) = M[Base._ind2sub(axes(M), k...)...]
+_getindex(::Type{NTuple{2,Int}}, M, k::Tuple{Int}) = M[Base._ind2sub(axes(M), k...)...]
 
-_getindex(::Type{Tuple{Int}}, M::Mul, (k,)::Tuple{CartesianIndex{1}}) = M[convert(Int, k)]
-_getindex(::Type{NTuple{2,Int}}, M::Mul, (kj,)::Tuple{CartesianIndex{2}}) = M[kj[1], kj[2]]
+_getindex(::Type{Tuple{Int}}, M, (k,)::Tuple{CartesianIndex{1}}) = M[convert(Int, k)]
+_getindex(::Type{NTuple{2,Int}}, M, (kj,)::Tuple{CartesianIndex{2}}) = M[kj[1], kj[2]]
 
 """
    indextype(A)
@@ -245,3 +245,7 @@ dot(a, b) = materialize(Dot(a, b))
 @inline LinearAlgebra.dot(a::LayoutArray, b::SubArray{<:Any,N,<:LayoutArray}) where N = dot(a,b)
 @inline LinearAlgebra.dot(a::SubArray{<:Any,N,<:LayoutArray}, b::SubArray{<:Any,N,<:LayoutArray}) where N = dot(a,b)
 
+# Temporary until layout 3-arg dot is added. 
+# We go to generic fallback as layout-arrays are structured
+dot(x, A, y) = dot(x, mul(A, y))
+LinearAlgebra.dot(x::AbstractVector, A::LayoutMatrix, y::AbstractVector) = dot(x, A, y)

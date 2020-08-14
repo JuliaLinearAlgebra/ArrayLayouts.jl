@@ -418,3 +418,12 @@ fillzeros(::Type{T}, ax) where T = Zeros{T}(ax)
 ###
 
 copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout}) = M.α*M.A*M.B + M.β*M.C
+
+###
+# DualLayout
+###
+
+function similar(M::MulAdd{<:DualLayout,<:Any,ZerosLayout}, ::Type{T}, (x,y)) where T
+    @assert x ≡ Base.OneTo(1)
+    similar(M.A', T, y)'
+end

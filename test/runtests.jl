@@ -126,11 +126,36 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test A\MyVector(x) ≈ A\x
             @test A\MyMatrix(X) ≈ A\X
         end
+
+        @testset "dot" begin
+            A = MyMatrix(randn(5,5))
+            b = randn(5)
+            @test dot(b, A, b) ≈ b'*(A*b) ≈ b'A*b
+        end
     end
 
     @testset "l/rmul!" begin
-        b = randn(5)
-        @test ArrayLayouts.lmul!(2, MyVector(copy(b))) == ArrayLayouts.rmul!(MyVector(copy(b)), 2) == 2b
+        b = MyVector(randn(5))
+        A = MyMatrix(randn(5,5))
+        @test lmul!(2, deepcopy(b)) == rmul!(deepcopy(b), 2) == 2b
+        @test lmul!(2, deepcopy(A)) == rmul!(deepcopy(A), 2) == 2A
+        @test lmul!(2, deepcopy(A)') == rmul!(deepcopy(A)', 2) == 2A'
+        @test lmul!(2, transpose(deepcopy(A))) == rmul!(transpose(deepcopy(A)), 2) == 2transpose(A)
+        @test lmul!(2, Symmetric(deepcopy(A))) == rmul!(Symmetric(deepcopy(A)), 2) == 2Symmetric(A)
+        @test lmul!(2, Hermitian(deepcopy(A))) == rmul!(Hermitian(deepcopy(A)), 2) == 2Hermitian(A)
+
+        C = randn(ComplexF64,5,5)
+        @test ArrayLayouts.lmul!(2, Hermitian(copy(C))) == ArrayLayouts.rmul!(Hermitian(copy(C)), 2) == 2Hermitian(C)
+
+        if VERSION ≥ v"1.5"
+            @test ldiv!(2, deepcopy(b)) == rdiv!(deepcopy(b), 2) == 2\b
+            @test ldiv!(2, deepcopy(A)) == rdiv!(deepcopy(A), 2) == 2\A
+            @test ldiv!(2, deepcopy(A)') == rdiv!(deepcopy(A)', 2) == 2\A'
+            @test ldiv!(2, transpose(deepcopy(A))) == rdiv!(transpose(deepcopy(A)), 2) == 2\transpose(A)
+            @test ldiv!(2, Symmetric(deepcopy(A))) == rdiv!(Symmetric(deepcopy(A)), 2) == 2\Symmetric(A)
+            @test ldiv!(2, Hermitian(deepcopy(A))) == rdiv!(Hermitian(deepcopy(A)), 2) == 2\Hermitian(A)
+            @test ArrayLayouts.ldiv!(2, Hermitian(copy(C))) == ArrayLayouts.rdiv!(Hermitian(copy(C)), 2) == 2\Hermitian(C)
+        end
     end
 end
 
