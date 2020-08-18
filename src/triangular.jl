@@ -12,6 +12,8 @@ rowsupport(::TriangularLayout{'L'}, A, j) = isempty(j) ? (1:0) : rowsupport(tria
 mulreduce(M::Mul{<:TriangularLayout}) = Lmul(M)
 mulreduce(M::Mul{<:TriangularLayout,<:TriangularLayout}) = Lmul(M)
 mulreduce(M::Mul{<:Any,<:TriangularLayout}) = Rmul(M)
+mulreduce(M::Mul{<:DiagonalLayout,<:TriangularLayout}) = Lmul(M)
+mulreduce(M::Mul{<:TriangularLayout,<:DiagonalLayout}) = Rmul(M)
 
 similar(M::Lmul{<:TriangularLayout{'U'},<:TriangularLayout{'U'}}) = UpperTriangular(Matrix{eltype(M)}(undef, size(M)))
 similar(M::Lmul{<:TriangularLayout{'L'},<:TriangularLayout{'L'}}) = LowerTriangular(Matrix{eltype(M)}(undef, size(M)))
