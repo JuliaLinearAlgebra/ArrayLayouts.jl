@@ -138,6 +138,9 @@ macro _layoutldiv(Typ)
 
         LinearAlgebra.ldiv!(A::Factorization, x::$Typ) = ArrayLayouts.ldiv!(A,x)
 
+        LinearAlgebra.ldiv!(A::Bidiagonal, B::$Typ) = ArrayLayouts.ldiv!(A,B)
+
+
         Base.:\(A::$Typ, x::AbstractVector) = ArrayLayouts.ldiv(A,x)
         Base.:\(A::$Typ, x::AbstractMatrix) = ArrayLayouts.ldiv(A,x)
 

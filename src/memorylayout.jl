@@ -485,7 +485,7 @@ MemoryLayout(A::Type{UpperTriangular{T,P}}) where {T,P} = triangularlayout(Upper
 MemoryLayout(A::Type{UnitUpperTriangular{T,P}}) where {T,P} = triangularlayout(UnitUpperTriangularLayout, MemoryLayout(P))
 MemoryLayout(A::Type{LowerTriangular{T,P}}) where {T,P} = triangularlayout(LowerTriangularLayout, MemoryLayout(P))
 MemoryLayout(A::Type{UnitLowerTriangular{T,P}}) where {T,P} = triangularlayout(UnitLowerTriangularLayout, MemoryLayout(P))
-triangularlayout(_::Type{Tri}, ::MemoryLayout) where Tri = Tri{UnknownLayout}()
+triangularlayout(::Type{Tri}, ::MemoryLayout) where Tri = Tri{UnknownLayout}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML<:AbstractColumnMajor} = Tri{ML}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML<:AbstractRowMajor} = Tri{ML}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML<:ConjLayout{<:AbstractRowMajor}} = Tri{ML}()
@@ -573,6 +573,17 @@ transposelayout(ml::BidiagonalLayout) = ml
 transposelayout(ml::SymTridiagonalLayout) = ml
 transposelayout(ml::TridiagonalLayout) = ml
 transposelayout(ml::ConjLayout{DiagonalLayout}) = ml
+
+triangularlayout(::Type{<:TriangularLayout{UPLO,'N'}}, ::TridiagonalLayout{ML}) where {UPLO,ML} = BidiagonalLayout{ML}()
+triangularlayout(::Type{<:TriangularLayout{UPLO,'N'}}, ::TridiagonalLayout{FillLayout}) where UPLO = BidiagonalLayout{FillLayout}()
+triangularlayout(::Type{<:TriangularLayout{UPLO,'U'}}, ::TridiagonalLayout{FillLayout}) where UPLO = BidiagonalLayout{FillLayout}()
+
+bidiagonaluplo(::Union{UpperTriangular,UnitUpperTriangular}) = 'U'
+bidiagonaluplo(::Union{LowerTriangular,UnitLowerTriangular}) = 'L'
+diagonaldata(U::Union{UnitUpperTriangular{T},UnitLowerTriangular{T}}) where T = Ones{T}(size(U,1))
+diagonaldata(U::Union{UpperTriangular{T},LowerTriangular{T}}) where T = diagonaldata(triangulardata(U))
+supdiagonaldata(U::Union{UnitUpperTriangular,UpperTriangular}) = supdiagonaldata(triangulardata(U))
+subdiagonaldata(U::Union{UnitLowerTriangular,LowerTriangular}) = subdiagonaldata(triangulardata(U))
 
 adjointlayout(::Type{<:Real}, ml::SymTridiagonalLayout) = ml
 adjointlayout(::Type{<:Real}, ml::TridiagonalLayout) = ml
