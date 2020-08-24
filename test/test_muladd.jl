@@ -74,6 +74,11 @@ Random.seed!(0)
                 @test all(c .=== BLAS.gemv!('N', 2one(T), A, b, one(T), copy(b)))
             end
         end
+
+        @testset "Matrix{Int} * Vector{Vector{Int}}" begin
+            A, x =  [1 2; 3 4] , [[1,2],[3,4]]
+            @test mul(A,x) == A*x
+        end
     end
 
     @testset "Matrix * Matrix" begin

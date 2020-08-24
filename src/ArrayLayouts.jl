@@ -27,7 +27,7 @@ import Base: AbstractArray, AbstractMatrix, AbstractVector,
       similar, @_gc_preserve_end, @_gc_preserve_begin,
       @nexprs, @ncall, @ntuple, tuple_type_tail,
       all, any, isbitsunion, issubset, replace_in_print_matrix, replace_with_centered_mark,
-      strides, unsafe_convert, first_index
+      strides, unsafe_convert, first_index, unalias
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcasted,
                         combine_eltypes, DefaultArrayStyle, instantiate, materialize,
