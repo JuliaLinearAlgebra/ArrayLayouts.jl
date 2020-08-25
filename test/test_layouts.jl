@@ -126,6 +126,19 @@ struct FooNumber <: Number end
         @test MemoryLayout(Bidiagonal(view(randn(10),[1,2,3]), view(randn(10),[1,2]), :U)) isa BidiagonalLayout{UnknownLayout}
         @test MemoryLayout(SymTridiagonal(view(randn(10),[1,2,3]), view(randn(10),[1,2]))) isa SymTridiagonalLayout{UnknownLayout}
         @test MemoryLayout(Tridiagonal(view(randn(10),[1,2]), view(randn(10),[1,2,3]), view(randn(10),[1,2]))) isa TridiagonalLayout{UnknownLayout}
+
+        @testset "Triangular of Tridiagonal" begin
+            U = UpperTriangular(T)
+            L = LowerTriangular(T)
+            @test MemoryLayout(U) isa BidiagonalLayout{DenseColumnMajor}
+            @test MemoryLayout(L) isa BidiagonalLayout{DenseColumnMajor}
+            @test diagonaldata(U) == diagonaldata(L) == diagonaldata(T)
+            @test subdiagonaldata(L) == subdiagonaldata(T)
+            @test supdiagonaldata(U) == supdiagonaldata(T)
+            @test bidiagonaluplo(U) == 'U'
+            @test bidiagonaluplo(L) == 'L'
+            @test_throws MethodError subdiagonaldata(U)
+        end
     end
 
     @testset "Symmetric/Hermitian" begin

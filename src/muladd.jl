@@ -19,13 +19,13 @@ end
     MulAdd{StyleA,StyleB,StyleC}(α, A, B, β, C)
 end
 
-@inline MulAdd(α, A::AA, B::BB, β, C::CC) where {AA,BB,CC} = 
+@inline MulAdd(α, A::AA, B::BB, β, C::CC) where {AA,BB,CC} =
     MulAdd{typeof(MemoryLayout(AA)), typeof(MemoryLayout(BB)), typeof(MemoryLayout(CC))}(α, A, B, β, C)
 
 MulAdd(A, B) = MulAdd(Mul(A, B))
 function MulAdd(M::Mul)
     TV = eltype(M)
-    MulAdd(scalarone(TV), M.A, M.B, scalarzero(TV), fillzeros(TV,axes(M)))
+    MulAdd(scalarone(TV), M.A, M.B, scalarzero(TV), mulzeros(TV,M))
 end
 
 @inline eltype(::MulAdd{StyleA,StyleB,StyleC,T,AA,BB,CC}) where {StyleA,StyleB,StyleC,T,AA,BB,CC} =
@@ -69,18 +69,11 @@ muladd!(α, A, B, β, C) = materialize!(MulAdd(α, A, B, β, C))
 materialize(M::MulAdd) = copy(instantiate(M))
 copy(M::MulAdd) = copyto!(similar(M), M)
 
-@inline function copyto!(dest::AbstractArray{T}, M::MulAdd) where T
-    M.C === dest  || copyto!(dest, M.C)
-    muladd!(M.α, M.A, M.B, M.β, dest)
-end
+_fill_copyto!(dest, C) = copyto!(dest, C)
+_fill_copyto!(dest, C::Zeros) = zero!(dest) # exploit special fill! overload
 
-@inline function copyto!(dest::AbstractArray{T}, M::MulAdd{<:Any,<:Any,ZerosLayout}) where T
-    α,A,B,β,C = M.α, M.A, M.B, M.β, M.C  
-    if !isbitstype(T) # instantiate
-        dest .= β .* view(A,:,1) .* Ref(B[1])  # get shape right
-    end
-    muladd!(α, A, B, β, dest)
-end
+@inline copyto!(dest::AbstractArray{T}, M::MulAdd) where T = 
+    muladd!(M.α, unalias(dest,M.A), unalias(dest,M.B), M.β, _fill_copyto!(dest, M.C))
 
 # Modified from LinearAlgebra._generic_matmatmul!
 function tile_size(T, S, R)
@@ -226,32 +219,28 @@ function _default_blasmul!(::IndexCartesian, α, A::AbstractMatrix, B::AbstractV
     C
 end
 
-default_blasmul!(α, A::AbstractMatrix, B::AbstractVector, β, C::AbstractVector) = 
+default_blasmul!(α, A::AbstractMatrix, B::AbstractVector, β, C::AbstractVector) =
     _default_blasmul!(Base.IndexStyle(typeof(A)), α, A, B, β, C)
 
 function materialize!(M::MatMulMatAdd)
     α, A, B, β, C = M.α, M.A, M.B, M.β, M.C
-    if C ≡ B
-        B = copy(B)
-    end
-    default_blasmul!(α, A, B, iszero(β) ? false : β, C)
+    default_blasmul!(α, unalias(C,A), unalias(C,B), iszero(β) ? false : β, C)
 end
 
 function materialize!(M::MatMulMatAdd{<:AbstractStridedLayout,<:AbstractStridedLayout,<:AbstractStridedLayout})
-    α, A, B, β, C = M.α, M.A, M.B, M.β, M.C
-    if C ≡ B
-        B = copy(B)
-    end
+    α, Ain, Bin, β, C = M.α, M.A, M.B, M.β, M.C
+    A = unalias(C, Ain)
+    B = unalias(C, Bin)
     ts = tile_size(eltype(A), eltype(B), eltype(C))
     if iszero(β) # false is a "strong" zero to wipe out NaNs
         if ts == 0 || !(axes(A) isa NTuple{2,OneTo{Int}}) || !(axes(B) isa NTuple{2,OneTo{Int}}) || !(axes(C) isa NTuple{2,OneTo{Int}})
-            default_blasmul!(α, A, B, false, C) 
-        else 
+            default_blasmul!(α, A, B, false, C)
+        else
             tiled_blasmul!(ts, α, A, B, false, C)
         end
     else
         if ts == 0 || !(axes(A) isa NTuple{2,OneTo{Int}}) || !(axes(B) isa NTuple{2,OneTo{Int}}) || !(axes(C) isa NTuple{2,OneTo{Int}})
-            default_blasmul!(α, A, B, β, C) 
+            default_blasmul!(α, A, B, β, C)
         else
             tiled_blasmul!(ts, α, A, B, β, C)
         end
@@ -260,29 +249,11 @@ end
 
 function materialize!(M::MatMulVecAdd)
     α, A, B, β, C = M.α, M.A, M.B, M.β, M.C
-    if C ≡ B
-        B = copy(B)
-    end
-    default_blasmul!(α, A, B, iszero(β) ? false : β, C)
+    default_blasmul!(α, unalias(C,A), unalias(C,B), iszero(β) ? false : β, C)
 end
 
-# make copy to make sure always works
-@inline function _gemv!(tA, α, A, x, β, y)
-    if x ≡ y
-        BLAS.gemv!(tA, α, A, copy(x), β, y)
-    else
-        BLAS.gemv!(tA, α, A, x, β, y)
-    end
-end
-
-# make copy to make sure always works
-@inline function _gemm!(tA, tB, α, A, B, β, C)
-    if B ≡ C
-        BLAS.gemm!(tA, tB, α, A, copy(B), β, C)
-    else
-        BLAS.gemm!(tA, tB, α, A, B, β, C)
-    end
-end
+@inline _gemv!(tA, α, A, x, β, y) = BLAS.gemv!(tA, α, unalias(y,A), unalias(y,x), β, y)
+@inline _gemm!(tA, tB, α, A, B, β, C) = BLAS.gemm!(tA, tB, α, unalias(C,A), unalias(C,B), β, C)
 
 # work around pointer issues
 @inline materialize!(M::BlasMatMulVecAdd{<:AbstractColumnMajor,<:AbstractStridedLayout,<:AbstractStridedLayout}) =
@@ -350,21 +321,8 @@ end
 ###
 
 # make copy to make sure always works
-@inline function _symv!(tA, α, A, x, β, y)
-    if x ≡ y
-        BLAS.symv!(tA, α, A, copy(x), β, y)
-    else
-        BLAS.symv!(tA, α, A, x, β, y)
-    end
-end
-
-@inline function _hemv!(tA, α, A, x, β, y)
-    if x ≡ y
-        BLAS.hemv!(tA, α, A, copy(x), β, y)
-    else
-        BLAS.hemv!(tA, α, A, x, β, y)
-    end
-end
+@inline _symv!(tA, α, A, x, β, y) = BLAS.symv!(tA, α, unalias(y,A), unalias(y,x), β, y)
+@inline _hemv!(tA, α, A, x, β, y) = BLAS.hemv!(tA, α, unalias(y,A), unalias(y,x), β, y)
 
 
 materialize!(M::BlasMatMulVecAdd{<:SymmetricLayout{<:AbstractColumnMajor},<:AbstractStridedLayout,<:AbstractStridedLayout}) =
@@ -411,10 +369,28 @@ scalarone(::Type{<:AbstractArray{T}}) where T = scalarone(T)
 scalarzero(::Type{T}) where T = zero(T)
 scalarzero(::Type{<:AbstractArray{T}}) where T = scalarzero(T)
 
-fillzeros(::Type{T}, ax) where T = Zeros{T}(ax)
+fillzeros(::Type{T}, ax) where T<:Number = Zeros{T}(ax)
+mulzeros(::Type{T}, M) where T<:Number = fillzeros(T, axes(M))
+
+# initiate array-valued MulAdd
+function _mulzeros!(dest::AbstractVector{T}, A, B) where T
+    for k in axes(dest,1)
+        dest[k] = similar(Mul(A[k,1],B[1]), eltype(T))
+    end
+    dest
+end
+
+function _mulzeros!(dest::AbstractMatrix{T}, A, B) where T
+    for j in axes(dest,2), k in axes(dest,1)
+        dest[k,j] = similar(Mul(A[k,1],B[1,j]), eltype(T))
+    end
+    dest
+end
+
+mulzeros(::Type{T}, M) where T<:AbstractArray = _mulzeros!(similar(Array{T}, axes(M)), M.A, M.B)
 
 ###
-# Fill 
+# Fill
 ###
 
 copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout}) = M.α*M.A*M.B + M.β*M.C

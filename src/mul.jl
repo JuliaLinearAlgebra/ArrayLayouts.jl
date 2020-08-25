@@ -19,9 +19,12 @@ axes(M::Mul, p::Int) = axes(M)[p]
 length(M::Mul) = prod(size(M))
 size(M::Mul) = map(length,axes(M))
 
-_mul_axes(A::Tuple{<:Any,<:Any}, ::Tuple{<:Any}) = (A[1],)
-_mul_axes(A::Tuple{<:Any}, B::Tuple{<:Any,<:Any}) = (A[1],B[2])
-_mul_axes(A::Tuple{<:Any,<:Any}, B::Tuple{<:Any,<:Any}) = (A[1],B[2])
+_mul_axes(A::Tuple{<:Any,<:Any}, ::Tuple{<:Any}) = (A[1],) # matrix * vector
+_mul_axes(A::Tuple{<:Any}, B::Tuple{<:Any,<:Any}) = (A[1],B[2]) # vector * matrix
+_mul_axes(A::Tuple{<:Any,<:Any}, B::Tuple{<:Any,<:Any}) = (A[1],B[2]) # matrix * matrix
+_mul_axes(::Tuple{}, ::Tuple{}) = () # scalar * scalar
+_mul_axes(::Tuple{}, B::Tuple) = B # scalar * B
+_mul_axes(A::Tuple, B::Tuple{}) = A # A * scalar
 
 axes(M::Mul) = _mul_axes(axes(M.A), axes(M.B))
 
