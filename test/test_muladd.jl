@@ -511,7 +511,7 @@ Random.seed!(0)
             @test ArrayLayouts.rmul!(copy(A),UpperTriangular(B)) == A*UpperTriangular(B)
         end
 
-        @testset "Diagonal and SymTridiagonal" begin
+        @testset "Diagonal" begin
             A = randn(5,5)
             B = Diagonal(randn(5))
             @test MemoryLayout(B) == DiagonalLayout{DenseColumnMajor}()
@@ -538,6 +538,13 @@ Random.seed!(0)
             @test @inferred(mul(UpperTriangular(A) , UnitUpperTriangular(B))) isa UpperTriangular
             @test @inferred(mul(LowerTriangular(A), UpperTriangular(B))) isa Matrix
             @test @inferred(mul(UnitUpperTriangular(A), LowerTriangular(B))) isa Matrix
+        end
+
+        @testset "diag * tri" begin
+            D = Diagonal(randn(5))
+            U = UpperTriangular(randn(5,5))
+            @test mul(D,U) == D*U
+            @test mul(U,D) == U*D
         end
     end
 
