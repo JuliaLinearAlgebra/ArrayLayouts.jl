@@ -77,7 +77,10 @@ Random.seed!(0)
 
         @testset "Matrix{Int} * Vector{Vector{Int}}" begin
             A, x =  [1 2; 3 4] , [[1,2],[3,4]]
+            X = reshape([[1 2],[3 4], [5 6], [7 8]],2,2)
             @test mul(A,x) == A*x
+            @test mul(A,X) == A*X
+            @test mul(X,A) == X*A
         end
     end
 
