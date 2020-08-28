@@ -252,3 +252,4 @@ dot(a, b) = materialize(Dot(a, b))
 # We go to generic fallback as layout-arrays are structured
 dot(x, A, y) = dot(x, mul(A, y))
 LinearAlgebra.dot(x::AbstractVector, A::LayoutMatrix, y::AbstractVector) = dot(x, A, y)
+LinearAlgebra.dot(x::AbstractVector, A::Symmetric{<:Real,<:LayoutMatrix}, y::AbstractVector) = dot(x, A, y)

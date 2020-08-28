@@ -29,10 +29,11 @@ function materialize!(M::Lmul{<:TriangularLayout{'U','N'}})
         throw(DimensionMismatch("right hand side B needs first dimension of size $(size(A,1)), has size $m"))
     end
     Adata = triangulardata(A)
-    for j = 1:n
-        for i = 1:m
+    for j = rowsupport(B)
+        cs = colsupport(B,j)
+        for i = cs
             Bij = Adata[i,i]*B[i,j]
-            for k = (i + 1:m) ∩ rowsupport(Adata,i)
+            for k = (i + 1:m) ∩ cs ∩ rowsupport(Adata,i)
                 Bij += Adata[i,k]*B[k,j]
             end
             B[i,j] = Bij
@@ -48,10 +49,11 @@ function materialize!(M::Lmul{<:TriangularLayout{'U','U'}})
         throw(DimensionMismatch("right hand side B needs first dimension of size $(size(A,1)), has size $m"))
     end
     Adata = triangulardata(A)
-    for j = 1:n
-        for i = 1:m
+    for j = rowsupport(B)
+        cs = colsupport(B,j)
+        for i = cs
             Bij = B[i,j]
-            for k = (i + 1:m) ∩ rowsupport(Adata,i)
+            for k = (i + 1:m) ∩ cs ∩ rowsupport(Adata,i)
                 Bij += Adata[i,k]*B[k,j]
             end
             B[i,j] = Bij
