@@ -71,6 +71,8 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test copyto!(Array{Float64}(undef,3,3), view(A,1:3,1:3)) == A[1:3,1:3]
         @test copyto!(MyMatrix(Array{Float64}(undef,5,5)), A') == A'
         @test copyto!(MyMatrix(Array{Float64}(undef,5,5)), view(A',:,:)) == A'
+        @test copyto!(Array{Float64}(undef,5,5), A') == A'
+        @test copyto!(Array{Float64}(undef,5,5), view(A',:,:)) == A'
 
         @test qr(A).factors ≈ qr(A.A).factors
         @test qr(A,Val(true)).factors ≈ qr(A.A,Val(true)).factors
