@@ -83,6 +83,15 @@ struct FooNumber <: Number end
             a = randn(5)
             @test MemoryLayout(a') isa DualLayout{DenseRowMajor}
             @test MemoryLayout(transpose(a)) isa DualLayout{DenseRowMajor}
+            @test MemoryLayout(view(a',:,1:3)) isa DualLayout{RowMajor}
+            @test MemoryLayout(view(a',1,1:3)) isa DenseColumnMajor
+            @test MemoryLayout(view(a',1:1,1:3)) isa RowMajor
+            @test (a')[:,1:3] == layout_getindex(a',:,1:3)
+            @test (a')[1:1,1:3] == layout_getindex(a',1:1,1:3)
+            @test layout_getindex(a',:,1:3) isa Adjoint
+            @test layout_getindex(a',1:1,1:3) isa Array
+
+            @test ArrayLayouts._copyto!(similar(a'), a') == a'
         end
     end
 
