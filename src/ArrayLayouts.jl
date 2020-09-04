@@ -163,29 +163,25 @@ _copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} 
     Base.invoke(copyto!, Tuple{AbstractArray{T,N},AbstractArray{V,N}}, dest, src)
 
 
-copyto!(dest::LayoutArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N =
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::AbstractArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N =
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::LayoutArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N =
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
+_copyto!(dest, src) = _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
+copyto!(dest::LayoutArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = _copyto!(dest, src)
+copyto!(dest::AbstractArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = _copyto!(dest, src)
+copyto!(dest::LayoutArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N = _copyto!(dest, src)
 
-copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::SubArray{<:Any,N,<:LayoutArray}) where N =
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::LayoutArray{<:Any,N}) where N =
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::LayoutArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N =
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) where N =
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N =
-    _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::SubArray{<:Any,N,<:LayoutArray}) where N = _copyto!(dest, src)
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::LayoutArray{<:Any,N}) where N = _copyto!(dest, src)
+copyto!(dest::LayoutArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = _copyto!(dest, src)
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) where N = _copyto!(dest, src)
+copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = _copyto!(dest, src)
+
+copyto!(dest::LayoutMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
+copyto!(dest::LayoutMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
+copyto!(dest::AbstractMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
+copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 # ambiguity from sparsematrix.jl
 if VERSION ≥ v"1.5"
-    copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) =
-        _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-    copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) =
-        _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
+    copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
+    copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
 end
 
 zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))

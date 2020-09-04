@@ -291,8 +291,14 @@ transposelayout(::RowMajor) = ColumnMajor()
 transposelayout(::DenseColumnMajor) = DenseRowMajor()
 transposelayout(::DenseRowMajor) = DenseColumnMajor()
 transposelayout(::ConjLayout{ML}) where ML = ConjLayout{typeof(transposelayout(ML()))}()
+adjointlayout(::Type{T}, ::DualLayout{ML}) where {T,ML} = adjointlayout(T, ML())
 adjointlayout(::Type{T}, M::MemoryLayout) where T = transposelayout(conjlayout(T, M))
+sublayout(::DualLayout{ML}, ::Type{<:Tuple{KR,JR}}) where {ML,KR<:Slice,JR} = DualLayout{typeof(sublayout(ML(),Tuple{KR,JR}))}()
+sublayout(::DualLayout{ML}, INDS::Type) where ML = sublayout(ML(), INDS)
+sub_materialize(::DualLayout{ML}, A) where ML = sub_materialize(adjointlayout(eltype(A), ML()), A')'
 
+_copyto!(dlay, ::DualLayout{ML}, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N,ML} = 
+    _copyto!(dlay, ML(), dest, src)
 
 # Layouts of PermutedDimsArrays
 """
