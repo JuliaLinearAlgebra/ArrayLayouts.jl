@@ -32,22 +32,26 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 # These need to test dispatch reduces to ArrayLayouts.mul, etc.
 @testset "LayoutArray" begin
     @testset "LayoutVector" begin
-        A = MyVector([1.,2,3])
+        a = MyVector([1.,2,3])
         B = randn(3,3)
         b = randn(3)
 
-        @test A == A.A == Vector(A)
-        @test A[1:3] == A.A[1:3]
-        @test stringmime("text/plain", A) == "3-element MyVector:\n 1.0\n 2.0\n 3.0"
-        @test B*A ≈ B*A.A
-        @test B'*A ≈ B'*A.A
-        @test transpose(B)*A ≈ transpose(B)*A.A
-        @test b'A ≈ transpose(b)A ≈ A'b ≈ transpose(A)b ≈ b'A.A
-        @test qr(B).Q*A ≈ qr(B).Q*A.A
+        @test a == a.A == Vector(a)
+        @test a[1:3] == a.A[1:3]
+        @test a[:] == a
+        @test stringmime("text/plain", a) == "3-element MyVector:\n 1.0\n 2.0\n 3.0"
+        @test B*a ≈ B*a.A
+        @test B'*a ≈ B'*a.A
+        @test transpose(B)*a ≈ transpose(B)*a.A
+        @test b'a ≈ transpose(b)a ≈ a'b ≈ transpose(a)b ≈ b'a.A
+        @test qr(B).Q*a ≈ qr(B).Q*a.A
 
-        @test A'A == transpose(A)A == dot(A,A) == dot(A,A.A) == dot(A.A,A) == 14
-        v = view(A,1:3)
-        @test dot(v,A) == dot(v,A.A) == dot(A,v) == dot(A.A,v) == dot(v,v) == 14
+        @test a'a == transpose(a)a == dot(a,a) == dot(a,a.A) == dot(a.A,a) == 14
+        v = view(a,1:3)
+        @test dot(v,a) == dot(v,a.A) == dot(a,v) == dot(a.A,v) == dot(v,v) == 14
+
+        s = SparseVector(3, [1], [2])
+        @test a's == s'a == dot(a,s) == dot(s,a) == dot(s,a.A)
     end
 
     @testset "LayoutMatrix" begin
@@ -73,6 +77,8 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test copyto!(MyMatrix(Array{Float64}(undef,5,5)), view(A',:,:)) == A'
         @test copyto!(Array{Float64}(undef,5,5), A') == A'
         @test copyto!(Array{Float64}(undef,5,5), view(A',:,:)) == A'
+
+        @test copyto!(view(MyMatrix(Array{Float64}(undef,5,5)),:,:), view(A',:,:)) == A'
 
         @test qr(A).factors ≈ qr(A.A).factors
         @test qr(A,Val(true)).factors ≈ qr(A.A,Val(true)).factors
