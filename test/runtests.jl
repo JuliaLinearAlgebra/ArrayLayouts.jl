@@ -1,4 +1,4 @@
-using ArrayLayouts, Random, FillArrays, Test, Base64
+using ArrayLayouts, Random, FillArrays, Test, SparseArrays, Base64
 import ArrayLayouts: MemoryLayout, @_layoutlmul, triangulardata
 
 Random.seed!(0)
