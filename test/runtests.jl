@@ -136,6 +136,13 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             b = randn(5)
             @test dot(b, A, b) ≈ b'*(A*b) ≈ b'A*b
         end
+
+        @testset "dual vector * symmetric (#40)" begin
+            A = randn(3,3)
+            x = rand(3)
+            @test x' * Symmetric(MyMatrix(A)) ≈ x'Symmetric(A)
+            @test transpose(x) * Symmetric(MyMatrix(A)) ≈ transpose(x)Symmetric(A)
+        end
     end
 
     @testset "l/rmul!" begin
