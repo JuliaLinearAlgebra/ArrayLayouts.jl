@@ -158,6 +158,7 @@ for Typ in (:LayoutArray, :(Transpose{<:Any,<:LayoutMatrix}), :(Adjoint{<:Any,<:
 end
 
 getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
+getindex(A::LayoutVector, kr::Colon) = layout_getindex(A, kr)
 
 _copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} =
     Base.invoke(copyto!, Tuple{AbstractArray{T,N},AbstractArray{V,N}}, dest, src)
@@ -177,6 +178,7 @@ copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) wher
 copyto!(dest::LayoutMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
 copyto!(dest::LayoutMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 copyto!(dest::AbstractMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
+copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 # ambiguity from sparsematrix.jl
 if VERSION ≥ v"1.5"
