@@ -1,8 +1,15 @@
 using ArrayLayouts, FillArrays, Random, Test
-import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul
+import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul, zero!
 
 Random.seed!(0)
 @testset "Multiplication" begin
+    @testset "zero!" begin
+        for A in (randn(5,5), [randn(5,5),randn(4,4)])
+            zero!(A)
+            @test iszero(A)
+        end
+    end
+
     @testset "Matrix * Vector" begin
         @testset "eltype" begin
             v = MulAdd(1,zeros(Int,2,2), zeros(Float64,2),0,zeros(2))
