@@ -157,6 +157,8 @@ end
 
 getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
 getindex(A::LayoutVector, kr::Colon) = layout_getindex(A, kr)
+getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::Colon) = layout_getindex(A, kr, jr)
+getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) = layout_getindex(A, kr, jr)
 
 _copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} =
     Base.invoke(copyto!, Tuple{AbstractArray{T,N},AbstractArray{V,N}}, dest, src)
