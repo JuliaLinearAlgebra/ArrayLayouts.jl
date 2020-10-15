@@ -39,6 +39,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test a == a.A == Vector(a)
         @test a[1:3] == a.A[1:3]
         @test a[:] == a
+        @test (a')[1,:] == (a')[1,1:3] == a
         @test stringmime("text/plain", a) == "3-element MyVector:\n 1.0\n 2.0\n 3.0"
         @test B*a ≈ B*a.A
         @test B'*a ≈ B'*a.A
@@ -56,7 +57,8 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
     @testset "LayoutMatrix" begin
         A = MyMatrix(randn(5,5))
-        for (kr,jr) in ((1:2,2:3), (:,:), (:,1:2), (2:3,:), ([1,2],3:4), (:,[1,2]), ([2,3],:))
+        for (kr,jr) in ((1:2,2:3), (:,:), (:,1:2), (2:3,:), ([1,2],3:4), (:,[1,2]), ([2,3],:),
+                        (2,:), (:,2), (2,1:3), (1:3,2))
             @test A[kr,jr] == A.A[kr,jr]
         end
         b = randn(5)
