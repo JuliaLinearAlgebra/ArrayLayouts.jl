@@ -1,7 +1,7 @@
 name = "ArrayLayouts"
 uuid = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
 authors = ["Sheehan Olver <solver@mac.com>"]
-version = "0.4.9"
+version = "0.4.10"
 
 [deps]
 Compat = "34da2185-b29b-5c13-b0c7-acf172513d20"
@@ -11,7 +11,7 @@ SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
 
 [compat]
 Compat = "3.16"
-FillArrays = "0.9.1"
+FillArrays = "0.9.1, 0.10"
 julia = "1"
 
 [extras]
