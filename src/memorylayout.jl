@@ -532,7 +532,6 @@ adjointlayout(::Type, L::AbstractFillLayout) = L
 transposelayout(L::AbstractFillLayout) = L
 # TODO: Move to FillArrays.jl
 _getindex_value(V::SubArray) = getindex_value(parent(V))
-_getindex_value(V) = getindex_value(V)
 
 sub_materialize(::AbstractFillLayout, V, ax) = Fill(_getindex_value(V), ax)
 sub_materialize(::ZerosLayout, V, ax) = Zeros(ax)
