@@ -294,6 +294,10 @@ struct FooNumber <: Number end
         @test MemoryLayout(Fill(1+0im,10)') == DualLayout{FillLayout}()
         @test MemoryLayout(Adjoint(Fill(1+0im,10,2))) == FillLayout()
         @test MemoryLayout(Transpose(Fill(1+0im,10,2))) == FillLayout()
+
+        @test layout_getindex(Fill(1,10), 1:3) ≡ Fill(1,3)
+        @test layout_getindex(Ones(1,10), 1, 1:3) ≡ Ones(3)
+        @test layout_getindex(Zeros(5,10,12), 1, 1:3,4:6) ≡ Zeros(3,3)
     end
 
     @testset "Triangular col/rowsupport" begin
