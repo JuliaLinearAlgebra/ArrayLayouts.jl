@@ -534,8 +534,8 @@ transposelayout(L::AbstractFillLayout) = L
 _getindex_value(V::SubArray) = getindex_value(parent(V))
 
 sub_materialize(::AbstractFillLayout, V, ax) = Fill(_getindex_value(V), ax)
-sub_materialize(::ZerosLayout, V, ax) = Zeros(ax)
-sub_materialize(::OnesLayout, V, ax) = Ones(ax)
+sub_materialize(::ZerosLayout, V, ax) = Zeros{eltype(V)}(ax)
+sub_materialize(::OnesLayout, V, ax) = Ones{eltype(V)}(ax)
 
 abstract type AbstractBandedLayout <: MemoryLayout end
 abstract type AbstractTridiagonalLayout <: AbstractBandedLayout end
