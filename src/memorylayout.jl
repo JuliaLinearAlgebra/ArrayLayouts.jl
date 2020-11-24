@@ -530,10 +530,11 @@ sublayout(L::AbstractFillLayout, inds::Type) = L
 reshapedlayout(L::AbstractFillLayout, _) = L
 adjointlayout(::Type, L::AbstractFillLayout) = L
 transposelayout(L::AbstractFillLayout) = L
-# TODO: Move to FillArrays.jl
-_getindex_value(V::SubArray) = getindex_value(parent(V))
 
-sub_materialize(::AbstractFillLayout, V, ax) = Fill(_getindex_value(V), ax)
+_copyto!(_, ::AbstractFillLayout, dest::AbstractArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N =
+    fill!(dest, getindex_value(src))
+
+sub_materialize(::AbstractFillLayout, V, ax) = Fill(getindex_value(V), ax)
 sub_materialize(::ZerosLayout, V, ax) = Zeros{eltype(V)}(ax)
 sub_materialize(::OnesLayout, V, ax) = Ones{eltype(V)}(ax)
 
