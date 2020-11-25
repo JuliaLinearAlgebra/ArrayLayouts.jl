@@ -27,7 +27,7 @@ import Base: AbstractArray, AbstractMatrix, AbstractVector,
       similar, @_gc_preserve_end, @_gc_preserve_begin,
       @nexprs, @ncall, @ntuple, tuple_type_tail,
       all, any, isbitsunion, issubset, replace_in_print_matrix, replace_with_centered_mark,
-      strides, unsafe_convert, first_index, unalias
+      strides, unsafe_convert, first_index, unalias, union
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcasted,
                         combine_eltypes, DefaultArrayStyle, instantiate, materialize,
@@ -281,6 +281,6 @@ Base.print_matrix_row(io::IO,
         axes_print_matrix_row(axes(X), io, X, A, i, cols, sep)
 
 
-
+include("cumsum.jl")
 
 end
