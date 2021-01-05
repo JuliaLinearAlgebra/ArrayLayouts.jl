@@ -179,6 +179,7 @@ copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) wher
 copyto!(dest::LayoutMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
 copyto!(dest::LayoutMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 copyto!(dest::AbstractMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
+copyto!(dest::SubArray{<:Any,2,<:LayoutArray}, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
 copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 # ambiguity from sparsematrix.jl
