@@ -79,6 +79,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test copyto!(MyMatrix(Array{Float64}(undef,5,5)), view(A',:,:)) == A'
         @test copyto!(Array{Float64}(undef,5,5), A') == A'
         @test copyto!(Array{Float64}(undef,5,5), view(A',:,:)) == A'
+        @test copyto!(view(MyMatrix(Array{Float64}(undef,5,5)),:,:), A') == A'
 
         @test copyto!(view(MyMatrix(Array{Float64}(undef,5,5)),:,:), view(A',:,:)) == A'
 
@@ -219,3 +220,4 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     @test_skip lmul!(U,view(copy(B),collect(1:5),1:5)) ≈ U * B
 end
 
+include("test_cumsum.jl")

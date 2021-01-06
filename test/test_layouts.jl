@@ -287,9 +287,9 @@ struct FooNumber <: Number end
         @test MemoryLayout(Fill(1,10)) == FillLayout()
         @test MemoryLayout(Ones(10)) == OnesLayout()
         @test MemoryLayout(Zeros(10)) == ZerosLayout()
-        @test MemoryLayout(view(Fill(1,10),1:3)) == FillLayout()
+        @test MemoryLayout(SubArray(Fill(1,10),(1:3,))) == FillLayout()
         @test MemoryLayout(view(Fill(1,10),1:3,1)) == FillLayout()
-        @test MemoryLayout(view(Fill(1,10),[1,3,2])) == FillLayout()
+        @test MemoryLayout(SubArray(Fill(1,10),([1,3,2],))) == FillLayout()
         @test MemoryLayout(reshape(Fill(1,10),2,5)) == FillLayout()
         @test MemoryLayout(Fill(1+0im,10)') == DualLayout{FillLayout}()
         @test MemoryLayout(Adjoint(Fill(1+0im,10,2))) == FillLayout()
@@ -298,6 +298,12 @@ struct FooNumber <: Number end
         @test layout_getindex(Fill(1,10), 1:3) ≡ Fill(1,3)
         @test layout_getindex(Ones{Int}(1,10), 1, 1:3) ≡ Ones{Int}(3)
         @test layout_getindex(Zeros{Int}(5,10,12), 1, 1:3,4:6) ≡ Zeros{Int}(3,3)
+
+        # views of Fill no longer create Sub Arrays, but are supported
+        # as there was no strong need to delete their support
+        v = SubArray(Fill(1,10),(1:3,))
+        @test ArrayLayouts.sub_materialize(v) ≡ Fill(1,3)
+        @test ArrayLayouts._copyto!(Vector{Float64}(undef,3), v) == ones(3)
     end
 
     @testset "Triangular col/rowsupport" begin
