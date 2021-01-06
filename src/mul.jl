@@ -142,6 +142,7 @@ macro veclayoutmul(Typ)
             LinearAlgebra.mul!(dest::AbstractVector, A::$Mod{<:Any,<:$Typ}, b::AbstractVector) =
                 ArrayLayouts.mul!(dest,A,b)
 
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::ArrayLayouts.LayoutMatrix) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractVector) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Mod{<:Number,<:$Typ}, B::AbstractVector{<:Number}) = ArrayLayouts.mul(A,B)

@@ -27,7 +27,7 @@ import Base: AbstractArray, AbstractMatrix, AbstractVector,
       similar, @_gc_preserve_end, @_gc_preserve_begin,
       @nexprs, @ncall, @ntuple, tuple_type_tail,
       all, any, isbitsunion, issubset, replace_in_print_matrix, replace_with_centered_mark,
-      strides, unsafe_convert, first_index, unalias
+      strides, unsafe_convert, first_index, unalias, union
 
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcasted,
                         combine_eltypes, DefaultArrayStyle, instantiate, materialize,
@@ -54,7 +54,8 @@ export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, Dot,
         DiagonalLayout, ScalarLayout, SymTridiagonalLayout, TridiagonalLayout, BidiagonalLayout,
         HermitianLayout, SymmetricLayout, TriangularLayout,
         UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout, DualLayout,
-        colsupport, rowsupport, layout_getindex, QLayout, LayoutArray, LayoutMatrix, LayoutVector
+        colsupport, rowsupport, layout_getindex, QLayout, LayoutArray, LayoutMatrix, LayoutVector,
+        RangeCumsum
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle})
@@ -104,6 +105,7 @@ include("factorizations.jl")
 @inline sub_materialize(_, V, _) = Array(V)
 @inline sub_materialize(L, V) = sub_materialize(L, V, axes(V))
 @inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(V), V)
+@inline sub_materialize(V::AbstractArray) = V # Anything not a SubArray is already materialized
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
 
@@ -178,6 +180,7 @@ copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) wher
 copyto!(dest::LayoutMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
 copyto!(dest::LayoutMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 copyto!(dest::AbstractMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
+copyto!(dest::SubArray{<:Any,2,<:LayoutArray}, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
 copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 # ambiguity from sparsematrix.jl
@@ -281,6 +284,6 @@ Base.print_matrix_row(io::IO,
         axes_print_matrix_row(axes(X), io, X, A, i, cols, sep)
 
 
-
+include("cumsum.jl")
 
 end
