@@ -177,6 +177,17 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test ArrayLayouts.ldiv!(2, Hermitian(copy(C))) == ArrayLayouts.rdiv!(Hermitian(copy(C)), 2) == 2\Hermitian(C)
         end
     end
+
+    @testset "pow/I" begin
+        A = randn(2,2)
+        B = MyMatrix(A)
+        @test B^2 ≈ A^2
+        @test B^2.3 ≈ A^2.3
+        @test B^(-1) ≈ inv(A)
+        @test B + I ≈ I + B ≈ A + I
+        @test B - I ≈ A - I
+        @test I - B ≈ I - B
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}

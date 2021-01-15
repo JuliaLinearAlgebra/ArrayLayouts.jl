@@ -254,8 +254,26 @@ dot(a, b) = materialize(Dot(a, b))
 @inline LinearAlgebra.dot(a::LayoutArray, b::SubArray{<:Any,N,<:LayoutArray}) where N = dot(a,b)
 @inline LinearAlgebra.dot(a::SubArray{<:Any,N,<:LayoutArray}, b::SubArray{<:Any,N,<:LayoutArray}) where N = dot(a,b)
 
-# Temporary until layout 3-arg dot is added. 
+# Temporary until layout 3-arg dot is added.
 # We go to generic fallback as layout-arrays are structured
 dot(x, A, y) = dot(x, mul(A, y))
 LinearAlgebra.dot(x::AbstractVector, A::LayoutMatrix, y::AbstractVector) = dot(x, A, y)
 LinearAlgebra.dot(x::AbstractVector, A::Symmetric{<:Real,<:LayoutMatrix}, y::AbstractVector) = dot(x, A, y)
+
+
+
+# allow overloading for infinite or lazy case
+@inline _power_by_squaring(_, _, A, p) = Base.invoke(Base.power_by_squaring, Tuple{AbstractMatrix,Integer}, A, p)
+@inline _apply(_, _, op, A::AbstractMatrix, Λ::UniformScaling) = Base.invoke(op, Tuple{AbstractMatrix,UniformScaling}, A, Λ)
+@inline _apply(_, _, op, Λ::UniformScaling, A::AbstractMatrix) = Base.invoke(op, Tuple{UniformScaling,AbstractMatrix}, Λ, A)
+
+for Typ in (:LayoutMatrix, :(Symmetric{<:Any,<:LayoutMatrix}), :(Hermitian{<:Any,<:LayoutMatrix}),
+            :(Adjoint{<:Any,<:LayoutMatrix}), :(Transpose{<:Any,<:LayoutMatrix}))
+    @eval begin
+        @inline Base.power_by_squaring(A::$Typ, p::Integer) = _power_by_squaring(MemoryLayout(A), size(A), A, p)
+        @inline +(A::$Typ, Λ::UniformScaling) = _apply(MemoryLayout(A), size(A), +, A, Λ)
+        @inline +(Λ::UniformScaling, A::$Typ) = _apply(MemoryLayout(A), size(A), +, Λ, A)
+        @inline -(A::$Typ, Λ::UniformScaling) = _apply(MemoryLayout(A), size(A), -, A, Λ)
+        @inline -(Λ::UniformScaling, A::$Typ) = _apply(MemoryLayout(A), size(A), -, Λ, A)
+    end
+end
