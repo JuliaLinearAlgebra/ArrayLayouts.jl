@@ -155,7 +155,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
         @testset "map(copy, ::Diagonal)" begin
             # this is needed in BlockArrays
-            D = Diagonal(MyMatrix(randn(2,2)), MyMatrix(randn(2,2)))
+            D = Diagonal([MyMatrix(randn(2,2)), MyMatrix(randn(2,2))])
             @test map(copy, D) == D
         end
     end
