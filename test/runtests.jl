@@ -152,6 +152,12 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test x' * Symmetric(MyMatrix(A)) ≈ x'Symmetric(A)
             @test transpose(x) * Symmetric(MyMatrix(A)) ≈ transpose(x)Symmetric(A)
         end
+
+        @testset "map(copy, ::Diagonal)" begin
+            # this is needed in BlockArrays
+            D = Diagonal(MyMatrix(randn(2,2)), MyMatrix(randn(2,2)))
+            @test map(copy, D) == D
+        end
     end
 
     @testset "l/rmul!" begin
