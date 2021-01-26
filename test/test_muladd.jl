@@ -660,4 +660,13 @@ Random.seed!(0)
         @test ArrayLayouts.dot(a,b) == mul(a',b) == dot(a,b)
         @test eltype(Dot(a,1:5)) == Float64
     end
+
+    @testset "adjtrans muladd" begin
+        A,B = [1 2], [[1,2]',[3,4]']
+        B̃ = [transpose([1,2]), transpose([3,4])]
+        @test copy(MulAdd(A,B)) == A*B
+        @test eltype(MulAdd(A,B)) == eltype(B)
+        @test copy(MulAdd(A,B̃)) == A*B̃
+        @test eltype(MulAdd(A,B̃)) == eltype(B̃)
+    end
 end
