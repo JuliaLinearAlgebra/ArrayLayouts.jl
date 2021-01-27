@@ -189,6 +189,9 @@ if VERSION ≥ v"1.5"
     copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
 end
 
+# avoid bad copy in Base
+Base.map(::typeof(copy), D::Diagonal{<:LayoutArray}) = Diagonal(map(copy, D.diag))
+
 zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
 function zero!(A::AbstractArray{<:AbstractArray})
     for a in A

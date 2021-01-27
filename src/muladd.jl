@@ -399,7 +399,17 @@ copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout}) 
 # DualLayout
 ###
 
+transtype(::Adjoint) = adjoint
+transtype(::Transpose) = transpose
+
 function similar(M::MulAdd{<:DualLayout,<:Any,ZerosLayout}, ::Type{T}, (x,y)) where T
-    @assert x ≡ Base.OneTo(1)
-    similar(M.A', T, y)'
+    @assert length(x) == 1
+    trans = transtype(M.A)
+    trans(similar(trans(M.A), T, y))
+end
+
+function similar(M::MulAdd{<:Any,<:DualLayout,ZerosLayout}, ::Type{T}, (x,y)) where T
+    @assert length(x) == 1
+    trans = transtype(M.B)
+    trans(similar(trans(M.B), T, y))
 end
