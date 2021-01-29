@@ -191,6 +191,8 @@ end
 
 # avoid bad copy in Base
 Base.map(::typeof(copy), D::Diagonal{<:LayoutArray}) = Diagonal(map(copy, D.diag))
+Base.permutedims(D::Diagonal{<:Any,<:LayoutVector}) = D
+
 
 zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
 function zero!(A::AbstractArray{<:AbstractArray})
