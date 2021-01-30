@@ -1,7 +1,7 @@
 # ArrayLayouts.jl
 A Julia package for describing array layouts and more general fast linear algebra
 
-[![Travis](https://travis-ci.org/JuliaMatrices/ArrayLayouts.jl.svg?branch=master)](https://travis-ci.org/JuliaMatrices/ArrayLayouts.jl)
+[![Build Status](https://github.com/JuliaMatrices/ArrayLayouts.jl/workflows/CI/badge.svg)](https://github.com/JuliaMatrices/ArrayLayouts.jl/actions)
 [![codecov](https://codecov.io/gh/JuliaMatrices/ArrayLayouts.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMatrices/ArrayLayouts.jl)
 
 This package implements a trait-based framework for describing array layouts such as column major, row major, etc. that can be dispatched 
