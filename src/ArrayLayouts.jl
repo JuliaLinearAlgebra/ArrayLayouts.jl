@@ -171,9 +171,17 @@ getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) =
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal) = mul(A, B)
 *(A::Diagonal, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 
+for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian)
+    @eval begin
+        *(A::Diagonal{<:Any,<:LayoutVector}, B::$Mod{<:Any,<:LayoutMatrix}) = mul(A,B)
+        *(A::$Mod{<:Any,<:LayoutMatrix}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A,B)
+    end
+end
 \(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
 \(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = ldiv(A, B)
 \(A::AbstractMatrix, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
+\(A::Diagonal{<:Any,<:LayoutVector}, B::LayoutMatrix) = ldiv(A, B)
+\(A::LayoutMatrix, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
 \(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal) = ldiv(A, B)
 \(A::Diagonal, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
 
