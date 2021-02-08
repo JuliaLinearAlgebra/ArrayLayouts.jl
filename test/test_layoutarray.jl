@@ -198,15 +198,15 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         D̃ = Diagonal(Vector(D.diag))
         B = randn(5,5)
         B̃ = MyMatrix(B)
-        @test D*D == Matrix(D)^2
-        @test_broken D^2 == D*D
-        @test D*B == Matrix(D)*B
-        @test B*D == B*Matrix(D)
-        @test D*B̃ == Matrix(D)*B̃
-        @test B̃*D == B̃*Matrix(D)
-        @test D*D̃ == D̃*D
+        @test D*D ≈ Matrix(D)^2
+        @test_broken D^2 ≈ D*D
+        @test D*B ≈ Matrix(D)*B
+        @test B*D ≈ B*Matrix(D)
+        @test D*B̃ ≈ Matrix(D)*B̃
+        @test B̃*D ≈ B̃*Matrix(D)
+        @test D*D̃ ≈ D̃*D
 
-        @test D\D == I
+        @test D\D ≈ I
         @test D\B ≈ Matrix(D)\B
         @test B\D ≈ B\Matrix(D)
         @test D\B̃ ≈ Matrix(D)\B̃
