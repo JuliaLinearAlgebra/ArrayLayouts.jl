@@ -632,6 +632,7 @@ rowsupport(A) = rowsupport(A, axes(A,1))
 
 colsupport(_, A, j) = axes(A,1)
 
+
 """"
     colsupport(A, j)
 
@@ -639,6 +640,12 @@ gives an iterator containing the possible non-zero entries in the j-th column of
 """
 colsupport(A, j) = colsupport(MemoryLayout(A), A, j)
 colsupport(A) = colsupport(A, axes(A,2))
+
+# TODO: generalise to other subarrays
+function colsupport(A::SubArray{<:Any,N,<:Any,<:Tuple{Slice,Any}}, j) where N
+    _, jr = parentindices(A)
+    colsupport(parent(A), jr[j])
+end
 
 rowsupport(::ZerosLayout, A, _) = 1:0
 colsupport(::ZerosLayout, A, _) = 1:0

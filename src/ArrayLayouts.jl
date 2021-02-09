@@ -132,6 +132,7 @@ macro layoutgetindex(Typ)
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Hermitian{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Adjoint{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Transpose{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutgetindex LinearAlgebra.SubArray{<:Any,2,<:$Typ}
     end)
 end
 
@@ -161,6 +162,29 @@ getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
 getindex(A::LayoutVector, kr::Colon) = layout_getindex(A, kr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::Colon) = layout_getindex(A, kr, jr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) = layout_getindex(A, kr, jr)
+
+*(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = mul(A, B)
+*(A::AbstractMatrix, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Diagonal{<:Any,<:LayoutVector}, B::LayoutMatrix) = mul(A, B)
+*(A::LayoutMatrix, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal) = mul(A, B)
+*(A::Diagonal, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
+
+for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian)
+    @eval begin
+        *(A::Diagonal{<:Any,<:LayoutVector}, B::$Mod{<:Any,<:LayoutMatrix}) = mul(A,B)
+        *(A::$Mod{<:Any,<:LayoutMatrix}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A,B)
+    end
+end
+\(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
+\(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = ldiv(A, B)
+\(A::AbstractMatrix, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
+\(A::Diagonal{<:Any,<:LayoutVector}, B::LayoutMatrix) = ldiv(A, B)
+\(A::LayoutMatrix, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
+\(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal) = ldiv(A, B)
+\(A::Diagonal, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
+
 
 _copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} =
     Base.invoke(copyto!, Tuple{AbstractArray{T,N},AbstractArray{V,N}}, dest, src)
