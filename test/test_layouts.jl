@@ -6,7 +6,7 @@ import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayou
                         UnitLowerTriangularLayout, ScalarLayout, UnknownLayout,
                         hermitiandata, symmetricdata, FillLayout, ZerosLayout, OnesLayout,
                         DiagonalLayout, TridiagonalLayout, SymTridiagonalLayout, colsupport, rowsupport,
-                        diagonaldata, subdiagonaldata, supdiagonaldata, BidiagonalLayout, bidiagonaluplo
+                        subdiag, supdiag, BidiagonalLayout, bidiagonaluplo
 
 struct FooBar end
 struct FooNumber <: Number end
@@ -117,12 +117,12 @@ struct FooNumber <: Number end
         @test bidiagonaluplo(Bl) == bidiagonaluplo(Adjoint(Bu)) == 'L'
         @test bidiagonaluplo(Bu) == bidiagonaluplo(Adjoint(Bl)) == 'U'
 
-        @test diagonaldata(T) == diagonaldata(T') == diagonaldata(S) == diagonaldata(Bl) == diagonaldata(Bu)
-        @test supdiagonaldata(T) == subdiagonaldata(Adjoint(T)) == subdiagonaldata(Transpose(T)) == 
-                    supdiagonaldata(S) == subdiagonaldata(S) == 
-                    supdiagonaldata(Bu) == subdiagonaldata(Adjoint(Bu)) == subdiagonaldata(Transpose(Bu))
-        @test subdiagonaldata(T) == supdiagonaldata(Adjoint(T)) == supdiagonaldata(Transpose(T)) == 
-                subdiagonaldata(Bl) == supdiagonaldata(Adjoint(Bl)) == supdiagonaldata(Transpose(Bl)) ==
+        @test diag(T) == diag(T') == diag(S) == diag(Bl) == diag(Bu)
+        @test supdiag(T) == subdiag(Adjoint(T)) == subdiag(Transpose(T)) == 
+                    supdiag(S) == subdiag(S) == 
+                    supdiag(Bu) == subdiag(Adjoint(Bu)) == subdiag(Transpose(Bu))
+        @test subdiag(T) == supdiag(Adjoint(T)) == supdiag(Transpose(T)) == 
+                subdiag(Bl) == supdiag(Adjoint(Bl)) == supdiag(Transpose(Bl)) ==
                 T.dl
 
         @test colsupport(T,3) == rowsupport(T,3) == colsupport(S,3) == rowsupport(S,3) == 2:4
@@ -141,12 +141,12 @@ struct FooNumber <: Number end
             L = LowerTriangular(T)
             @test MemoryLayout(U) isa BidiagonalLayout{DenseColumnMajor}
             @test MemoryLayout(L) isa BidiagonalLayout{DenseColumnMajor}
-            @test diagonaldata(U) == diagonaldata(L) == diagonaldata(T)
-            @test subdiagonaldata(L) == subdiagonaldata(T)
-            @test supdiagonaldata(U) == supdiagonaldata(T)
+            @test diag(U) == diag(L) == diag(T)
+            @test subdiag(L) == subdiag(T)
+            @test supdiag(U) == supdiag(T)
             @test bidiagonaluplo(U) == 'U'
             @test bidiagonaluplo(L) == 'L'
-            @test_throws MethodError subdiagonaldata(U)
+            @test_throws MethodError subdiag(U)
         end
     end
 
@@ -246,8 +246,8 @@ struct FooNumber <: Number end
         @test MemoryLayout(Sc) isa SymTridiagonalLayout
         @test MemoryLayout(Hc) isa HermitianLayout
 
-        @test diagonaldata(S) == diagonaldata(B)
-        @test subdiagonaldata(S) == supdiagonaldata(S) == supdiagonaldata(B)
+        @test diag(S) == diag(B)
+        @test subdiag(S) == supdiag(S) == supdiag(B)
 
         @test colsupport(S,3) == colsupport(H,3) == colsupport(Sc,3) == colsupport(Hc,3) == 2:4
         @test rowsupport(S,3) == rowsupport(H,3) == rowsupport(Sc,3) == rowsupport(Hc,3) == 2:4
