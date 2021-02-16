@@ -139,8 +139,8 @@ struct FooNumber <: Number end
         @testset "Triangular of Tridiagonal" begin
             U = UpperTriangular(T)
             L = LowerTriangular(T)
-            @test MemoryLayout(U) isa BidiagonalLayout{DenseColumnMajor}
-            @test MemoryLayout(L) isa BidiagonalLayout{DenseColumnMajor}
+            @test MemoryLayout(U) isa BidiagonalLayout{DenseColumnMajor,DenseColumnMajor}
+            @test MemoryLayout(L) isa BidiagonalLayout{DenseColumnMajor,DenseColumnMajor}
             @test diag(U) == diag(L) == diag(T)
             @test subdiag(L) == subdiag(T)
             @test supdiag(U) == supdiag(T)
@@ -304,6 +304,12 @@ struct FooNumber <: Number end
         v = SubArray(Fill(1,10),(1:3,))
         @test ArrayLayouts.sub_materialize(v) ≡ Fill(1,3)
         @test ArrayLayouts._copyto!(Vector{Float64}(undef,3), v) == ones(3)
+
+        T = Tridiagonal(Fill(1,10), Fill(2,11), Fill(3,10))
+        @test MemoryLayout(UpperTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
+        @test MemoryLayout(LowerTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
+        @test MemoryLayout(UnitUpperTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
+        @test MemoryLayout(UnitLowerTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
     end
 
     @testset "Triangular col/rowsupport" begin

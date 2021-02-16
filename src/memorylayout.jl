@@ -598,12 +598,9 @@ supdiag(U::Union{UnitUpperTriangular,UpperTriangular}) = supdiag(triangulardata(
 subdiag(U::Union{UnitLowerTriangular,LowerTriangular}) = subdiag(triangulardata(U))
 
 adjointlayout(::Type{<:Real}, ml::SymTridiagonalLayout) = ml
-adjointlayout(::Type{<:Real}, ml::TridiagonalLayout) = ml
+adjointlayout(::Type{<:Real}, ::TridiagonalLayout{DL,D,DU}) where {DL,D,DU} = TridiagonalLayout{DU,D,DL}()
 adjointlayout(::Type{<:Real}, ml::BidiagonalLayout) = ml
 
-symmetriclayout(B::BidiagonalLayout{DV,EV}) where {DV,EV} = SymTridiagonalLayout{DV,EV}()
-hermitianlayout(::Type{<:Real}, B::BidiagonalLayout{DV,EV}) where {DV,EV} = SymTridiagonalLayout{DV,EV}()
-hermitianlayout(_, B::BidiagonalLayout) = HermitianLayout{typeof(B)}()
 
 subdiag(D::Transpose) = supdiag(parent(D))
 supdiag(D::Transpose) = subdiag(parent(D))
