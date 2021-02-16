@@ -586,9 +586,11 @@ transposelayout(ml::SymTridiagonalLayout) = ml
 transposelayout(ml::TridiagonalLayout) = ml
 transposelayout(ml::ConjLayout{DiagonalLayout}) = ml
 
-triangularlayout(::Type{<:TriangularLayout{UPLO,'N'}}, ::TridiagonalLayout{ML}) where {UPLO,ML} = BidiagonalLayout{ML}()
-triangularlayout(::Type{<:TriangularLayout{UPLO,'N'}}, ::TridiagonalLayout{FillLayout}) where UPLO = BidiagonalLayout{FillLayout}()
-triangularlayout(::Type{<:TriangularLayout{UPLO,'U'}}, ::TridiagonalLayout{FillLayout}) where UPLO = BidiagonalLayout{FillLayout}()
+triangularlayout(::Type{<:TriangularLayout{'L','N'}}, ::TridiagonalLayout{DL,D,DU}) where {DL,D,DU} = BidiagonalLayout{D,DL}()
+triangularlayout(::Type{<:TriangularLayout{'U','N'}}, ::TridiagonalLayout{DL,D,DU}) where {UPLO,DL,D,DU} = BidiagonalLayout{D,DU}()
+triangularlayout(::Type{<:TriangularLayout{'L','N'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) = BidiagonalLayout{FillLayout,FillLayout}()
+triangularlayout(::Type{<:TriangularLayout{'U','N'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) = BidiagonalLayout{FillLayout,FillLayout}()
+triangularlayout(::Type{<:TriangularLayout{UPLO,'U'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) where UPLO = BidiagonalLayout{FillLayout,FillLayout}()
 
 bidiagonaluplo(::Union{UpperTriangular,UnitUpperTriangular}) = 'U'
 bidiagonaluplo(::Union{LowerTriangular,UnitLowerTriangular}) = 'L'
@@ -599,8 +601,8 @@ adjointlayout(::Type{<:Real}, ml::SymTridiagonalLayout) = ml
 adjointlayout(::Type{<:Real}, ml::TridiagonalLayout) = ml
 adjointlayout(::Type{<:Real}, ml::BidiagonalLayout) = ml
 
-symmetriclayout(B::BidiagonalLayout{ML}) where ML = SymTridiagonalLayout{ML}()
-hermitianlayout(::Type{<:Real}, B::BidiagonalLayout{ML}) where ML = SymTridiagonalLayout{ML}()
+symmetriclayout(B::BidiagonalLayout{DV,EV}) where {DV,EV} = SymTridiagonalLayout{DV,EV}()
+hermitianlayout(::Type{<:Real}, B::BidiagonalLayout{DV,EV}) where {DV,EV} = SymTridiagonalLayout{DV,EV}()
 hermitianlayout(_, B::BidiagonalLayout) = HermitianLayout{typeof(B)}()
 
 subdiag(D::Transpose) = supdiag(parent(D))
