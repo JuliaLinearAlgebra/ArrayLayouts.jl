@@ -1,4 +1,4 @@
-using ArrayLayouts, FillArrays, Random, Test
+using ArrayLayouts, FillArrays, Random, LinearAlgebra, Test
 import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul, zero!
 
 Random.seed!(0)
@@ -668,5 +668,22 @@ Random.seed!(0)
         @test eltype(MulAdd(A,B)) == eltype(B)
         @test copy(MulAdd(A,B̃)) == A*B̃
         @test eltype(MulAdd(A,B̃)) == eltype(B̃)
+    end
+
+    @testset "Bidiagonal" begin
+        BidiagU = Bidiagonal(randn(5), randn(4), :U)
+        BidiagL = Bidiagonal(randn(5), randn(4), :L)
+        Tridiag = Tridiagonal(randn(4), randn(5), randn(4))
+        SymTri = SymTridiagonal(randn(5), randn(4))
+        Diag = Diagonal(randn(5))
+        @test typeof(mul(BidiagU,Diag)) <: Bidiagonal
+        @test typeof(mul(BidiagL,Diag)) <: Bidiagonal
+        @test typeof(mul(Tridiag,Diag)) <: Tridiagonal
+        @test typeof(mul(SymTri,Diag))  <: Tridiagonal
+
+        @test typeof(mul(BidiagU,Diag)) <: Bidiagonal
+        @test typeof(mul(Diag,BidiagL)) <: Bidiagonal
+        @test typeof(mul(Diag,Tridiag)) <: Tridiagonal
+        @test typeof(mul(Diag,SymTri))  <: Tridiagonal
     end
 end
