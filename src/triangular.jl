@@ -321,8 +321,8 @@ end
 function _bidiag_backsub!(M)
     A,b = M.A, M.B
     N = last(colsupport(b,1))
-    dv = diag(A)
-    ev = supdiag(A)
+    dv = diagonaldata(A)
+    ev = supdiagonaldata(A)
     b[N] = bj1 = dv[N]\b[N]
     
     @inbounds for j = (N - 1):-1:1
@@ -341,8 +341,8 @@ end
 
 function _bidiag_forwardsub!(M)
     A, b = M.A, M.B
-    dv = diag(A)
-    ev = subdiag(A)
+    dv = diagonaldata(A)
+    ev = subdiagonaldata(A)
     N = length(b)
     b[1] = bj1 = dv[1]\b[1]
     @inbounds for j = 2:N

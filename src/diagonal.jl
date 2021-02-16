@@ -16,9 +16,9 @@ function materialize!(M::Lmul{<:DiagonalLayout{<:AbstractFillLayout}})
 end
 
 
-copy(M::Lmul{<:DiagonalLayout,<:DiagonalLayout}) = Diagonal(diag(M.A) .* diag(M.B))
-copy(M::Lmul{<:DiagonalLayout}) = diag(M.A) .* M.B
-copy(M::Rmul{<:Any,<:DiagonalLayout}) = M.A .* permutedims(diag(M.B))
+copy(M::Lmul{<:DiagonalLayout,<:DiagonalLayout}) = Diagonal(diagonaldata(M.A) .* diagonaldata(M.B))
+copy(M::Lmul{<:DiagonalLayout}) = diagonaldata(M.A) .* M.B
+copy(M::Rmul{<:Any,<:DiagonalLayout}) = M.A .* permutedims(diagonaldata(M.B))
 
 
 

@@ -570,15 +570,19 @@ MemoryLayout(::Type{Tridiagonal{T,P}}) where {T,P} = tridiagonallayout(MemoryLay
 bidiagonaluplo(A::Bidiagonal) = A.uplo
 bidiagonaluplo(A::AdjOrTrans) = bidiagonaluplo(parent(A)) == 'L' ? 'U' : 'L'
 
+diagonaldata(D::Diagonal) = parent(D)
+diagonaldata(D::Bidiagonal) = D.dv
+diagonaldata(D::SymTridiagonal) = D.dv
+diagonaldata(D::Tridiagonal) = D.d
 
-supdiag(D::Bidiagonal) = D.uplo == 'U' ? D.ev : throw(ArgumentError("$D is lower-bidiagonal"))
-subdiag(D::Bidiagonal) = D.uplo == 'L' ? D.ev : throw(ArgumentError("$D is upper-bidiagonal"))
+supdiagonaldata(D::Bidiagonal) = D.uplo == 'U' ? D.ev : throw(ArgumentError("$D is lower-bidiagonal"))
+subdiagonaldata(D::Bidiagonal) = D.uplo == 'L' ? D.ev : throw(ArgumentError("$D is upper-bidiagonal"))
 
-supdiag(D::SymTridiagonal) = D.ev
-subdiag(D::SymTridiagonal) = D.ev
+supdiagonaldata(D::SymTridiagonal) = D.ev
+subdiagonaldata(D::SymTridiagonal) = D.ev
 
-subdiag(D::Tridiagonal) = D.dl
-supdiag(D::Tridiagonal) = D.du
+subdiagonaldata(D::Tridiagonal) = D.dl
+supdiagonaldata(D::Tridiagonal) = D.du
 
 transposelayout(ml::DiagonalLayout) = ml
 transposelayout(ml::BidiagonalLayout) = ml
@@ -594,22 +598,30 @@ triangularlayout(::Type{<:TriangularLayout{UPLO,'U'}}, ::TridiagonalLayout{FillL
 
 bidiagonaluplo(::Union{UpperTriangular,UnitUpperTriangular}) = 'U'
 bidiagonaluplo(::Union{LowerTriangular,UnitLowerTriangular}) = 'L'
-supdiag(U::Union{UnitUpperTriangular,UpperTriangular}) = supdiag(triangulardata(U))
-subdiag(U::Union{UnitLowerTriangular,LowerTriangular}) = subdiag(triangulardata(U))
+diagonaldata(U::Union{UnitUpperTriangular{T},UnitLowerTriangular{T}}) where T = Ones{T}(size(U,1))
+diagonaldata(U::Union{UpperTriangular{T},LowerTriangular{T}}) where T = diagonaldata(triangulardata(U))
+supdiagonaldata(U::Union{UnitUpperTriangular,UpperTriangular}) = supdiagonaldata(triangulardata(U))
+subdiagonaldata(U::Union{UnitLowerTriangular,LowerTriangular}) = subdiagonaldata(triangulardata(U))
 
 adjointlayout(::Type{<:Real}, ml::SymTridiagonalLayout) = ml
 adjointlayout(::Type{<:Real}, ::TridiagonalLayout{DL,D,DU}) where {DL,D,DU} = TridiagonalLayout{DU,D,DL}()
 adjointlayout(::Type{<:Real}, ml::BidiagonalLayout) = ml
 
+symmetriclayout(B::BidiagonalLayout{DV,EV}) where {DV,EV} = SymTridiagonalLayout{DV,EV}()
+hermitianlayout(::Type{<:Real}, B::BidiagonalLayout{DV,EV}) where {DV,EV} = SymTridiagonalLayout{DV,EV}()
+hermitianlayout(_, B::BidiagonalLayout) = HermitianLayout{typeof(B)}()
 
-subdiag(D::Transpose) = supdiag(parent(D))
-supdiag(D::Transpose) = subdiag(parent(D))
+diagonaldata(D::Transpose) = diagonaldata(parent(D))
+subdiagonaldata(D::Transpose) = supdiagonaldata(parent(D))
+supdiagonaldata(D::Transpose) = subdiagonaldata(parent(D))
 
-subdiag(D::Adjoint{<:Real}) = supdiag(parent(D))
-supdiag(D::Adjoint{<:Real}) = subdiag(parent(D))
+diagonaldata(D::Adjoint{<:Real}) = diagonaldata(parent(D))
+subdiagonaldata(D::Adjoint{<:Real}) = supdiagonaldata(parent(D))
+supdiagonaldata(D::Adjoint{<:Real}) = subdiagonaldata(parent(D))
 
-subdiag(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiag(parent(S)) : supdiag(parent(S))
-supdiag(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiag(parent(S)) : supdiag(parent(S))
+diagonaldata(S::HermOrSym) = diagonaldata(parent(S))
+subdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
+supdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
 
 
 
