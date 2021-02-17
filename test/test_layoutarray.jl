@@ -171,15 +171,14 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         C = randn(ComplexF64,5,5)
         @test ArrayLayouts.lmul!(2, Hermitian(copy(C))) == ArrayLayouts.rmul!(Hermitian(copy(C)), 2) == 2Hermitian(C)
 
-        if VERSION ≥ v"1.5"
-            @test ldiv!(2, deepcopy(b)) == rdiv!(deepcopy(b), 2) == 2\b
-            @test ldiv!(2, deepcopy(A)) == rdiv!(deepcopy(A), 2) == 2\A
-            @test ldiv!(2, deepcopy(A)') == rdiv!(deepcopy(A)', 2) == 2\A'
-            @test ldiv!(2, transpose(deepcopy(A))) == rdiv!(transpose(deepcopy(A)), 2) == 2\transpose(A)
-            @test ldiv!(2, Symmetric(deepcopy(A))) == rdiv!(Symmetric(deepcopy(A)), 2) == 2\Symmetric(A)
-            @test ldiv!(2, Hermitian(deepcopy(A))) == rdiv!(Hermitian(deepcopy(A)), 2) == 2\Hermitian(A)
-            @test ArrayLayouts.ldiv!(2, Hermitian(copy(C))) == ArrayLayouts.rdiv!(Hermitian(copy(C)), 2) == 2\Hermitian(C)
-        end
+        
+        @test ldiv!(2, deepcopy(b)) == rdiv!(deepcopy(b), 2) == 2\b
+        @test ldiv!(2, deepcopy(A)) == rdiv!(deepcopy(A), 2) == 2\A
+        @test ldiv!(2, deepcopy(A)') == rdiv!(deepcopy(A)', 2) == 2\A'
+        @test ldiv!(2, transpose(deepcopy(A))) == rdiv!(transpose(deepcopy(A)), 2) == 2\transpose(A)
+        @test ldiv!(2, Symmetric(deepcopy(A))) == rdiv!(Symmetric(deepcopy(A)), 2) == 2\Symmetric(A)
+        @test ldiv!(2, Hermitian(deepcopy(A))) == rdiv!(Hermitian(deepcopy(A)), 2) == 2\Hermitian(A)
+        @test ArrayLayouts.ldiv!(2, Hermitian(copy(C))) == ArrayLayouts.rdiv!(Hermitian(copy(C)), 2) == 2\Hermitian(C)
     end
 
     @testset "pow/I" begin

@@ -542,20 +542,24 @@ abstract type AbstractBandedLayout <: MemoryLayout end
 abstract type AbstractTridiagonalLayout <: AbstractBandedLayout end
 
 struct DiagonalLayout{ML} <: AbstractBandedLayout end
-struct BidiagonalLayout{ML} <: AbstractBandedLayout end
-struct SymTridiagonalLayout{ML} <: AbstractTridiagonalLayout end
-struct TridiagonalLayout{ML} <: AbstractTridiagonalLayout end
+struct BidiagonalLayout{DV,EV} <: AbstractBandedLayout end
+struct SymTridiagonalLayout{DV,EV} <: AbstractTridiagonalLayout end
+struct TridiagonalLayout{DL,D,DU} <: AbstractTridiagonalLayout end
 
-bidiagonallayout(_) = BidiagonalLayout{UnknownLayout}()
-tridiagonallayout(_) = TridiagonalLayout{UnknownLayout}()
-symtridiagonallayout(_) = SymTridiagonalLayout{UnknownLayout}()
+bidiagonallayout(dv, ev) = BidiagonalLayout{UnknownLayout,UnknownLayout}()
+tridiagonallayout(dl, d, du) = TridiagonalLayout{UnknownLayout,UnknownLayout,UnknownLayout}()
+
+symtridiagonallayout(d, ev) = SymTridiagonalLayout{UnknownLayout,UnknownLayout}()
+bidiagonallayout(d) = bidiagonallayout(d, d)
+tridiagonallayout(d) = tridiagonallayout(d,d,d)
+symtridiagonallayout(d) = symtridiagonallayout(d,d)
 diagonallayout(_) = DiagonalLayout{UnknownLayout}()
 
 
-diagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = DiagonalLayout{typeof(lay)}()
-bidiagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = BidiagonalLayout{typeof(lay)}()
-tridiagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = TridiagonalLayout{typeof(lay)}()
-symtridiagonallayout(lay::Union{AbstractStridedLayout, AbstractFillLayout}) = SymTridiagonalLayout{typeof(lay)}()
+diagonallayout(::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = DiagonalLayout{Lay}()
+bidiagonallayout(::Lay, ::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = BidiagonalLayout{Lay,Lay}()
+tridiagonallayout(::Lay, ::Lay, ::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = TridiagonalLayout{Lay,Lay,Lay}()
+symtridiagonallayout(::Lay, ::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = SymTridiagonalLayout{Lay,Lay}()
 
 
 MemoryLayout(D::Type{Diagonal{T,P}}) where {T,P} = diagonallayout(MemoryLayout(P))
@@ -586,9 +590,11 @@ transposelayout(ml::SymTridiagonalLayout) = ml
 transposelayout(ml::TridiagonalLayout) = ml
 transposelayout(ml::ConjLayout{DiagonalLayout}) = ml
 
-triangularlayout(::Type{<:TriangularLayout{UPLO,'N'}}, ::TridiagonalLayout{ML}) where {UPLO,ML} = BidiagonalLayout{ML}()
-triangularlayout(::Type{<:TriangularLayout{UPLO,'N'}}, ::TridiagonalLayout{FillLayout}) where UPLO = BidiagonalLayout{FillLayout}()
-triangularlayout(::Type{<:TriangularLayout{UPLO,'U'}}, ::TridiagonalLayout{FillLayout}) where UPLO = BidiagonalLayout{FillLayout}()
+triangularlayout(::Type{<:TriangularLayout{'L','N'}}, ::TridiagonalLayout{DL,D,DU}) where {DL,D,DU} = BidiagonalLayout{D,DL}()
+triangularlayout(::Type{<:TriangularLayout{'U','N'}}, ::TridiagonalLayout{DL,D,DU}) where {UPLO,DL,D,DU} = BidiagonalLayout{D,DU}()
+triangularlayout(::Type{<:TriangularLayout{'L','N'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) = BidiagonalLayout{FillLayout,FillLayout}()
+triangularlayout(::Type{<:TriangularLayout{'U','N'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) = BidiagonalLayout{FillLayout,FillLayout}()
+triangularlayout(::Type{<:TriangularLayout{UPLO,'U'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) where UPLO = BidiagonalLayout{FillLayout,FillLayout}()
 
 bidiagonaluplo(::Union{UpperTriangular,UnitUpperTriangular}) = 'U'
 bidiagonaluplo(::Union{LowerTriangular,UnitLowerTriangular}) = 'L'
@@ -598,20 +604,20 @@ supdiagonaldata(U::Union{UnitUpperTriangular,UpperTriangular}) = supdiagonaldata
 subdiagonaldata(U::Union{UnitLowerTriangular,LowerTriangular}) = subdiagonaldata(triangulardata(U))
 
 adjointlayout(::Type{<:Real}, ml::SymTridiagonalLayout) = ml
-adjointlayout(::Type{<:Real}, ml::TridiagonalLayout) = ml
+adjointlayout(::Type{<:Real}, ::TridiagonalLayout{DL,D,DU}) where {DL,D,DU} = TridiagonalLayout{DU,D,DL}()
 adjointlayout(::Type{<:Real}, ml::BidiagonalLayout) = ml
 
-symmetriclayout(B::BidiagonalLayout{ML}) where ML = SymTridiagonalLayout{ML}()
-hermitianlayout(::Type{<:Real}, B::BidiagonalLayout{ML}) where ML = SymTridiagonalLayout{ML}()
+symmetriclayout(B::BidiagonalLayout{DV,EV}) where {DV,EV} = SymTridiagonalLayout{DV,EV}()
+hermitianlayout(::Type{<:Real}, B::BidiagonalLayout{DV,EV}) where {DV,EV} = SymTridiagonalLayout{DV,EV}()
 hermitianlayout(_, B::BidiagonalLayout) = HermitianLayout{typeof(B)}()
 
+diagonaldata(D::Transpose) = diagonaldata(parent(D))
 subdiagonaldata(D::Transpose) = supdiagonaldata(parent(D))
 supdiagonaldata(D::Transpose) = subdiagonaldata(parent(D))
-diagonaldata(D::Transpose) = diagonaldata(parent(D))
 
+diagonaldata(D::Adjoint{<:Real}) = diagonaldata(parent(D))
 subdiagonaldata(D::Adjoint{<:Real}) = supdiagonaldata(parent(D))
 supdiagonaldata(D::Adjoint{<:Real}) = subdiagonaldata(parent(D))
-diagonaldata(D::Adjoint{<:Real}) = diagonaldata(parent(D))
 
 diagonaldata(S::HermOrSym) = diagonaldata(parent(S))
 subdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
@@ -653,10 +659,14 @@ colsupport(::ZerosLayout, A, _) = 1:0
 rowsupport(::DiagonalLayout, _, k) = isempty(k) ? (1:0) : minimum(k):maximum(k)
 colsupport(::DiagonalLayout, _, j) = isempty(j) ? (1:0) : minimum(j):maximum(j)
 
-colsupport(::BidiagonalLayout, A, j) = 
+function colsupport(::BidiagonalLayout, A, j)
+    isempty(j) && return 1:0
     bidiagonaluplo(A) == 'L' ? (minimum(j):min(size(A,1),maximum(j)+1)) : (max(minimum(j)-1,1):maximum(j))
-rowsupport(::BidiagonalLayout, A, j) = 
+end
+function rowsupport(::BidiagonalLayout, A, j)
+    isempty(j) && return 1:0
     bidiagonaluplo(A) == 'U' ? (minimum(j):min(size(A,2),maximum(j)+1)) : (max(minimum(j)-1,1):maximum(j))
+end
 
 colsupport(::AbstractTridiagonalLayout, A, j) = max(minimum(j)-1,1):min(size(A,1),maximum(j)+1)
 rowsupport(::AbstractTridiagonalLayout, A, j) = max(minimum(j)-1,1):min(size(A,2),maximum(j)+1)
