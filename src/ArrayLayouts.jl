@@ -1,5 +1,5 @@
 module ArrayLayouts
-using Base, Base.Broadcast, LinearAlgebra, FillArrays, SparseArrays, Compat
+using Base, Base.Broadcast, LinearAlgebra, FillArrays, SparseArrays
 import LinearAlgebra.BLAS
 
 import Base: AbstractArray, AbstractMatrix, AbstractVector,
@@ -170,8 +170,25 @@ for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian)
     @eval begin
         *(A::Diagonal{<:Any,<:LayoutVector}, B::$Mod{<:Any,<:LayoutMatrix}) = mul(A,B)
         *(A::$Mod{<:Any,<:LayoutMatrix}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A,B)
+        *(A::Diagonal{<:Any,<:LayoutVector}, B::$Mod{<:Any,<:AbstractMatrix}) = mul(A,B)
+        *(A::$Mod{<:Any,<:AbstractMatrix}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A,B)
     end
 end
+
+*(A::LayoutMatrix, B::Adjoint{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::LayoutMatrix, B::Transpose{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::Adjoint{<:Any,<:AbstractTriangular}, B::LayoutMatrix) = mul(A, B)
+*(A::Transpose{<:Any,<:AbstractTriangular}, B::LayoutMatrix) = mul(A, B)
+
+*(A::Transpose{<:Any,<:AbstractTriangular}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::Adjoint{<:Any,<:AbstractTriangular}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::Adjoint{<:Any,<:AbstractTriangular}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::Transpose{<:Any,<:AbstractTriangular}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::Adjoint{<:Any,<:LayoutMatrix}, B::Transpose{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::Transpose{<:Any,<:LayoutMatrix}, B::Adjoint{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::Adjoint{<:Any,<:LayoutMatrix}, B::Adjoint{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::Transpose{<:Any,<:LayoutMatrix}, B::Transpose{<:Any,<:AbstractTriangular}) = mul(A, B)
+
 \(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
 \(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = ldiv(A, B)
 \(A::AbstractMatrix, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
