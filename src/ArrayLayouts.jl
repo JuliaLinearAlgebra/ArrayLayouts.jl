@@ -166,6 +166,11 @@ getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) =
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal) = mul(A, B)
 *(A::Diagonal, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 
+*(A::LayoutMatrix, B::Adjoint{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::LayoutMatrix, B::Transpose{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::Adjoint{<:Any,<:AbstractTriangular}, B::LayoutMatrix) = mul(A, B)
+*(A::Transpose{<:Any,<:AbstractTriangular}, B::LayoutMatrix) = mul(A, B)
+
 for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian)
     @eval begin
         *(A::Diagonal{<:Any,<:LayoutVector}, B::$Mod{<:Any,<:LayoutMatrix}) = mul(A,B)
