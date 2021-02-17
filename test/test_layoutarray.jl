@@ -219,11 +219,14 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         D = Diagonal(MyVector(randn(5)))
 
         @test D * A' ≈ D * A.A'
+        @test A' * D ≈ A.A' * D
 
-        @test A * T' ≈ A.A * T'
-        @test A * transpose(T) ≈ A.A * transpose(T)
-        @test T' * A ≈ T' * A.A
-        @test transpose(T) * A ≈ transpose(T) * A.A
+        @test A * Adjoint(T) ≈ A.A * Adjoint(T)
+        @test A * Transpose(T) ≈ A.A * Transpose(T)
+        @test Adjoint(T) * A ≈ Adjoint(T) * A.A
+        @test Transpose(T) * A ≈ Transpose(T) * A.A
+        @test Transpose(T)A' ≈ Adjoint(T)A' ≈ Adjoint(T)Transpose(A) ≈ Transpose(T)Transpose(A)
+        @test Transpose(A)Adjoint(T) ≈ A'Adjoint(T) ≈ A'Transpose(T) ≈ Transpose(A)Transpose(T)
     end
 end
 
