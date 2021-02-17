@@ -41,12 +41,7 @@ import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
 import FillArrays: AbstractFill, getindex_value, axes_print_matrix_row
 
-if VERSION < v"1.2-"
-    import Base: has_offset_axes
-    require_one_based_indexing(A...) = !has_offset_axes(A...) || throw(ArgumentError("offset arrays are not supported but got an array with index other than 1"))
-else
-    import Base: require_one_based_indexing
-end
+import Base: require_one_based_indexing
 
 export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, Dot,
         lmul, rmul, mul, ldiv, rdiv, mul, MemoryLayout, AbstractStridedLayout,
@@ -208,10 +203,8 @@ copyto!(dest::SubArray{<:Any,2,<:LayoutArray}, src::AdjOrTrans{<:Any,<:LayoutArr
 copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 # ambiguity from sparsematrix.jl
-if VERSION ≥ v"1.5"
-    copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
-    copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
-end
+copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
+copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
 
 # avoid bad copy in Base
 Base.map(::typeof(copy), D::Diagonal{<:LayoutArray}) = Diagonal(map(copy, D.diag))

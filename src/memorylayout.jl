@@ -659,10 +659,14 @@ colsupport(::ZerosLayout, A, _) = 1:0
 rowsupport(::DiagonalLayout, _, k) = isempty(k) ? (1:0) : minimum(k):maximum(k)
 colsupport(::DiagonalLayout, _, j) = isempty(j) ? (1:0) : minimum(j):maximum(j)
 
-colsupport(::BidiagonalLayout, A, j) = 
+function colsupport(::BidiagonalLayout, A, j)
+    isempty(j) && return 1:0
     bidiagonaluplo(A) == 'L' ? (minimum(j):min(size(A,1),maximum(j)+1)) : (max(minimum(j)-1,1):maximum(j))
-rowsupport(::BidiagonalLayout, A, j) = 
+end
+function rowsupport(::BidiagonalLayout, A, j)
+    isempty(j) && return 1:0
     bidiagonaluplo(A) == 'U' ? (minimum(j):min(size(A,2),maximum(j)+1)) : (max(minimum(j)-1,1):maximum(j))
+end
 
 colsupport(::AbstractTridiagonalLayout, A, j) = max(minimum(j)-1,1):min(size(A,1),maximum(j)+1)
 rowsupport(::AbstractTridiagonalLayout, A, j) = max(minimum(j)-1,1):min(size(A,2),maximum(j)+1)

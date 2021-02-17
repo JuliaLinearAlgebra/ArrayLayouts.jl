@@ -95,12 +95,7 @@ __ldiv!(_, F, B) = LinearAlgebra.ldiv!(F, B)
 @inline materialize!(M::Ldiv) = _ldiv!(M.A, M.B)
 @inline materialize!(M::Rdiv) = ldiv!(M.B', M.A')'
 @inline copyto!(dest::AbstractArray, M::Rdiv) = copyto!(dest', Ldiv(M.B', M.A'))'
-
-if VERSION ≥ v"1.1-pre"
-    @inline copyto!(dest::AbstractArray, M::Ldiv) = _ldiv!(dest, M.A, M.B)
-else
-    @inline copyto!(dest::AbstractArray, M::Ldiv) = _ldiv!(dest, M.A, copy(M.B))
-end
+@inline copyto!(dest::AbstractArray, M::Ldiv) = _ldiv!(dest, M.A, copy(M.B))
 
 const MatLdivVec{styleA, styleB, T, V} = Ldiv{styleA, styleB, <:AbstractMatrix{T}, <:AbstractVector{V}}
 const MatLdivMat{styleA, styleB, T, V} = Ldiv{styleA, styleB, <:AbstractMatrix{T}, <:AbstractMatrix{V}}
