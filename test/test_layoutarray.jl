@@ -212,6 +212,19 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test B̃\D ≈ B̃\Matrix(D)
         @test D\D̃ ≈ D̃\D
     end
+
+    @testset "Adj/Trans" begin
+        A = MyMatrix(randn(5,5))
+        T = UpperTriangular(randn(5,5))
+        D = Diagonal(MyVector(randn(5)))
+
+        @test D * A' ≈ D * A.A'
+
+        @test A * T' ≈ A.A * T'
+        @test A * transpose(T) ≈ A.A * transpose(T)
+        @test T' * A ≈ T' * A.A
+        @test transpose(T) * A ≈ transpose(T) * A.A
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
