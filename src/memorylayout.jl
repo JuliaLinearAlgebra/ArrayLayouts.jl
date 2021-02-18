@@ -668,8 +668,14 @@ function rowsupport(::BidiagonalLayout, A, j)
     bidiagonaluplo(A) == 'U' ? (minimum(j):min(size(A,2),maximum(j)+1)) : (max(minimum(j)-1,1):maximum(j))
 end
 
-colsupport(::AbstractTridiagonalLayout, A, j) = max(minimum(j)-1,1):min(size(A,1),maximum(j)+1)
-rowsupport(::AbstractTridiagonalLayout, A, j) = max(minimum(j)-1,1):min(size(A,2),maximum(j)+1)
+function colsupport(::AbstractTridiagonalLayout, A, j)
+	isempty(j) && return 1:0
+	max(minimum(j)-1,1):min(size(A,1),maximum(j)+1)
+end
+function rowsupport(::AbstractTridiagonalLayout, A, j)
+	isempty(j) && return 1:0
+	max(minimum(j)-1,1):min(size(A,2),maximum(j)+1)
+end
 
 function colsupport(::SymmetricLayout, A, j)
     if symmetricuplo(A) == 'U'
