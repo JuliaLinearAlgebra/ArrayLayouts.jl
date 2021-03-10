@@ -103,6 +103,7 @@ include("factorizations.jl")
 @inline sub_materialize(V::AbstractArray) = V # Anything not a SubArray is already materialized
 
 copy(A::SubArray{<:Any,N,<:LayoutArray}) where N = sub_materialize(A)
+copy(A::SubArray{<:Any,N,<:AdjOrTrans{<:Any,<:LayoutArray}}) where N = sub_materialize(A)
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
 
