@@ -1,4 +1,5 @@
 using ArrayLayouts, LinearAlgebra, Test
+import ArrayLayouts: sub_materialize
 
 struct MyMatrix <: LayoutMatrix{Float64}
     A::Matrix{Float64}
@@ -42,6 +43,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
         @test a'a == transpose(a)a == dot(a,a) == dot(a,a.A) == dot(a.A,a) == 14
         v = view(a,1:3)
+        @test copy(v) == sub_materialize(v) == a[1:3]
         @test dot(v,a) == dot(v,a.A) == dot(a,v) == dot(a.A,v) == dot(v,v) == 14
 
         s = SparseVector(3, [1], [2])
