@@ -46,6 +46,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test copy(v) == sub_materialize(v) == a[1:3]
         @test dot(v,a) == dot(v,a.A) == dot(a,v) == dot(a.A,v) == dot(v,v) == 14
 
+        V = view(a',:,1:3)
+        @test copy(V) == sub_materialize(V) == (a')[:,1:3]
+
         s = SparseVector(3, [1], [2])
         @test a's == s'a == dot(a,s) == dot(s,a) == dot(s,a.A)
     end
