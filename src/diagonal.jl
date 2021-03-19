@@ -57,7 +57,8 @@ copy(M::Rmul{<:SymTridiagonalLayout,<:DiagonalLayout}) = convert(SymTridiagonal,
 copy(M::Lmul{<:DiagonalLayout,<:SymTridiagonalLayout}) = M.A * convert(SymTridiagonal, M.B)
 
 copy(M::Lmul{DiagonalLayout{OnesLayout}}) = copy_oftype(M.B, eltype(M))
-copy(M::Lmul{DiagonalLayout{OnesLayout},<:DiagonalLayout}) = copy_oftype(M.B, eltype(M))
+copy(M::Lmul{DiagonalLayout{OnesLayout},<:DiagonalLayout}) = Diagonal(copy_oftype(diagonaldata(M.B), eltype(M)))
+copy(M::Lmul{<:DiagonalLayout,DiagonalLayout{OnesLayout}}) = Diagonal(copy_oftype(diagonaldata(M.A), eltype(M)))
 copy(M::Lmul{DiagonalLayout{OnesLayout},DiagonalLayout{OnesLayout}}) = copy_oftype(M.B, eltype(M))
 copy(M::Rmul{<:Any,DiagonalLayout{OnesLayout}}) = copy_oftype(M.A, eltype(M))
 
