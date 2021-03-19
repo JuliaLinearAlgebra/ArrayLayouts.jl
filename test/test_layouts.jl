@@ -361,6 +361,8 @@ struct FooNumber <: Number end
         @test ArrayLayouts.mul(B, F) isa Bidiagonal{Int,<:Fill}
         @test ArrayLayouts.mul(F, B) isa Bidiagonal{Int,<:Fill}
         @test ArrayLayouts.mul(B, F) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(F, S) isa SymTridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(S, F) isa SymTridiagonal{Int,<:Fill}
 
         @test ArrayLayouts.mul((1:11)', F) isa AbstractMatrix{Int}
     end
