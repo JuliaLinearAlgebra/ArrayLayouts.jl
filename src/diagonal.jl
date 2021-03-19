@@ -47,6 +47,7 @@ copy(M::Rdiv{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) = M.A .* inv(getinde
 copy(M::Rdiv{<:DiagonalLayout,<:DiagonalLayout{<:AbstractFillLayout}}) = Diagonal(M.A.diag .* inv(getindex_value(M.B.diag)))
 
 
+
 ## bi/tridiagonal copy
 copy(M::Rmul{<:BidiagonalLayout,<:DiagonalLayout}) = convert(Bidiagonal, M.A) * M.B
 copy(M::Lmul{<:DiagonalLayout,<:BidiagonalLayout}) = M.A * convert(Bidiagonal, M.B)
@@ -55,6 +56,15 @@ copy(M::Lmul{<:DiagonalLayout,<:TridiagonalLayout}) = M.A * convert(Tridiagonal,
 copy(M::Rmul{<:SymTridiagonalLayout,<:DiagonalLayout}) = convert(SymTridiagonal, M.A) * M.B
 copy(M::Lmul{<:DiagonalLayout,<:SymTridiagonalLayout}) = M.A * convert(SymTridiagonal, M.B)
 
+copy(M::Lmul{DiagonalLayout{OnesLayout}}) = copy_oftype(M.B, eltype(M))
+copy(M::Lmul{DiagonalLayout{OnesLayout},<:DiagonalLayout}) = Diagonal(copy_oftype(diagonaldata(M.B), eltype(M)))
+copy(M::Lmul{<:DiagonalLayout,DiagonalLayout{OnesLayout}}) = Diagonal(copy_oftype(diagonaldata(M.A), eltype(M)))
+copy(M::Lmul{DiagonalLayout{OnesLayout},DiagonalLayout{OnesLayout}}) = copy_oftype(M.B, eltype(M))
+copy(M::Rmul{<:Any,DiagonalLayout{OnesLayout}}) = copy_oftype(M.A, eltype(M))
+
+copy(M::Lmul{<:DiagonalLayout{<:AbstractFillLayout}}) = getindex_value(diagonaldata(M.A)) * M.B
+copy(M::Lmul{<:DiagonalLayout{<:AbstractFillLayout},<:DiagonalLayout}) = getindex_value(diagonaldata(M.A)) * M.B
+copy(M::Rmul{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) = M.A * getindex_value(diagonaldata(M.B))
 
 copy(M::Rmul{<:BidiagonalLayout,<:DiagonalLayout{<:AbstractFillLayout}}) = M.A * getindex_value(diagonaldata(M.B))
 copy(M::Lmul{<:DiagonalLayout{<:AbstractFillLayout},<:BidiagonalLayout}) = getindex_value(diagonaldata(M.A)) * M.B
@@ -62,3 +72,11 @@ copy(M::Rmul{<:TridiagonalLayout,<:DiagonalLayout{<:AbstractFillLayout}}) = M.A 
 copy(M::Lmul{<:DiagonalLayout{<:AbstractFillLayout},<:TridiagonalLayout}) = getindex_value(diagonaldata(M.A)) * M.B
 copy(M::Rmul{<:SymTridiagonalLayout,<:DiagonalLayout{<:AbstractFillLayout}}) = M.A * getindex_value(diagonaldata(M.B))
 copy(M::Lmul{<:DiagonalLayout{<:AbstractFillLayout},<:SymTridiagonalLayout}) = getindex_value(diagonaldata(M.A)) * M.B
+
+
+copy(M::Rmul{<:BidiagonalLayout,DiagonalLayout{OnesLayout}}) = copy_oftype(M.A, eltype(M))
+copy(M::Lmul{DiagonalLayout{OnesLayout},<:BidiagonalLayout}) =  copy_oftype(M.B, eltype(M))
+copy(M::Rmul{<:TridiagonalLayout,DiagonalLayout{OnesLayout}}) = copy_oftype(M.A, eltype(M))
+copy(M::Lmul{DiagonalLayout{OnesLayout},<:TridiagonalLayout}) =  copy_oftype(M.B, eltype(M))
+copy(M::Rmul{<:SymTridiagonalLayout,DiagonalLayout{OnesLayout}}) = copy_oftype(M.A, eltype(M))
+copy(M::Lmul{DiagonalLayout{OnesLayout},<:SymTridiagonalLayout}) =  copy_oftype(M.B, eltype(M))

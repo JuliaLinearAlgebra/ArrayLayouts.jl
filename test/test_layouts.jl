@@ -310,6 +310,61 @@ struct FooNumber <: Number end
         @test MemoryLayout(LowerTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
         @test MemoryLayout(UnitUpperTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
         @test MemoryLayout(UnitLowerTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
+
+        B = Bidiagonal(Fill(1,11), Fill(2,10), :U)
+        @test MemoryLayout(B) isa BidiagonalLayout{FillLayout,FillLayout}
+
+        S = SymTridiagonal(Fill(1,11), Fill(2,10))
+        @test MemoryLayout(S) isa SymTridiagonalLayout{FillLayout,FillLayout}
+
+        
+        @test ArrayLayouts.mul(Eye{Int}(11), 1:11) ≡ 1:11
+        @test ArrayLayouts.mul(Eye(11), 1:11) isa AbstractVector{Float64}
+        @test ArrayLayouts.mul((1:11)', Eye{Int}(11)) isa AbstractMatrix{Int}
+        @test ArrayLayouts.mul((1:11)', Eye(11)) isa AbstractMatrix{Float64}
+
+        D = Diagonal(1:5)
+        @test ArrayLayouts.mul(D, Eye{Int}(5)) ≡ ArrayLayouts.mul(Eye{Int}(5), D) ≡ D
+        @test ArrayLayouts.mul(D, Eye(5)) == ArrayLayouts.mul(Eye(5), D) == D
+
+        @test ArrayLayouts.mul(Eye{Int}(11), T) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(T, Eye{Int}(11)) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(Eye{Int}(11), T) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(T, Eye{Int}(11)) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(Eye{Int}(11), B) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(B, Eye{Int}(11)) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(Eye{Int}(11), B) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(B, Eye{Int}(11)) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(Eye{Int}(11), S) isa SymTridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(S, Eye{Int}(11)) isa SymTridiagonal{Int,<:Fill}
+
+        @test ArrayLayouts.mul(Eye(11), T) isa Tridiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(T, Eye(11)) isa Tridiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(Eye(11), T) isa Tridiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(T, Eye(11)) isa Tridiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(Eye(11), B) isa Bidiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(B, Eye(11)) isa Bidiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(Eye(11), B) isa Bidiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(B, Eye(11)) isa Bidiagonal{Float64,<:Fill}
+
+        @test ArrayLayouts.mul(Eye{Int}(10), Eye{Int}(10)) ≡ Eye{Int}(10)
+        @test ArrayLayouts.mul(Eye{Int}(10), Eye(10)) ≡ Eye(10)
+
+        F = Diagonal(Fill(2,11))
+        @test ArrayLayouts.mul(F, 1:11) ≡ 2:2:22
+        @test ArrayLayouts.mul(F, Diagonal(1:11)) ≡ ArrayLayouts.mul(Diagonal(1:11), F) ≡ Diagonal(2:2:22)
+        @test ArrayLayouts.mul(F, T) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(T, F) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(F, T) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(T, F) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(F, B) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(B, F) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(F, B) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(B, F) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(F, S) isa SymTridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(S, F) isa SymTridiagonal{Int,<:Fill}
+
+        @test ArrayLayouts.mul((1:11)', F) isa AbstractMatrix{Int}
     end
 
     @testset "Triangular col/rowsupport" begin
