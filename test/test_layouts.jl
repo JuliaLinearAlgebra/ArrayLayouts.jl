@@ -311,6 +311,28 @@ struct FooNumber <: Number end
         @test MemoryLayout(UnitUpperTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
         @test MemoryLayout(UnitLowerTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
 
+        B = Bidiagonal(Fill(1,11), Fill(2,10), :U)
+        @test MemoryLayout(B) isa BidiagonalLayout{FillLayout,FillLayout}
+
+        @test ArrayLayouts.mul(Eye{Int}(11), T) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(T, Eye{Int}(11)) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(Eye{Int}(11), T) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(T, Eye{Int}(11)) isa Tridiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(Eye{Int}(11), B) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(B, Eye{Int}(11)) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(Eye{Int}(11), B) isa Bidiagonal{Int,<:Fill}
+        @test ArrayLayouts.mul(B, Eye{Int}(11)) isa Bidiagonal{Int,<:Fill}
+
+        @test ArrayLayouts.mul(Eye(11), T) isa Tridiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(T, Eye(11)) isa Tridiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(Eye(11), T) isa Tridiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(T, Eye(11)) isa Tridiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(Eye(11), B) isa Bidiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(B, Eye(11)) isa Bidiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(Eye(11), B) isa Bidiagonal{Float64,<:Fill}
+        @test ArrayLayouts.mul(B, Eye(11)) isa Bidiagonal{Float64,<:Fill}
+
+        @test ArrayLayouts.mul(Eye{Int}(10), Eye{Int}(10)) ≡ Eye{Int}(10)
         @test ArrayLayouts.mul(Eye{Int}(10), Eye(10)) ≡ Eye(10)
     end
 
