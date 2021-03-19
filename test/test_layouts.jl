@@ -311,7 +311,7 @@ struct FooNumber <: Number end
         @test MemoryLayout(UnitUpperTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
         @test MemoryLayout(UnitLowerTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
 
-        @test ArrayLayouts.mul(Eye{Int}{(10), Eye(10)) ≡ Eye(10)
+        @test ArrayLayouts.mul(Eye{Int}(10), Eye(10)) ≡ Eye(10)
     end
 
     @testset "Triangular col/rowsupport" begin
