@@ -554,7 +554,7 @@ bidiagonallayout(d) = bidiagonallayout(d, d)
 tridiagonallayout(d) = tridiagonallayout(d,d,d)
 symtridiagonallayout(d) = symtridiagonallayout(d,d)
 diagonallayout(_) = DiagonalLayout{UnknownLayout}()
-
+diagonal(d::AbstractVector) = Diagonal(d) # support non-array diagonal objects like QuasiDiagonal
 
 diagonallayout(::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = DiagonalLayout{Lay}()
 bidiagonallayout(::Lay, ::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = BidiagonalLayout{Lay,Lay}()
@@ -656,8 +656,8 @@ end
 rowsupport(::ZerosLayout, A, _) = 1:0
 colsupport(::ZerosLayout, A, _) = 1:0
 
-rowsupport(::DiagonalLayout, _, k) = isempty(k) ? (1:0) : minimum(k):maximum(k)
-colsupport(::DiagonalLayout, _, j) = isempty(j) ? (1:0) : minimum(j):maximum(j)
+rowsupport(::DiagonalLayout, _, k) = k
+colsupport(::DiagonalLayout, _, j) = j
 
 function colsupport(::BidiagonalLayout, A, j)
     isempty(j) && return 1:0
