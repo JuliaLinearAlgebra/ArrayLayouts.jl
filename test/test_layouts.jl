@@ -428,4 +428,8 @@ struct FooNumber <: Number end
         MemoryLayout(revD)
         @test 0 == @allocated MemoryLayout(revD)
     end
+
+    @testset "bug in vec views BandedMatrices#233" begin
+        @test colsupport(view(randn(5,5),:,1),1:1) ≡ Base.OneTo(5)
+    end
 end
