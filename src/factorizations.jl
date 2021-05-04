@@ -286,7 +286,7 @@ _lu(layout, axes, A; kwds...) = Base.invoke(lu, Tuple{AbstractMatrix{eltype(A)}}
 _lu(layout, axes, A, pivot::P; kwds...) where P = Base.invoke(lu, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
 _lu!(layout, axes, A, args...; kwds...) = error("Overload _lu!(::$(typeof(layout)), axes, A)")
 _cholesky(layout, axes, A; kwds...) = error("Overload _cholesky(::$(typeof(layout)), axes, A)")
-_cholesky!(layout, axes, A, args...; kwds...) = error("Overload _cholesky!(::$(typeof(layout)), axes, A)")
+_cholesky!(layout, axes, A, v::Val{tf}; kwds...) where tf = Base.invoke(cholesky!, Tuple{LinearAlgebra.RealHermSymComplexHerm,Val{tf}}, A, v; kwds...)
 _factorize(layout, axes, A) = qr(A) # Default to QR
 
 _inv_eye(_, ::Type{T}, axs::NTuple{2,Base.OneTo{Int}}) where T = Matrix{T}(I, map(length,axs)...)
