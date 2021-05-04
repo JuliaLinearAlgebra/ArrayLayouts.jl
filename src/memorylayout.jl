@@ -648,7 +648,7 @@ colsupport(A, j) = colsupport(MemoryLayout(A), A, j)
 colsupport(A) = colsupport(A, axes(A,2))
 
 # TODO: generalise to other subarrays
-function colsupport(A::SubArray{<:Any,N,<:Any,<:Tuple{Slice,Any}}, j) where N
+function colsupport(A::SubArray{<:Any,N,<:Any,<:Tuple{Slice,AbstractVector}}, j) where N
     _, jr = parentindices(A)
     colsupport(parent(A), jr[j])
 end
