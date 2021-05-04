@@ -285,8 +285,7 @@ _qr!(layout, axes, A, args...; kwds...) = error("Overload _qr!(::$(typeof(layout
 _lu(layout, axes, A; kwds...) = Base.invoke(lu, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
 _lu(layout, axes, A, pivot::P; kwds...) where P = Base.invoke(lu, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
 _lu!(layout, axes, A, args...; kwds...) = error("Overload _lu!(::$(typeof(layout)), axes, A)")
-_cholesky(layout, axes, A; kwds...) = Base.invoke(cholesky, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
-_cholesky(layout, axes, A, pivot::P; kwds...) where P = Base.invoke(cholesky, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
+_cholesky(layout, axes, A; kwds...) = error("Overload _cholesky(::$(typeof(layout)), axes, A)")
 _cholesky!(layout, axes, A, args...; kwds...) = error("Overload _cholesky!(::$(typeof(layout)), axes, A)")
 _factorize(layout, axes, A) = qr(A) # Default to QR
 
@@ -330,3 +329,13 @@ macro layoutfactorizations(Typ)
         ArrayLayouts.@_layoutfactorizations LinearAlgebra.RealHermSymComplexHerm{<:Real,<:SubArray{<:Real,2,<:$Typ}}
     end)
 end
+
+function ldiv!(C::Cholesky{<:Any,<:AbstractMatrix}, B::LayoutArray)
+    if C.uplo == 'L'
+        return ldiv!(adjoint(LowerTriangular(C.factors)), ldiv!(LowerTriangular(C.factors), B))
+    else
+        return ldiv!(UpperTriangular(C.factors), ldiv!(adjoint(UpperTriangular(C.factors)), B))
+    end
+end
+
+
