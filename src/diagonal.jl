@@ -16,7 +16,7 @@ function materialize!(M::Lmul{<:DiagonalLayout{<:AbstractFillLayout}})
 end
 
 
-copy(M::Lmul{<:DiagonalLayout,<:DiagonalLayout}) = Diagonal(diagonaldata(M.A) .* diagonaldata(M.B))
+copy(M::Lmul{<:DiagonalLayout,<:DiagonalLayout}) = diagonal(diagonaldata(M.A) .* diagonaldata(M.B))
 copy(M::Lmul{<:DiagonalLayout}) = diagonaldata(M.A) .* M.B
 copy(M::Rmul{<:Any,<:DiagonalLayout}) = M.A .* permutedims(diagonaldata(M.B))
 
@@ -36,15 +36,15 @@ function materialize!(M::Ldiv{<:DiagonalLayout})
     M.B
 end
 
-copy(M::Ldiv{<:DiagonalLayout,<:DiagonalLayout}) = Diagonal(inv.(M.A.diag) .* M.B.diag)
+copy(M::Ldiv{<:DiagonalLayout,<:DiagonalLayout}) = diagonal(inv.(M.A.diag) .* M.B.diag)
 copy(M::Ldiv{<:DiagonalLayout}) = inv.(M.A.diag) .* M.B
 copy(M::Ldiv{<:DiagonalLayout{<:AbstractFillLayout}}) = inv(getindex_value(M.A.diag)) .* M.B
-copy(M::Ldiv{<:DiagonalLayout{<:AbstractFillLayout},<:DiagonalLayout}) = Diagonal(inv(getindex_value(M.A.diag)) .* M.B.diag)
+copy(M::Ldiv{<:DiagonalLayout{<:AbstractFillLayout},<:DiagonalLayout}) = diagonal(inv(getindex_value(M.A.diag)) .* M.B.diag)
 
-copy(M::Rdiv{<:DiagonalLayout,<:DiagonalLayout}) = Diagonal(M.A.diag .* inv.(M.B.diag))
+copy(M::Rdiv{<:DiagonalLayout,<:DiagonalLayout}) = diagonal(M.A.diag .* inv.(M.B.diag))
 copy(M::Rdiv{<:Any,<:DiagonalLayout}) = M.A .* inv.(permutedims(M.B.diag))
 copy(M::Rdiv{<:Any,<:DiagonalLayout{<:AbstractFillLayout}}) = M.A .* inv(getindex_value(M.B.diag)) 
-copy(M::Rdiv{<:DiagonalLayout,<:DiagonalLayout{<:AbstractFillLayout}}) = Diagonal(M.A.diag .* inv(getindex_value(M.B.diag)))
+copy(M::Rdiv{<:DiagonalLayout,<:DiagonalLayout{<:AbstractFillLayout}}) = diagonal(M.A.diag .* inv(getindex_value(M.B.diag)))
 
 
 
