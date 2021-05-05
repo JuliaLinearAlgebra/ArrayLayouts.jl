@@ -81,16 +81,21 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
         @test copyto!(view(MyMatrix(Array{Float64}(undef,5,5)),:,:), view(A',:,:)) == A'
 
-        @test qr(A).factors ≈ qr(A.A).factors
-        @test qr(A,Val(true)).factors ≈ qr(A.A,Val(true)).factors
-        @test lu(A).factors ≈ lu(A.A).factors
-        @test lu(A,Val(true)).factors ≈ lu(A.A,Val(true)).factors
-        @test_throws ErrorException qr!(A)
-        @test_throws ErrorException lu!(A)
+        @testset "factorizations" begin
+            @test qr(A).factors ≈ qr(A.A).factors
+            @test qr(A,Val(true)).factors ≈ qr(A.A,Val(true)).factors
+            @test lu(A).factors ≈ lu(A.A).factors
+            @test lu(A,Val(true)).factors ≈ lu(A.A,Val(true)).factors
+            @test_throws ErrorException qr!(A)
+            @test_throws ErrorException lu!(A)
 
-        @test qr(A) isa LinearAlgebra.QRCompactWY
-        @test inv(A) ≈ inv(A.A)
+            @test qr(A) isa LinearAlgebra.QRCompactWY
+            @test inv(A) ≈ inv(A.A)
 
+            S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I))
+            @test cholesky(S).U ≈ cholesky!(deepcopy(S)).U
+            @test cholesky(S,Val(true)).U ≈ cholesky(Matrix(S),Val(true)).U
+        end
         Bin = randn(5,5)
         B = MyMatrix(copy(Bin))
         muladd!(1.0, A, A, 2.0, B)
