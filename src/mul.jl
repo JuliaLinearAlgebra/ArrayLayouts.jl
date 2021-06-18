@@ -163,8 +163,10 @@ macro layoutmul(Typ)
 
         LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::AbstractMatrix) =
             ArrayLayouts.mul!(dest,A,b)
-        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::$Typ) =
-            ArrayLayouts.mul!(dest,A,b)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::AbstractMatrix, B::$Typ) =
+            ArrayLayouts.mul!(dest,A,B)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::$Typ) =
+            ArrayLayouts.mul!(dest,A,B)
 
         Base.:*(A::$Typ, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::$Typ, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
