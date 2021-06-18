@@ -106,6 +106,12 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             muladd!(1.0, Ones(5,5), A, 2.0, B)
         end
 
+        @testset "mul!" begin
+            @test mul!(B, A, A) ≈ A*A
+            @test mul!(B, A', A) ≈ A'*A
+            @test mul!(B, A, A') ≈ A*A'
+        end
+
         @testset "generic_blasmul!" begin
             A = BigFloat.(randn(5,5))
             Bin = BigFloat.(randn(5,5))
