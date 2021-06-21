@@ -1,4 +1,5 @@
 module ArrayLayouts
+using Base: _typed_hcat
 using Base, Base.Broadcast, LinearAlgebra, FillArrays, SparseArrays
 import LinearAlgebra.BLAS
 
@@ -328,4 +329,22 @@ Base.print_matrix_row(io::IO,
 
 include("cumsum.jl")
 
-end
+###
+# support overloading hcat/vcat for ∞-arrays
+###
+
+const LayoutVecOrMat{T} = Union{LayoutVector{T},LayoutMatrix{T}}
+const LayoutVecOrMats{T} = Union{LayoutVecOrMat{T},SubArray{T,1,<:LayoutVecOrMat},SubArray{T,2,<:LayoutVecOrMat}}
+
+typed_hcat(::Type{T}, ::Tuple, A...) where T = Base._typed_hcat(T, A)
+typed_vcat(::Type{T}, ::Tuple, A...) where T = Base._typed_vcat(T, A)
+typed_hcat(::Type{T}, A...) where T = typed_hcat(T, (size(A[1],1), sum(size.(A,2))), A...)
+typed_vcat(::Type{T}, A...) where T = typed_vcat(T, (sum(size.(A,1)),size(A[1],2)), A...)
+
+Base.typed_vcat(::Type{T}, A::LayoutVecOrMats, B::AbstractVecOrMat...) where T = typed_vcat(T, A, B...)
+Base.typed_hcat(::Type{T}, A::LayoutVecOrMats, B::AbstractVecOrMat...) where T = typed_hcat(T, A, B...)
+Base.typed_vcat(::Type{T}, A::LayoutVecOrMats, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_vcat(T, A, B, C...)
+Base.typed_hcat(::Type{T}, A::LayoutVecOrMats, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_hcat(T, A, B, C...)
+Base.typed_vcat(::Type{T}, A::AbstractVecOrMat, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_vcat(T, A, B, C...)
+Base.typed_hcat(::Type{T}, A::AbstractVecOrMat, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_hcat(T, A, B, C...)
+end # module
