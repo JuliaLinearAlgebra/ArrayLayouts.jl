@@ -110,6 +110,20 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test mul!(B, A, A) ≈ A*A
             @test mul!(B, A', A) ≈ A'*A
             @test mul!(B, A, A') ≈ A*A'
+            @test mul!(B, A', A') ≈ A'*A'
+            @test mul!(B, A, Bin) ≈ A*Bin
+
+            @test mul!(copy(B), A, A, 2, 3) ≈ 2A*A + 3B
+            @test mul!(copy(B), A', A, 2, 3) ≈ 2A'*A + 3B
+            @test mul!(copy(B), A, A', 2, 3) ≈ 2A*A' + 3B
+            @test mul!(copy(B), A', A', 2, 3) ≈ 2A'*A' + 3B
+            @test mul!(copy(B), Bin, A, 2, 3) ≈ 2Bin*A + 3B
+            @test mul!(copy(B), Bin, A', 2, 3) ≈ 2Bin*A' + 3B
+            @test mul!(copy(B), A, Bin, 2, 3) ≈ 2A*Bin + 3B
+            @test mul!(copy(B), A', Bin, 2, 3) ≈ 2A'*Bin + 3B
+            @test mul!(copy(B), A, Bin, 2, 3) ≈ 2A*Bin + 3B
+            @test mul!(copy(B), A, Bin', 2, 3) ≈ 2A*Bin' + 3B
+            @test mul!(copy(B), Bin', A, 2, 3) ≈ 2Bin'*A + 3B
         end
 
         @testset "generic_blasmul!" begin
@@ -243,6 +257,18 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test Transpose(T) * A ≈ Transpose(T) * A.A
         @test Transpose(T)A' ≈ Adjoint(T)A' ≈ Adjoint(T)Transpose(A) ≈ Transpose(T)Transpose(A)
         @test Transpose(A)Adjoint(T) ≈ A'Adjoint(T) ≈ A'Transpose(T) ≈ Transpose(A)Transpose(T)
+    end
+
+    @testset "concat" begin
+        a = MyVector(randn(5))
+        A = MyMatrix(randn(5,6))
+
+        @test [a; a] == [Array(a); a] == [a; Array(a)]
+        @test [A; A] == [Array(A); A] == [A; Array(A)]
+
+        @test [Array(a) A A] == [Array(a) Array(A) Array(A)]
+        @test [a A A] == [Array(a) Array(A) Array(A)]
+        @test [a Array(A) A] == [Array(a) Array(A) Array(A)]
     end
 end
 

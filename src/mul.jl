@@ -109,6 +109,7 @@ copy(M::Mul) = copy(mulreduce(M))
 @inline copyto!(dest, M::Mul) = copyto!(dest, mulreduce(M))
 @inline copyto!(dest::AbstractArray, M::Mul) = copyto!(dest, mulreduce(M))
 mul!(dest::AbstractArray, A::AbstractArray, B::AbstractArray) = copyto!(dest, Mul(A,B))
+mul!(dest::AbstractArray, A::AbstractArray, B::AbstractArray, α::Number, β::Number) = muladd!(α, A, B, β, dest)
 
 
 broadcastable(M::Mul) = M
@@ -161,12 +162,18 @@ macro layoutmul(Typ)
         LinearAlgebra.mul!(dest::AbstractVector, A::$Typ, b::AbstractVector) =
             ArrayLayouts.mul!(dest,A,b)
 
-        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::AbstractMatrix) =
-            ArrayLayouts.mul!(dest,A,b)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::AbstractMatrix) =
+            ArrayLayouts.mul!(dest,A,B)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::AbstractMatrix, B::$Typ) =
             ArrayLayouts.mul!(dest,A,B)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::$Typ) =
             ArrayLayouts.mul!(dest,A,B)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::AbstractMatrix, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::AbstractMatrix, B::$Typ, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::$Typ, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
 
         Base.:*(A::$Typ, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::$Typ, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
@@ -193,9 +200,22 @@ macro layoutmul(Typ)
 
             LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::$Mod{<:Any,<:AbstractMatrix}) =
                 ArrayLayouts.mul!(dest,A,b)
-
             LinearAlgebra.mul!(dest::AbstractVector, A::$Mod{<:Any,<:$Typ}, b::AbstractVector) =
                 ArrayLayouts.mul!(dest,A,b)
+            LinearAlgebra.mul!(dest::AbstractMatrix, A::$Mod{<:Any,<:$Typ}, B::AbstractMatrix, α::Number, β::Number) =
+                ArrayLayouts.mul!(dest,A,B,α,β)
+            LinearAlgebra.mul!(dest::AbstractMatrix, A::AbstractMatrix, B::$Mod{<:Any,<:$Typ}, α::Number, β::Number) =
+                ArrayLayouts.mul!(dest,A,B,α,β)
+            LinearAlgebra.mul!(dest::AbstractMatrix, A::$Mod{<:Any,<:$Typ}, B::$Typ, α::Number, β::Number) =
+                ArrayLayouts.mul!(dest,A,B,α,β)
+            LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::$Mod{<:Any,<:$Typ}, α::Number, β::Number) =
+                ArrayLayouts.mul!(dest,A,B,α,β)
+            LinearAlgebra.mul!(dest::AbstractMatrix, A::$Mod{<:Any,<:AbstractVecOrMat}, B::$Typ, α::Number, β::Number) =
+                ArrayLayouts.mul!(dest,A,B,α,β)
+            LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::$Mod{<:Any,<:AbstractVecOrMat}, α::Number, β::Number) =
+                ArrayLayouts.mul!(dest,A,B,α,β)
+            LinearAlgebra.mul!(dest::AbstractMatrix, A::$Mod{<:Any,<:$Typ}, B::$Mod{<:Any,<:$Typ}, α::Number, β::Number) =
+                ArrayLayouts.mul!(dest,A,B,α,β)
 
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractMatrix) = ArrayLayouts.mul(A,B)
