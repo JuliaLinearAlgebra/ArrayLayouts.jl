@@ -110,6 +110,16 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test mul!(B, A, A) ≈ A*A
             @test mul!(B, A', A) ≈ A'*A
             @test mul!(B, A, A') ≈ A*A'
+            @test mul!(B, A', A') ≈ A'*A'
+
+            @test mul!(copy(B), A, A, 2, 3) ≈ 2A*A + 3B
+            @test mul!(copy(B), A', A, 2, 3) ≈ 2A'*A + 3B
+            @test mul!(copy(B), A, A', 2, 3) ≈ 2A*A' + 3B
+            @test mul!(copy(B), A', A', 2, 3) ≈ 2A'*A' + 3B
+            @test mul!(copy(B), Bin, A, 2, 3) ≈ 2Bin*A + 3B
+            @test mul!(copy(B), Bin, A', 2, 3) ≈ 2Bin*A' + 3B
+            @test mul!(copy(B), A, Bin, 2, 3) ≈ 2A*Bin + 3B
+            @test mul!(copy(B), A', Bin, 2, 3) ≈ 2A'*Bin + 3B
         end
 
         @testset "generic_blasmul!" begin
