@@ -351,8 +351,10 @@ struct FooNumber <: Number end
         @test ArrayLayouts.mul(Eye{Int}(10), Eye(10)) ≡ Eye(10)
 
         F = Diagonal(Fill(2,11))
-        @test ArrayLayouts.mul(F, 1:11) ≡ 2:2:22
-        @test ArrayLayouts.mul(F, Diagonal(1:11)) ≡ ArrayLayouts.mul(Diagonal(1:11), F) ≡ Diagonal(2:2:22)
+        @test ArrayLayouts.mul(F, 1:11) isa AbstractRange
+        @test ArrayLayouts.mul(F, 1:11) == 2:2:22
+        @test ArrayLayouts.mul(F, Diagonal(1:11)) == ArrayLayouts.mul(Diagonal(1:11), F) == Diagonal(2:2:22)
+        @test ArrayLayouts.mul(F, Diagonal(1:11)).diag isa AbstractRange
         @test ArrayLayouts.mul(F, T) isa Tridiagonal{Int,<:Fill}
         @test ArrayLayouts.mul(T, F) isa Tridiagonal{Int,<:Fill}
         @test ArrayLayouts.mul(F, T) isa Tridiagonal{Int,<:Fill}

@@ -1,6 +1,11 @@
 using ArrayLayouts, LinearAlgebra, Test
 import ArrayLayouts: sub_materialize
 
+if VERSION < v"1.7-"
+    ColumnNorm() = Val(true)
+    RowMaximum() = Val(true)
+end
+
 struct MyMatrix <: LayoutMatrix{Float64}
     A::Matrix{Float64}
 end
@@ -83,9 +88,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
         @testset "factorizations" begin
             @test qr(A).factors ≈ qr(A.A).factors
-            @test qr(A,Val(true)).factors ≈ qr(A.A,Val(true)).factors
+            @test qr(A,ColumnNorm()).factors ≈ qr(A.A,ColumnNorm()).factors
             @test lu(A).factors ≈ lu(A.A).factors
-            @test lu(A,Val(true)).factors ≈ lu(A.A,Val(true)).factors
+            @test lu(A,RowMaximum()).factors ≈ lu(A.A,RowMaximum()).factors
             @test_throws ErrorException qr!(A)
             @test_throws ErrorException lu!(A)
 
@@ -228,7 +233,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         B = randn(5,5)
         B̃ = MyMatrix(B)
         @test D*D ≈ Matrix(D)^2
-        @test_broken D^2 ≈ D*D
+        if VERSION ≥ v"1.7-"
+            @test D^2 ≈ D*D
+        end
         @test D*B ≈ Matrix(D)*B
         @test B*D ≈ B*Matrix(D)
         @test D*B̃ ≈ Matrix(D)*B̃
