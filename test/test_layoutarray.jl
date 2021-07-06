@@ -1,5 +1,10 @@
-using ArrayLayouts, LinearAlgebra, Compat, Test
+using ArrayLayouts, LinearAlgebra, Test
 import ArrayLayouts: sub_materialize
+
+if VERSION < v"1.7-"
+    ColumnNorm() = Val(true)
+    RowMaximum() = Val(true)
+end
 
 struct MyMatrix <: LayoutMatrix{Float64}
     A::Matrix{Float64}
