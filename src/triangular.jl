@@ -330,7 +330,7 @@ function _bidiag_backsub!(M)
         bj -= ev[j] * bj1
         dvj = dv[j]
         if iszero(dvj)
-            throw(SingularEbception(j))
+            throw(SingularException(j))
         end
         bj   = dvj\bj
         b[j] = bj1 = bj
@@ -350,7 +350,7 @@ function _bidiag_forwardsub!(M)
         bj -= ev[j - 1] * bj1
         dvj = dv[j]
         if iszero(dvj)
-            throw(SingularEbception(j))
+            throw(SingularException(j))
         end
         bj   = dvj\bj
         b[j] = bj1 = bj
