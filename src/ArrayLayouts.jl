@@ -232,13 +232,19 @@ Base.map(::typeof(copy), D::Diagonal{<:LayoutArray}) = Diagonal(map(copy, D.diag
 Base.permutedims(D::Diagonal{<:Any,<:LayoutVector}) = D
 
 
-zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
-function zero!(A::AbstractArray{<:AbstractArray})
+zero!(A) = zero!(MemoryLayout(A), A)
+zero!(_, A) = fill!(A,zero(eltype(A)))
+function zero!(_, A::AbstractArray{<:AbstractArray})
     for a in A
         zero!(a)
     end
     A
 end
+
+_norm(_, A, p) = Base.invoke(norm, Tuple{Any,Real}, A, p)
+LinearAlgebra.norm(A::LayoutArray, p::Real=2) = _norm(MemoryLayout(A), A, p)
+LinearAlgebra.norm(A::SubArray{<:Any,N,<:LayoutArray}, p::Real=2) where N = _norm(MemoryLayout(A), A, p)
+
 
 _fill_lmul!(β, A::AbstractArray{T}) where T = iszero(β) ? zero!(A) : lmul!(β, A)
 
