@@ -50,6 +50,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         v = view(a,1:3)
         @test copy(v) == sub_materialize(v) == a[1:3]
         @test dot(v,a) == dot(v,a.A) == dot(a,v) == dot(a.A,v) == dot(v,v) == 14
+        @test norm(v) == norm(a) == norm([1,2,3])
 
         V = view(a',:,1:3)
         @test copy(V) == sub_materialize(V) == (a')[:,1:3]
