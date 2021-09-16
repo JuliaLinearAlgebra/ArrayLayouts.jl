@@ -101,7 +101,7 @@ include("factorizations.jl")
 @inline sub_materialize(_, V, _) = Array(V)
 @inline sub_materialize(L, V) = sub_materialize(L, V, axes(V))
 @inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(V), V)
-@inline sub_materialize(V::AbstractArray) = V # Anything not a SubArray is already materialized
+@inline sub_materialize(V) = V # Anything not a SubArray is already materialized
 
 copy(A::SubArray{<:Any,N,<:LayoutArray}) where N = sub_materialize(A)
 copy(A::SubArray{<:Any,N,<:AdjOrTrans{<:Any,<:LayoutArray}}) where N = sub_materialize(A)
