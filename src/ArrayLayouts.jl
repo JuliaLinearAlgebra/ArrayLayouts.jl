@@ -162,6 +162,12 @@ getindex(A::LayoutVector, kr::Colon) = layout_getindex(A, kr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::Colon) = layout_getindex(A, kr, jr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) = layout_getindex(A, kr, jr)
 
+*(a::Zeros{<:Any,2}, b::LayoutMatrix) = FillArrays.mult_zeros(a, b)
+*(a::AdjointAbsVec{<:Any,<:Zeros{<:Any,1}}, b::LayoutMatrix) = FillArrays.mult_zeros(a, b)
+*(a::TransposeAbsVec{<:Any,<:Zeros{<:Any,1}}, b::LayoutMatrix) = FillArrays.mult_zeros(a, b)
+*(a::Transpose{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 1}) = FillArrays.mult_zeros(a, b)
+*(a::Adjoint{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 1}) = FillArrays.mult_zeros(a, b)
+
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 *(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = mul(A, B)
 *(A::AbstractMatrix, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
@@ -306,6 +312,9 @@ end
 # printing
 ###
 
+const LayoutVecOrMat{T} = Union{LayoutVector{T},LayoutMatrix{T}}
+const LayoutVecOrMats{T} = Union{LayoutVecOrMat{T},SubArray{T,1,<:LayoutVecOrMat},SubArray{T,2,<:LayoutVecOrMat}}
+
 layout_replace_in_print_matrix(_, A, i, j, s) =
     i in colsupport(A,j) ? s : Base.replace_with_centered_mark(s)
 
@@ -315,7 +324,7 @@ Base.replace_in_print_matrix(A::Union{LayoutVector,
                                       UnitUpperTriangular{<:Any,<:LayoutMatrix},
                                       LowerTriangular{<:Any,<:LayoutMatrix},
                                       UnitLowerTriangular{<:Any,<:LayoutMatrix},
-                                      AdjOrTrans{<:Any,<:LayoutMatrix},
+                                      AdjOrTrans{<:Any,<:LayoutVecOrMat},
                                       HermOrSym{<:Any,<:LayoutMatrix},
                                       SubArray{<:Any,2,<:LayoutMatrix}}, i::Integer, j::Integer, s::AbstractString) =
     layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)
@@ -339,8 +348,7 @@ include("cumsum.jl")
 # support overloading hcat/vcat for ∞-arrays
 ###
 
-const LayoutVecOrMat{T} = Union{LayoutVector{T},LayoutMatrix{T}}
-const LayoutVecOrMats{T} = Union{LayoutVecOrMat{T},SubArray{T,1,<:LayoutVecOrMat},SubArray{T,2,<:LayoutVecOrMat}}
+
 
 typed_hcat(::Type{T}, ::Tuple, A...) where T = Base._typed_hcat(T, A)
 typed_vcat(::Type{T}, ::Tuple, A...) where T = Base._typed_vcat(T, A)
