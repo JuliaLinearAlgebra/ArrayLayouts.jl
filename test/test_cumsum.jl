@@ -8,6 +8,7 @@ using ArrayLayouts, Test
         @test r[Base.OneTo(3)] == r[1:3]
         @test last(r) == r[end]
         @test diff(r) == diff(Vector(r))
+        @test first(r) == r[1]
     end
 
     a,b = RangeCumsum(Base.OneTo(5)), RangeCumsum(Base.OneTo(6))
