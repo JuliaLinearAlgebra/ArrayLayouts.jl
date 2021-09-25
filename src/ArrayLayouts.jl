@@ -163,10 +163,11 @@ getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::Colon) = layout_g
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) = layout_getindex(A, kr, jr)
 
 *(a::Zeros{<:Any,2}, b::LayoutMatrix) = FillArrays.mult_zeros(a, b)
-*(a::AdjointAbsVec{<:Any,<:Zeros{<:Any,1}}, b::LayoutMatrix) = FillArrays.mult_zeros(a, b)
-*(a::TransposeAbsVec{<:Any,<:Zeros{<:Any,1}}, b::LayoutMatrix) = FillArrays.mult_zeros(a, b)
-*(a::Transpose{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 1}) = FillArrays.mult_zeros(a, b)
+*(a::LayoutMatrix, b::Zeros{<:Any,2}) = FillArrays.mult_zeros(a, b)
+*(a::Transpose{T, <:LayoutMatrix{T}}, b::Zeros{T, 1}) where T<:Real = FillArrays.mult_zeros(a, b)
 *(a::Adjoint{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 1}) = FillArrays.mult_zeros(a, b)
+*(a::Transpose{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 2}) = FillArrays.mult_zeros(a, b)
+*(a::Adjoint{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 2}) = FillArrays.mult_zeros(a, b)
 
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 *(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = mul(A, B)

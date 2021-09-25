@@ -39,6 +39,8 @@ size(M::MulAdd) = map(length,axes(M))
 axes(M::MulAdd) = axes(M.C)
 
 similar(M::MulAdd, ::Type{T}, axes) where {T,N} = similar(Array{T}, axes)
+similar(M::MulAdd{<:DualLayout,<:Any,<:Any,<:Any,<:Adjoint}, ::Type{T}, axes) where {T,N} = similar(Array{T}, axes[2])'
+similar(M::MulAdd{<:DualLayout,<:Any,<:Any,<:Any,<:Transpose}, ::Type{T}, axes) where {T,N} = transpose(similar(Array{T}, axes[2]))
 similar(M::MulAdd, ::Type{T}) where T = similar(M, T, axes(M))
 similar(M::MulAdd) = similar(M, eltype(M))
 
@@ -371,6 +373,8 @@ scalarzero(::Type{<:AbstractArray{T}}) where T = scalarzero(T)
 
 fillzeros(::Type{T}, ax) where T<:Number = Zeros{T}(ax)
 mulzeros(::Type{T}, M) where T<:Number = fillzeros(T, axes(M))
+mulzeros(::Type{T}, M::Mul{<:DualLayout,<:Any,<:Adjoint}) where T<:Number = fillzeros(T, axes(M,2))'
+mulzeros(::Type{T}, M::Mul{<:DualLayout,<:Any,<:Transpose}) where T<:Number = transpose(fillzeros(T, axes(M,2)))
 
 # initiate array-valued MulAdd
 function _mulzeros!(dest::AbstractVector{T}, A, B) where T
