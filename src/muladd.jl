@@ -413,8 +413,3 @@ function similar(M::MulAdd{<:Any,<:DualLayout,ZerosLayout}, ::Type{T}, (x,y)) wh
     trans = transtype(M.B)
     trans(similar(trans(M.B), T, y))
 end
-
-const ZerosLayouts = Union{ZerosLayout,DualLayout{ZerosLayout}}
-copy(M::MulAdd{<:ZerosLayouts, <:ZerosLayouts, <:ZerosLayouts}) = M.C
-copy(M::MulAdd{<:ZerosLayouts, <:Any, <:ZerosLayouts}) = M.C
-copy(M::MulAdd{<:Any, <:ZerosLayouts, <:ZerosLayouts}) = M.C
