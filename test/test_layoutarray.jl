@@ -1,4 +1,4 @@
-using ArrayLayouts, LinearAlgebra, FillArrays, Test
+using ArrayLayouts, LinearAlgebra, FillArrays, Base64, Test
 import ArrayLayouts: sub_materialize
 
 if VERSION < v"1.7-"
