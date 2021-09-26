@@ -1,4 +1,4 @@
-using ArrayLayouts, LinearAlgebra, Test
+using ArrayLayouts, LinearAlgebra, FillArrays, Base64, Test
 import ArrayLayouts: sub_materialize
 
 if VERSION < v"1.7-"
@@ -173,6 +173,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             A = MyMatrix(randn(5,5))
             b = randn(5)
             @test dot(b, A, b) ≈ b'*(A*b) ≈ b'A*b
+            @test dot(b, A, b) ≈ transpose(b)*(A*b) ≈ transpose(b)A*b
         end
 
         @testset "dual vector * symmetric (#40)" begin
@@ -265,7 +266,31 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test Transpose(T) * A ≈ Transpose(T) * A.A
         @test Transpose(T)A' ≈ Adjoint(T)A' ≈ Adjoint(T)Transpose(A) ≈ Transpose(T)Transpose(A)
         @test Transpose(A)Adjoint(T) ≈ A'Adjoint(T) ≈ A'Transpose(T) ≈ Transpose(A)Transpose(T)
+
+        @test Zeros(5)' * A ≡ Zeros(5)'
+        @test transpose(Zeros(5)) * A ≡ transpose(Zeros(5))
+
+        @test A' * Zeros(5) ≡ Zeros(5)
+        @test Zeros(3,5) * A ≡ Zeros(3,5)
+        @test A * Zeros(5,3) ≡ Zeros(5,3)
+        @test A' * Zeros(5,3) ≡ Zeros(5,3)
+        @test transpose(A) * Zeros(5,3) ≡ Zeros(5,3)
+        @test A' * Zeros(5) ≡ Zeros(5)
+        @test transpose(A) * Zeros(5) ≡ Zeros(5)
+
+        b = MyVector(randn(5))
+        @test A' * b ≈ A' * b.A
     end
+
+    @testset "AbstractQ" begin
+        A = MyMatrix(randn(5,5))
+        Q = qr(randn(5,5)).Q
+        @test Q'*A ≈ Q'*A.A
+        @test Q*A ≈ Q*A.A
+        @test A*Q ≈ A.A*Q
+        @test A*Q' ≈ A.A*Q'
+    end
+
 
     @testset "concat" begin
         a = MyVector(randn(5))
@@ -277,6 +302,11 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test [Array(a) A A] == [Array(a) Array(A) Array(A)]
         @test [a A A] == [Array(a) Array(A) Array(A)]
         @test [a Array(A) A] == [Array(a) Array(A) Array(A)]
+    end
+
+    @testset "dot" begin
+        a = MyVector(randn(5))
+        @test dot(a, Zeros(5)) ≡ dot(Zeros(5), a) ≡ 0.0
     end
 end
 
