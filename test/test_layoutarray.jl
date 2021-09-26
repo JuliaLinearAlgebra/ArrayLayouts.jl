@@ -277,7 +277,20 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test transpose(A) * Zeros(5,3) ≡ Zeros(5,3)
         @test A' * Zeros(5) ≡ Zeros(5)
         @test transpose(A) * Zeros(5) ≡ Zeros(5)
+
+        b = MyVector(randn(5))
+        @test A' * b ≈ A' * b.A
     end
+
+    @testset "AbstractQ" begin
+        A = MyMatrix(randn(5,5))
+        Q = qr(randn(5,5)).Q
+        @test Q'*A ≈ Q'*A.A
+        @test Q*A ≈ Q*A.A
+        @test A*Q ≈ A.A*Q
+        @test A*Q' ≈ A.A*Q'
+    end
+
 
     @testset "concat" begin
         a = MyVector(randn(5))
