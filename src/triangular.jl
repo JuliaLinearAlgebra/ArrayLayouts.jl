@@ -239,7 +239,7 @@ end
 
 function materialize!(M::MatLdivMat{<:Union{TriangularLayout,BidiagonalLayout}})
     A,X = M.A,M.B
-    size(A,2) == size(X,1) || thow(DimensionMismatch("Dimensions must match"))
+    size(A,2) == size(X,1) || throw(DimensionMismatch("Dimensions must match"))
     @views for j in axes(X,2)
         ldiv!(A, X[:,j])
     end
