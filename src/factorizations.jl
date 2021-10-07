@@ -307,7 +307,6 @@ _lu(layout, axes, A, pivot::P; kwds...) where P = Base.invoke(lu, Tuple{Abstract
 _lu!(layout, axes, A, args...; kwds...) = error("Overload _lu!(::$(typeof(layout)), axes, A)")
 _cholesky(layout, axes, A, ::Val{false}=Val(false); check::Bool = true) = cholesky!(cholcopy(A); check = check)
 _cholesky(layout, axes, A, ::Val{true}; tol = 0.0, check::Bool = true) = cholesky!(cholcopy(A), Val(true); tol = tol, check = check)
-_cholesky!(layout, axes, A, v::Val{tf}; kwds...) where tf = Base.invoke(cholesky!, Tuple{LinearAlgebra.RealHermSymComplexHerm,Val{tf}}, A, v; kwds...)
 _factorize(layout, axes, A) = qr(A) # Default to QR
 
 
@@ -342,11 +341,34 @@ end
 
 
 # Cholesky factorization without pivoting (copied from stdlib/LinearAlgebra).
-function _cholesky!(layout, axes, A::LinearAlgebra.RealHermSymComplexHerm, ::Val{false}; check::Bool = true)
-    C, info = LinearAlgebra._chol!(A.data, A.uplo == 'U' ? UpperTriangular : LowerTriangular)
+
+# _chol!. Internal methods for calling unpivoted Cholesky
+## BLAS/LAPACK element types
+function _chol!(::Symmetric{<:AbstractColumnMajor}, A::AbstractMatrix{<:BlasFloat}, ::Type{UpperTriangular})
+    C, info = LAPACK.potrf!('U', A)
+    return UpperTriangular(C), info
+end
+function _chol!(::Symmetric{<:AbstractColumnMajor}, A::AbstractMatrix{<:BlasFloat}, ::Type{LowerTriangular})
+    C, info = LAPACK.potrf!('L', A)
+    return LowerTriangular(C), info
+end
+
+_chol!(_, A, UL) = LinearAlgebra._chol!(A, UL)
+
+function _cholesky!(layout, axes, A::RealHermSymComplexHerm, ::Val{false}; check::Bool = true)
+    C, info = _chol!(layout, A.data, A.uplo == 'U' ? UpperTriangular : LowerTriangular)
     check && LinearAlgebra.checkpositivedefinite(info)
     return Cholesky(C.data, A.uplo, info)
 end
+
+function _cholesky!(::SymmetricLayout{<:AbstractColumnMajor}, axes, A::AbstractMatrix{<:BlasReal},
+    ::Val{true}; tol = 0.0, check::Bool = true)
+    AA, piv, rank, info = LAPACK.pstrf!(A.uplo, A.data, tol)
+    C = CholeskyPivoted{eltype(AA),typeof(AA)}(AA, A.uplo, piv, rank, tol, info)
+    check && chkfullrank(C)
+    return C
+end
+
 
 _inv_eye(_, ::Type{T}, axs::NTuple{2,Base.OneTo{Int}}) where T = Matrix{T}(I, map(length,axs)...)
 function _inv_eye(A, ::Type{T}, (rows,cols)) where T
@@ -369,7 +391,8 @@ end
 macro _layoutfactorizations(Typ)
     esc(quote
         LinearAlgebra.cholesky(A::$Typ, args...; kwds...) = ArrayLayouts._cholesky(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
-        LinearAlgebra.cholesky!(A::$Typ, v::Val{false}=Val(false); check::Bool = true) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check)
+        LinearAlgebra.cholesky!(A::RealHermSymComplexHerm{<:Real,<:$Typ}, v::Val{false}=Val(false); check::Bool = true) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check)
+        LinearAlgebra.cholesky!(A::RealHermSymComplexHerm{<:Real,<:$Typ}, v::Val{true}; check::Bool = true, tol = 0.0) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check, tol=tol)
         LinearAlgebra.qr(A::$Typ, args...; kwds...) = ArrayLayouts._qr(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.qr!(A::$Typ, args...; kwds...) = ArrayLayouts._qr!(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.lu(A::$Typ, pivot::Union{Val{false}, Val{true}}; kwds...) = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(A), axes(A), A, pivot; kwds...)
