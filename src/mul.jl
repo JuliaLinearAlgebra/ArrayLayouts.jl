@@ -30,9 +30,13 @@ axes(M::Mul) = _mul_axes(axes(M.A), axes(M.B))
 
 # The following design is to support QuasiArrays.jl where indices
 # may not be `Int`
+
+zeroeltype(M) = zero(eltype(M)) # allow special casing where we know more about zero
+zeroeltype(M::Mul{<:Any,<:Any,<:SubArray}) = zeroeltype(Mul(parent(M.A), M.B))
+
 function _getindex(::Type{Tuple{AA}}, M::Mul, (k,)::Tuple{AA}) where AA
     A,B = M.A, M.B
-    ret = zero(eltype(M))
+    ret = zeroeltype(M)
     for j = rowsupport(A, k) ∩ colsupport(B,1)
         ret += A[k,j] * B[j]
     end
@@ -41,7 +45,7 @@ end
 
 function _getindex(::Type{Tuple{AA,BB}}, M::Mul, (k, j)::Tuple{AA,BB}) where {AA,BB}
     A,B = M.A,M.B
-    ret = zero(eltype(M))
+    ret = zeroeltype(M)
     @inbounds for ℓ in (rowsupport(A,k) ∩ colsupport(B,j))
         ret += A[k,ℓ] * B[ℓ,j]
     end
@@ -292,8 +296,9 @@ LinearAlgebra.dot(x::AbstractVector, A::Symmetric{<:Real,<:LayoutMatrix}, y::Abs
 
 # allow overloading for infinite or lazy case
 @inline _power_by_squaring(_, _, A, p) = Base.invoke(Base.power_by_squaring, Tuple{AbstractMatrix,Integer}, A, p)
-@inline _apply(_, _, op, A::AbstractMatrix, Λ::UniformScaling) = Base.invoke(op, Tuple{AbstractMatrix,UniformScaling}, A, Λ)
-@inline _apply(_, _, op, Λ::UniformScaling, A::AbstractMatrix) = Base.invoke(op, Tuple{UniformScaling,AbstractMatrix}, Λ, A)
+# TODO: Remove unnecessary _apply
+_apply(_, _, op, Λ::UniformScaling, A::AbstractMatrix) = op(Diagonal(Fill(Λ.λ,size(A,1))), A)
+_apply(_, _, op, A::AbstractMatrix, Λ::UniformScaling) = op(A, Diagonal(Fill(Λ.λ,size(A,1))))
 
 for Typ in (:LayoutMatrix, :(Symmetric{<:Any,<:LayoutMatrix}), :(Hermitian{<:Any,<:LayoutMatrix}),
             :(Adjoint{<:Any,<:LayoutMatrix}), :(Transpose{<:Any,<:LayoutMatrix}))
