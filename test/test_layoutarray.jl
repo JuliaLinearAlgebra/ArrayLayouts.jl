@@ -1,5 +1,5 @@
 using ArrayLayouts, LinearAlgebra, FillArrays, Base64, Test
-import ArrayLayouts: sub_materialize
+import ArrayLayouts: sub_materialize, MemoryLayout
 
 if VERSION < v"1.7-"
     ColumnNorm() = Val(true)
@@ -16,6 +16,7 @@ Base.size(A::MyMatrix) = size(A.A)
 Base.strides(A::MyMatrix) = strides(A.A)
 Base.unsafe_convert(::Type{Ptr{T}}, A::MyMatrix) where T = Base.unsafe_convert(Ptr{T}, A.A)
 MemoryLayout(::Type{MyMatrix}) = DenseColumnMajor()
+Base.copy(A::MyMatrix) = MyMatrix(copy(A.A))
 
 struct MyVector <: LayoutVector{Float64}
     A::Vector{Float64}
@@ -94,6 +95,12 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test lu(A,RowMaximum()).factors ≈ lu(A.A,RowMaximum()).factors
             @test_throws ErrorException qr!(A)
             @test lu!(copy(A)).factors ≈ lu(A.A).factors
+            b = randn(5)
+            @test all(A \ b .≡ A.A \ b)
+            @test all(lu(A).L .≡ lu(A.A).L)
+            @test all(lu(A).U .≡ lu(A.A).U)
+            @test lu(A).p == lu(A.A).p
+            @test lu(A).P == lu(A.A).P
 
             @test qr(A) isa LinearAlgebra.QRCompactWY
             @test inv(A) ≈ inv(A.A)
@@ -208,7 +215,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         C = randn(ComplexF64,5,5)
         @test ArrayLayouts.lmul!(2, Hermitian(copy(C))) == ArrayLayouts.rmul!(Hermitian(copy(C)), 2) == 2Hermitian(C)
 
-        
+
         @test ldiv!(2, deepcopy(b)) == rdiv!(deepcopy(b), 2) == 2\b
         @test ldiv!(2, deepcopy(A)) == rdiv!(deepcopy(A), 2) == 2\A
         @test ldiv!(2, deepcopy(A)') == rdiv!(deepcopy(A)', 2) == 2\A'
