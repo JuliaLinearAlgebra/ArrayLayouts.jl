@@ -93,7 +93,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test lu(A).factors ≈ lu(A.A).factors
             @test lu(A,RowMaximum()).factors ≈ lu(A.A,RowMaximum()).factors
             @test_throws ErrorException qr!(A)
-            @test_throws ErrorException lu!(A)
+            @test lu!(copy(A)).factors ≈ lu(A.A).factors
 
             @test qr(A) isa LinearAlgebra.QRCompactWY
             @test inv(A) ≈ inv(A.A)
