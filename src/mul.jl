@@ -30,9 +30,13 @@ axes(M::Mul) = _mul_axes(axes(M.A), axes(M.B))
 
 # The following design is to support QuasiArrays.jl where indices
 # may not be `Int`
+
+zeroeltype(M) = zero(eltype(M)) # allow special casing where we know more about zero
+zeroeltype(M::Mul{<:Any,<:Any,<:SubArray}) = zeroeltype(Mul(parent(M.A), M.B))
+
 function _getindex(::Type{Tuple{AA}}, M::Mul, (k,)::Tuple{AA}) where AA
     A,B = M.A, M.B
-    ret = zero(eltype(M))
+    ret = zeroeltype(M)
     for j = rowsupport(A, k) ∩ colsupport(B,1)
         ret += A[k,j] * B[j]
     end
@@ -41,7 +45,7 @@ end
 
 function _getindex(::Type{Tuple{AA,BB}}, M::Mul, (k, j)::Tuple{AA,BB}) where {AA,BB}
     A,B = M.A,M.B
-    ret = zero(eltype(M))
+    ret = zeroeltype(M)
     @inbounds for ℓ in (rowsupport(A,k) ∩ colsupport(B,j))
         ret += A[k,ℓ] * B[ℓ,j]
     end
