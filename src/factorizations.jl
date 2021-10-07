@@ -46,7 +46,8 @@ end
 materialize!(L::Ldiv{<:LULayout{<:AbstractColumnMajor},<:AbstractColumnMajor,<:LU{T},<:AbstractVecOrMat{T}}) where {T<:BlasFloat} =
     LAPACK.getrs!('N', L.A.factors, L.A.ipiv, L.B)
 
-function ldiv!(A::LU{<:Any,<:StridedMatrix}, B::StridedVecOrMat)
+function materialize!(L::Ldiv{<:LULayout})
+    A,B = L.A,L.B
     _apply_ipiv_rows!(A, B)
     ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), B))
 end
