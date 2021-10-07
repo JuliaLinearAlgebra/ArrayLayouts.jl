@@ -36,7 +36,7 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcas
 
 import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, Abuf, Bbuf, Cbuf, factorize, qr, lu, cholesky,
                         norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym, copy_oftype,
-                        AdjointAbsVec, TransposeAbsVec, cholcopy
+                        AdjointAbsVec, TransposeAbsVec, cholcopy, checknonsingular
 
 import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 

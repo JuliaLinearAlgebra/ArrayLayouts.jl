@@ -15,10 +15,21 @@ factors are stored with layout SLAY and τ stored with layout TLAY
 """
 struct QRPackedLayout{SLAY,TLAY} <: AbstractQRLayout end
 
+
+"""
+    LULayout{SLAY}()
+
+represents a Packed QR factorization whose 
+factors are stored with layout SLAY and τ stored with layout TLAY
+"""
+struct LULayout{SLAY} <: AbstractQRLayout end
+
 MemoryLayout(::Type{<:LinearAlgebra.QRCompactWY{<:Any,MAT}}) where MAT = 
     QRCompactWYLayout{typeof(MemoryLayout(MAT)),DenseColumnMajor}()
 MemoryLayout(::Type{<:LinearAlgebra.QR{<:Any,MAT}}) where MAT = 
     QRPackedLayout{typeof(MemoryLayout(MAT)),DenseColumnMajor}()
+MemoryLayout(::Type{<:LinearAlgebra.LU{<:Any,MAT}}) where MAT = 
+    LULayout{typeof(MemoryLayout(MAT))}()
 
 function materialize!(L::Ldiv{<:QRCompactWYLayout,<:Any,<:Any,<:AbstractVector})
     A,b = L.A, L.B
@@ -30,6 +41,14 @@ function materialize!(L::Ldiv{<:QRCompactWYLayout,<:Any,<:Any,<:AbstractMatrix})
     A,B = L.A, L.B
     ldiv!(UpperTriangular(A.R), view(lmul!(adjoint(A.Q), B), 1:size(A, 2), 1:size(B, 2)))
     B
+end
+
+materialize!(L::Ldiv{<:LULayout{<:AbstractColumnMajor},<:AbstractColumnMajor,<:LU{T},<:AbstractVecOrMat{T}}) where {T<:BlasFloat} =
+    LAPACK.getrs!('N', L.A.factors, L.A.ipiv, L.B)
+
+function ldiv!(A::LU{<:Any,<:StridedMatrix}, B::StridedVecOrMat)
+    _apply_ipiv_rows!(A, B)
+    ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), B))
 end
 
 # Julia implementation similar to xgelsy
@@ -289,6 +308,37 @@ _cholesky(layout, axes, A, ::Val{false}=Val(false); check::Bool = true) = choles
 _cholesky(layout, axes, A, ::Val{true}; tol = 0.0, check::Bool = true) = cholesky!(cholcopy(A), Val(true); tol = tol, check = check)
 _cholesky!(layout, axes, A, v::Val{tf}; kwds...) where tf = Base.invoke(cholesky!, Tuple{LinearAlgebra.RealHermSymComplexHerm,Val{tf}}, A, v; kwds...)
 _factorize(layout, axes, A) = qr(A) # Default to QR
+
+
+_factorize(::AbstractStridedLayout, axes, A) = lu(A)
+function _lu!(::AbstractColumnMajor, axes, A::AbstractMatrix{T}, pivot::Union{Val{false}, Val{true}} = Val(true);
+            check::Bool = true) where T<:BlasFloat
+    if pivot === Val(false)
+        return generic_lufact!(A, pivot; check = check)
+    end
+    lpt = LAPACK.getrf!(A)
+    check && checknonsingular(lpt[3])
+    return LU{T,typeof(A)}(lpt[1], lpt[2], lpt[3])
+end
+
+# for some reason only defined for StridedMatrix in LinearAlgebra
+function getproperty(F::LU{T,<:LayoutMatrix}, d::Symbol) where T
+    m, n = size(F)
+    if d === :L
+        L = tril!(getfield(F, :factors)[1:m, 1:min(m,n)])
+        for i = 1:min(m,n); L[i,i] = one(T); end
+        return L
+    elseif d === :U
+        return triu!(getfield(F, :factors)[1:min(m,n), 1:n])
+    elseif d === :p
+        return ipiv2perm(getfield(F, :ipiv), m)
+    elseif d === :P
+        return Matrix{T}(I, m, m)[:,invperm(F.p)]
+    else
+        getfield(F, d)
+    end
+end
+
 
 # Cholesky factorization without pivoting (copied from stdlib/LinearAlgebra).
 function _cholesky!(layout, axes, A::LinearAlgebra.RealHermSymComplexHerm, ::Val{false}; check::Bool = true)
