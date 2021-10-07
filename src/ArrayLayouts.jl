@@ -53,6 +53,13 @@ export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, Dot,
         colsupport, rowsupport, layout_getindex, QLayout, LayoutArray, LayoutMatrix, LayoutVector,
         RangeCumsum
 
+if VERSION < v"1.7-"
+    const ColumnNorm = Val{true}
+    const RowMaximum = Val{true}
+    const NoPivot = Val{false}
+end
+        
+
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle})
     @assert length(bc.args) == 1

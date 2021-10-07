@@ -1,10 +1,6 @@
 using ArrayLayouts, LinearAlgebra, FillArrays, Base64, Test
-import ArrayLayouts: sub_materialize, MemoryLayout
+import ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum
 
-if VERSION < v"1.7-"
-    ColumnNorm() = Val(true)
-    RowMaximum() = Val(true)
-end
 
 struct MyMatrix <: LayoutMatrix{Float64}
     A::Matrix{Float64}

@@ -311,9 +311,9 @@ _factorize(layout, axes, A) = qr(A) # Default to QR
 
 
 _factorize(::AbstractStridedLayout, axes, A) = lu(A)
-function _lu!(::AbstractColumnMajor, axes, A::AbstractMatrix{T}, pivot::Union{Val{false}, Val{true}} = Val(true);
+function _lu!(::AbstractColumnMajor, axes, A::AbstractMatrix{T}, pivot::Union{NoPivot, RowMaximum} = RowMaximum();
             check::Bool = true) where T<:BlasFloat
-    if pivot === Val(false)
+    if pivot === NoPivot()
         return generic_lufact!(A, pivot; check = check)
     end
     lpt = LAPACK.getrf!(A)
@@ -395,7 +395,7 @@ macro _layoutfactorizations(Typ)
         LinearAlgebra.cholesky!(A::RealHermSymComplexHerm{<:Real,<:$Typ}, v::Val{true}; check::Bool = true, tol = 0.0) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check, tol=tol)
         LinearAlgebra.qr(A::$Typ, args...; kwds...) = ArrayLayouts._qr(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.qr!(A::$Typ, args...; kwds...) = ArrayLayouts._qr!(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
-        LinearAlgebra.lu(A::$Typ, pivot::Union{Val{false}, Val{true}}; kwds...) = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(A), axes(A), A, pivot; kwds...)
+        LinearAlgebra.lu(A::$Typ, pivot::Union{NoPivot,RowMaximum}; kwds...) = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(A), axes(A), A, pivot; kwds...)
         LinearAlgebra.lu(A::$Typ{T}; kwds...) where T = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(A), axes(A), A; kwds...)
         LinearAlgebra.lu!(A::$Typ, args...; kwds...) = ArrayLayouts._lu!(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.factorize(A::$Typ) = ArrayLayouts._factorize(ArrayLayouts.MemoryLayout(A), axes(A), A)
