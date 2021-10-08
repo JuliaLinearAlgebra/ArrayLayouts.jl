@@ -100,6 +100,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
             @test qr(A) isa LinearAlgebra.QRCompactWY
             @test inv(A) ≈ inv(A.A)
+            if VERSION ≥ v"1.7-"
+                @test qr(A, Val(true)) == qr(A, ColumnNorm())
+            end
 
             S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I))
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U

@@ -3,14 +3,14 @@ abstract type AbstractQRLayout <: MemoryLayout end
 """
    QRCompactWYLayout{SLAY,TLAY}()
 
-represents a Compact-WY QR factorization whose 
+represents a Compact-WY QR factorization whose
 factors are stored with layout SLAY and τ stored with layout TLAY
 """
 struct QRCompactWYLayout{SLAY,TLAY} <: AbstractQRLayout end
 """
     QRPackedLayout{SLAY,TLAY}()
 
-represents a Packed QR factorization whose 
+represents a Packed QR factorization whose
 factors are stored with layout SLAY and τ stored with layout TLAY
 """
 struct QRPackedLayout{SLAY,TLAY} <: AbstractQRLayout end
@@ -19,16 +19,16 @@ struct QRPackedLayout{SLAY,TLAY} <: AbstractQRLayout end
 """
     LULayout{SLAY}()
 
-represents a Packed QR factorization whose 
+represents a Packed QR factorization whose
 factors are stored with layout SLAY and τ stored with layout TLAY
 """
 struct LULayout{SLAY} <: AbstractQRLayout end
 
-MemoryLayout(::Type{<:LinearAlgebra.QRCompactWY{<:Any,MAT}}) where MAT = 
+MemoryLayout(::Type{<:LinearAlgebra.QRCompactWY{<:Any,MAT}}) where MAT =
     QRCompactWYLayout{typeof(MemoryLayout(MAT)),DenseColumnMajor}()
-MemoryLayout(::Type{<:LinearAlgebra.QR{<:Any,MAT}}) where MAT = 
+MemoryLayout(::Type{<:LinearAlgebra.QR{<:Any,MAT}}) where MAT =
     QRPackedLayout{typeof(MemoryLayout(MAT)),DenseColumnMajor}()
-MemoryLayout(::Type{<:LinearAlgebra.LU{<:Any,MAT}}) where MAT = 
+MemoryLayout(::Type{<:LinearAlgebra.LU{<:Any,MAT}}) where MAT =
     LULayout{typeof(MemoryLayout(MAT))}()
 
 function materialize!(L::Ldiv{<:QRCompactWYLayout,<:Any,<:Any,<:AbstractVector})
@@ -114,9 +114,9 @@ struct AdjQRPackedQLayout{SLAY,TLAY} <: AbstractQLayout end
 struct QRCompactWYQLayout{SLAY,TLAY} <: AbstractQLayout end
 struct AdjQRCompactWYQLayout{SLAY,TLAY} <: AbstractQLayout end
 
-MemoryLayout(::Type{<:LinearAlgebra.QRPackedQ{<:Any,S}}) where {S,T} = 
+MemoryLayout(::Type{<:LinearAlgebra.QRPackedQ{<:Any,S}}) where {S,T} =
     QRPackedQLayout{typeof(MemoryLayout(S)),DenseColumnMajor}()
-MemoryLayout(::Type{<:LinearAlgebra.QRCompactWYQ{<:Any,S}}) where {S,T} = 
+MemoryLayout(::Type{<:LinearAlgebra.QRCompactWYQ{<:Any,S}}) where {S,T} =
     QRCompactWYQLayout{typeof(MemoryLayout(S)),DenseColumnMajor}()
 
 adjointlayout(::Type, ::QRPackedQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRPackedQLayout{SLAY,TLAY}()
@@ -129,7 +129,7 @@ mulreduce(M::Mul{<:Any,<:AbstractQLayout}) = Rmul(M)
 
 function copyto!(dest::AbstractArray{T}, M::Lmul{<:AbstractQLayout}) where T
     A,B = M.A,M.B
-    if size(dest,1) == size(B,1) 
+    if size(dest,1) == size(B,1)
         copyto!(dest, B)
     else
         copyto!(view(dest,1:size(B,1),:), B)
@@ -149,13 +149,13 @@ materialize!(M::Rmul{LAY}) where LAY<:AbstractQLayout = error("Overload material
 
 materialize!(M::Ldiv{<:AbstractQLayout}) = materialize!(Lmul(M.A',M.B))
 
-materialize!(M::Lmul{<:QRPackedQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat = 
-    LAPACK.ormqr!('L','N',M.A.factors,M.A.τ,M.B)    
+materialize!(M::Lmul{<:QRPackedQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
+    LAPACK.ormqr!('L','N',M.A.factors,M.A.τ,M.B)
 
-materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat = 
+materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
     LAPACK.gemqrt!('L','N',M.A.factors,M.A.T,M.B)
 
-function materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractRowMajor,<:AbstractMatrix{T},<:AbstractMatrix{T}}) where T<:BlasReal 
+function materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractRowMajor,<:AbstractMatrix{T},<:AbstractMatrix{T}}) where T<:BlasReal
     LAPACK.gemqrt!('R','T',M.A.factors,M.A.T,transpose(M.B))
     M.B
 end
@@ -196,11 +196,11 @@ end
 ### QcB
 materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
     (A = M.A.parent; LAPACK.ormqr!('L','T',A.factors,A.τ,M.B))
-materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex = 
+materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
     (A = M.A.parent; LAPACK.ormqr!('L','C',A.factors,A.τ,M.B))
 materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
     (A = M.A.parent; LAPACK.gemqrt!('L','T',A.factors,A.T,M.B))
-materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex = 
+materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
     (A = M.A.parent; LAPACK.gemqrt!('L','C',A.factors,A.T,M.B))
 function materialize!(M::Lmul{<:AdjQRPackedQLayout})
     adjA,B = M.A, M.B
@@ -422,4 +422,6 @@ function ldiv!(C::Cholesky{<:Any,<:AbstractMatrix}, B::LayoutArray)
     end
 end
 
-
+if VERSION ≥ v"1.7-"
+    @deprecate qr(A::LayoutMatrix, ::Val{true}) qr(A, ColumnNorm())
+end
