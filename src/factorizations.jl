@@ -391,8 +391,8 @@ end
 macro _layoutfactorizations(Typ)
     esc(quote
         LinearAlgebra.cholesky(A::$Typ, args...; kwds...) = ArrayLayouts._cholesky(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
-        LinearAlgebra.cholesky!(A::RealHermSymComplexHerm{<:Real,<:$Typ}, v::Val{false}=Val(false); check::Bool = true) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check)
-        LinearAlgebra.cholesky!(A::RealHermSymComplexHerm{<:Real,<:$Typ}, v::Val{true}; check::Bool = true, tol = 0.0) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check, tol=tol)
+        LinearAlgebra.cholesky!(A::LinearAlgebra.RealHermSymComplexHerm{<:Real,<:$Typ}, v::Val{false}=Val(false); check::Bool = true) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check)
+        LinearAlgebra.cholesky!(A::LinearAlgebra.RealHermSymComplexHerm{<:Real,<:$Typ}, v::Val{true}; check::Bool = true, tol = 0.0) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check, tol=tol)
         LinearAlgebra.qr(A::$Typ, args...; kwds...) = ArrayLayouts._qr(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.qr!(A::$Typ, args...; kwds...) = ArrayLayouts._qr!(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.lu(A::$Typ, pivot::Union{NoPivot,RowMaximum}; kwds...) = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(A), axes(A), A, pivot; kwds...)
