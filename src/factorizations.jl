@@ -425,3 +425,6 @@ end
 if VERSION ≥ v"1.7-"
     @deprecate qr(A::LayoutMatrix, ::Val{true}) qr(A, ColumnNorm())
 end
+
+
+LinearAlgebra.ldiv!(F::LU{<:Any,<:LayoutMatrix}, B::LayoutVector) = ldiv!(F, B)
