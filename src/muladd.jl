@@ -98,8 +98,8 @@ function tiled_blasmul!(tile_size, α, A::AbstractMatrix{T}, B::AbstractMatrix{S
     @inbounds begin
         sz = (tile_size, tile_size)
         # FIXME: This code is completely invalid!!!
-        Atile = unsafe_wrap(Array, convert(Ptr{T}, pointer(Abuf[Threads.threadid()])), sz)
-        Btile = unsafe_wrap(Array, convert(Ptr{S}, pointer(Bbuf[Threads.threadid()])), sz)
+        Atile = Array{T}(undef, sz)
+        Btile = Array{S}(undef, sz)
 
         z1 = zero(A[1, 1]*B[1, 1] + A[1, 1]*B[1, 1])
         z = convert(promote_type(typeof(z1), R), z1)
@@ -119,8 +119,7 @@ function tiled_blasmul!(tile_size, α, A::AbstractMatrix{T}, B::AbstractMatrix{S
                 end
             end
         else
-            # FIXME: This code is completely invalid!!!
-            Ctile = unsafe_wrap(Array, convert(Ptr{R}, pointer(Cbuf[Threads.threadid()])), sz)
+            Ctile = Array{R}(undef, sz)
             for jb = 1:tile_size:nB
                 jlim = min(jb+tile_size-1,nB)
                 jlen = jlim-jb+1

@@ -686,4 +686,10 @@ Random.seed!(0)
         @test typeof(mul(Diag,Tridiag)) <: Tridiagonal
         @test typeof(mul(Diag,SymTri))  <: Tridiagonal
     end
+
+    @testset "tiled_blasmul!" begin
+        X = randn(ComplexF64, 8, 4)
+        Y = randn(8, 2)
+        @test all(mul(Y',X) .=== Y'X)
+    end
 end
