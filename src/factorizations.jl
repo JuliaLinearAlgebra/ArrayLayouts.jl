@@ -422,6 +422,8 @@ function ldiv!(C::Cholesky{<:Any,<:AbstractMatrix}, B::LayoutArray)
     end
 end
 
+LinearAlgebra.ldiv!(L::LU{<:Any,<:LayoutMatrix}, B::LayoutVector) = ArrayLayouts.ldiv!(L, B)
+
 if VERSION ≥ v"1.7-"
     @deprecate qr(A::LayoutMatrix, ::Val{true}) qr(A, ColumnNorm())
 end
