@@ -35,12 +35,12 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcas
                         materialize!, eltypes
 
 import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, factorize, qr, lu, cholesky,
-                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym, copy_oftype,
-                        AdjointAbsVec, TransposeAbsVec, cholcopy, checknonsingular, _apply_ipiv_rows!, ipiv2perm, RealHermSymComplexHerm, chkfullrank
+                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym, AdjointAbsVec,
+                        TransposeAbsVec, cholcopy, checknonsingular, _apply_ipiv_rows!, ipiv2perm, RealHermSymComplexHerm, chkfullrank
 
 import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
-import FillArrays: AbstractFill, getindex_value, axes_print_matrix_row
+import FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype
 
 import Base: require_one_based_indexing
 
