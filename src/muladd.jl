@@ -74,7 +74,7 @@ copy(M::MulAdd) = copyto!(similar(M), M)
 _fill_copyto!(dest, C) = copyto!(dest, C)
 _fill_copyto!(dest, C::Zeros) = zero!(dest) # exploit special fill! overload
 
-@inline copyto!(dest::AbstractArray{T}, M::MulAdd) where T = 
+@inline copyto!(dest::AbstractArray{T}, M::MulAdd) where T =
     muladd!(M.α, unalias(dest,M.A), unalias(dest,M.B), M.β, _fill_copyto!(dest, M.C))
 
 # Modified from LinearAlgebra._generic_matmatmul!

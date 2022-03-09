@@ -1,4 +1,4 @@
-using ArrayLayouts, FillArrays, Random, LinearAlgebra, Test
+using ArrayLayouts, FillArrays, Random, StableRNGs, LinearAlgebra, Test
 import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul, zero!
 
 Random.seed!(0)
@@ -688,8 +688,9 @@ Random.seed!(0)
     end
 
     @testset "tiled_blasmul!" begin
-        X = randn(ComplexF64, 8, 4)
-        Y = randn(8, 2)
+        rng = StableRNG(1)
+        X = randn(rng, ComplexF64, 8, 4)
+        Y = randn(rng, 8, 2)
         @test all(mul(Y',X) .=== Y'X)
     end
 end
