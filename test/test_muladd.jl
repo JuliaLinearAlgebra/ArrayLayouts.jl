@@ -657,7 +657,8 @@ Random.seed!(0)
     @testset "Dot" begin
         a = randn(5)
         b = randn(5)
-        @test ArrayLayouts.dot(a,b) == mul(a',b) == dot(a,b)
+        @test ArrayLayouts.dot(a,b) == mul(a',b)
+        @test ArrayLayout.dot(a,b) ≈ dot(a,b)
         @test eltype(Dot(a,1:5)) == Float64
     end
 
