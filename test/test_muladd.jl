@@ -658,7 +658,7 @@ Random.seed!(0)
         a = randn(5)
         b = randn(5)
         @test ArrayLayouts.dot(a,b) == mul(a',b)
-        @test ArrayLayout.dot(a,b) ≈ dot(a,b)
+        @test ArrayLayouts.dot(a,b) ≈ dot(a,b)
         @test eltype(Dot(a,1:5)) == Float64
     end
 
@@ -692,6 +692,6 @@ Random.seed!(0)
         rng = StableRNG(1)
         X = randn(rng, ComplexF64, 8, 4)
         Y = randn(rng, 8, 2)
-        @test all(mul(Y',X) .=== Y'X)
+        @test mul(Y',X) ≈ Y'X
     end
 end
