@@ -1,5 +1,5 @@
 using ArrayLayouts, LinearAlgebra, FillArrays, Base64, Test
-import ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum
+import ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum
 
 
 struct MyMatrix <: LayoutMatrix{Float64}
@@ -10,6 +10,7 @@ Base.getindex(A::MyMatrix, k::Int, j::Int) = A.A[k,j]
 Base.setindex!(A::MyMatrix, v, k::Int, j::Int) = setindex!(A.A, v, k, j)
 Base.size(A::MyMatrix) = size(A.A)
 Base.strides(A::MyMatrix) = strides(A.A)
+Base.elsize(::Type{MyMatrix}) = sizeof(Float64)
 Base.unsafe_convert(::Type{Ptr{T}}, A::MyMatrix) where T = Base.unsafe_convert(Ptr{T}, A.A)
 MemoryLayout(::Type{MyMatrix}) = DenseColumnMajor()
 Base.copy(A::MyMatrix) = MyMatrix(copy(A.A))
@@ -22,6 +23,7 @@ Base.getindex(A::MyVector, k::Int) = A.A[k]
 Base.setindex!(A::MyVector, v, k::Int) = setindex!(A.A, v, k)
 Base.size(A::MyVector) = size(A.A)
 Base.strides(A::MyVector) = strides(A.A)
+Base.elsize(::Type{MyVector}) = sizeof(Float64)
 Base.unsafe_convert(::Type{Ptr{T}}, A::MyVector) where T = Base.unsafe_convert(Ptr{T}, A.A)
 MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
@@ -100,17 +102,14 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
             @test qr(A) isa LinearAlgebra.QRCompactWY
             @test inv(A) ≈ inv(A.A)
-            if VERSION ≥ v"1.7-"
-                @test qr(A, Val(true)) == qr(A, ColumnNorm())
-            end
 
             S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I))
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
-            @test cholesky(S,Val(true)).U ≈ cholesky(Matrix(S),Val(true)).U
+            @test cholesky(S,CRowMaximum()).U ≈ cholesky(Matrix(S),CRowMaximum()).U
 
             S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I),:L)
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
-            @test cholesky(S,Val(true)).U ≈ cholesky(Matrix(S),Val(true)).U
+            @test cholesky(S,CRowMaximum()).U ≈ cholesky(Matrix(S),CRowMaximum()).U
         end
         Bin = randn(5,5)
         B = MyMatrix(copy(Bin))

@@ -22,7 +22,7 @@ import Base: AbstractArray, AbstractMatrix, AbstractVector,
          AbstractMatrix, AbstractArray, checkindex, unsafe_length, OneTo, one, zero,
         to_shape, _sub2ind, print_matrix, print_matrix_row, print_matrix_vdots,
       checkindex, Slice, @propagate_inbounds, @_propagate_inbounds_meta,
-      _in_range, _range, _rangestyle, Ordered,
+      _in_range, _range, Ordered,
       ArithmeticWraps, floatrange, reverse, unitrange_last,
       AbstractArray, AbstractVector, axes, (:), _sub2ind_recurse, broadcast, promote_eltypeof,
       similar, @_gc_preserve_end, @_gc_preserve_begin,
@@ -35,12 +35,12 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcas
                         materialize!, eltypes
 
 import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, factorize, qr, lu, cholesky,
-                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym, copy_oftype,
-                        AdjointAbsVec, TransposeAbsVec, cholcopy, checknonsingular, _apply_ipiv_rows!, ipiv2perm, RealHermSymComplexHerm, chkfullrank
+                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym, AdjointAbsVec,
+                        TransposeAbsVec, cholcopy, checknonsingular, _apply_ipiv_rows!, ipiv2perm, RealHermSymComplexHerm, chkfullrank
 
 import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
-import FillArrays: AbstractFill, getindex_value, axes_print_matrix_row
+import FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype
 
 import Base: require_one_based_indexing
 
@@ -57,6 +57,14 @@ if VERSION < v"1.7-"
     const ColumnNorm = Val{true}
     const RowMaximum = Val{true}
     const NoPivot = Val{false}
+end
+
+if VERSION < v"1.8-"
+    const CRowMaximum = Val{true}
+    const CNoPivot = Val{false}
+else
+    const CRowMaximum = RowMaximum
+    const CNoPivot = NoPivot
 end
         
 
@@ -81,7 +89,9 @@ strides(A::Transpose) = _transpose_strides(strides(parent(A))...)
 """
     ConjPtr{T}
 
-represents that the entry is the complex-conjugate of the pointed to entry.
+A memory address referring to complex conjugated data of type T. However, there is no guarantee
+that the memory is actually valid, or that it actually represents the complex conjugate of data of
+the specified type.
 """
 struct ConjPtr{T}
     ptr::Ptr{T}
@@ -95,6 +105,14 @@ function unsafe_convert(::Type{ConjPtr{T}}, V::SubArray{T,2}) where {T,N,P}
     kr, jr = parentindices(V)
     unsafe_convert(Ptr{T}, view(parent(V)', jr, kr))
 end
+
+Base.elsize(::Type{<:Adjoint{<:Complex,P}}) where P<:AbstractVecOrMat = conjelsize(P)
+conjelsize(::Type{<:Adjoint{<:Complex,P}}) where P<:AbstractVecOrMat = Base.elsize(P)
+conjelsize(::Type{<:Transpose{<:Any, P}}) where {P<:AbstractVecOrMat} = conjelsize(P)
+conjelsize(::Type{<:PermutedDimsArray{<:Any, <:Any, <:Any, <:Any, P}}) where {P} = conjelsize(P)
+conjelsize(::Type{<:ReshapedArray{<:Any,<:Any,P}}) where {P} = conjelsize(P)
+conjelsize(::Type{<:SubArray{<:Any,<:Any,P}}) where {P} = conjelsize(P)
+conjelsize(A::AbstractArray) = conjelsize(typeof(A))
 
 include("memorylayout.jl")
 include("mul.jl")
