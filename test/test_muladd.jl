@@ -692,6 +692,6 @@ Random.seed!(0)
         rng = StableRNG(1)
         X = randn(rng, ComplexF64, 8, 4)
         Y = randn(rng, 8, 2)
-        @test all(mul(Y',X) .=== Y'X)
+        @test all(isapprox.(mul(Y', X), Y'X; atol=0.000001))
     end
 end
