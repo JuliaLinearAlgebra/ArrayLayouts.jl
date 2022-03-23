@@ -262,6 +262,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test D\B̃ ≈ Matrix(D)\B̃
         @test B̃\D ≈ B̃\Matrix(D)
         @test D\D̃ ≈ D̃\D
+        @test B̃/D ≈ B̃/Matrix(D)
     end
 
     @testset "Adj/Trans" begin

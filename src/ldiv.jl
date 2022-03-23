@@ -158,7 +158,8 @@ macro _layoutldiv(Typ)
         Base.:/(A::$Typ, x::AbstractMatrix) = ArrayLayouts.rdiv(A,x)
 
         Base.:/(x::AbstractMatrix, A::$Typ) = ArrayLayouts.rdiv(x,A)
-        Base.:/(x::Diagonal, A::$Typ) = ArrayLayouts.rdiv(x,A)
+        Base.:/(D::Diagonal, A::$Typ) = ArrayLayouts.rdiv(D,A)
+        Base.:/(A::$Typ, D::Diagonal) = ArrayLayouts.rdiv(A,D)
 
         Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.rdiv(x,A)
     end
