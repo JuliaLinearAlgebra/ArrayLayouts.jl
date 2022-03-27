@@ -132,6 +132,15 @@ copy(A::SubArray{<:Any,N,<:LayoutArray}) where N = sub_materialize(A)
 copy(A::SubArray{<:Any,N,<:AdjOrTrans{<:Any,<:LayoutArray}}) where N = sub_materialize(A)
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
+function layout_getindex(A::AbstractArray, k::Int)
+    @_propagate_inbounds_meta
+    Base.error_if_canonical_getindex(IndexStyle(A), A, k)
+    Base._getindex(IndexStyle(A), A, k)
+end
+
+
+# avoid 0-dimensional views
+Base.@propagate_inbounds layout_getindex(A::AbstractArray, I::CartesianIndex) = A[to_indices(A, (I,))...]
 
 macro _layoutgetindex(Typ)
     esc(quote
