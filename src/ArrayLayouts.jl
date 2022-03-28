@@ -132,10 +132,10 @@ copy(A::SubArray{<:Any,N,<:LayoutArray}) where N = sub_materialize(A)
 copy(A::SubArray{<:Any,N,<:AdjOrTrans{<:Any,<:LayoutArray}}) where N = sub_materialize(A)
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
-function layout_getindex(A::AbstractArray, k::Int)
+function layout_getindex(A::AbstractArray, k::Int...)
     @_propagate_inbounds_meta
-    Base.error_if_canonical_getindex(IndexStyle(A), A, k)
-    Base._getindex(IndexStyle(A), A, k)
+    Base.error_if_canonical_getindex(IndexStyle(A), A, k...)
+    Base._getindex(IndexStyle(A), A, k...)
 end
 
 

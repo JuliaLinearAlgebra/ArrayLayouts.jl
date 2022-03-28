@@ -321,6 +321,12 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         a = MyVector(randn(5))
         @test dot(a, Zeros(5)) ≡ dot(Zeros(5), a) ≡ 0.0
     end
+
+    @testset "layout_getindex scalar" begin
+        A = MyMatrix(rand(5,4))
+        @test A[6] == ArrayLayouts.layout_getindex(A,6) == A[1,2]
+        @test A[1,2] == A[CartesianIndex(1,2)] == ArrayLayouts.layout_getindex(A,CartesianIndex(1,2))
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
