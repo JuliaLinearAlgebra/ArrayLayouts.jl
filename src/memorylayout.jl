@@ -693,3 +693,23 @@ function colsupport(::HermitianLayout, A, j)
 end
 rowsupport(::Union{SymmetricLayout,HermitianLayout}, A, j) = colsupport(A, j)
 
+
+
+function _sym_axes(A)
+    ax = axes(parent(A),2)
+    (ax, ax)
+end
+
+###
+# axes overloads to support block indexing
+###
+
+axes(A::HermOrSym{<:Any,<:LayoutMatrix}) = _sym_axes(A)
+axes(A::HermOrSym{<:Any,<:SubArray{<:Any,2,<:LayoutMatrix}}) = _sym_axes(A)
+axes(A::AbstractTriangular{<:Any,<:LayoutMatrix}) = axes(parent(A))
+axes(A::AbstractTriangular{<:Any,<:SubArray{<:Any,2,<:LayoutMatrix}}) = axes(parent(A))
+
+function axes(D::Diagonal{<:Any,<:LayoutVector})
+    a = axes(parent(D),1)
+    (a,a)
+end
