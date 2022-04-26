@@ -327,6 +327,14 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test A[6] == ArrayLayouts.layout_getindex(A,6) == A[1,2]
         @test A[1,2] == A[CartesianIndex(1,2)] == ArrayLayouts.layout_getindex(A,CartesianIndex(1,2))
     end
+
+    @testset "structured axes" begin
+        A = MyMatrix(rand(5,5))
+        x = MyVector(rand(5))
+        @test axes(Symmetric(A)) == axes(Symmetric(view(A,1:5,1:5))) == axes(A)
+        @test axes(UpperTriangular(A)) == axes(UpperTriangular(view(A,1:5,1:5))) == axes(A)
+        @test axes(Diagonal(x)) == axes(Diagonal(Vector(x)))
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
