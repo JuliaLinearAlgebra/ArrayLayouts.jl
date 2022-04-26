@@ -80,11 +80,6 @@ abstract type LayoutArray{T,N} <: AbstractArray{T,N} end
 const LayoutMatrix{T} = LayoutArray{T,2}
 const LayoutVector{T} = LayoutArray{T,1}
 
-## TODO: Following are type piracy whch may be removed in Julia v1.5
-_transpose_strides(a) = (a,1)
-_transpose_strides(a,b) = (b,a)
-strides(A::Adjoint) = _transpose_strides(strides(parent(A))...)
-strides(A::Transpose) = _transpose_strides(strides(parent(A))...)
 
 """
     ConjPtr{T}
