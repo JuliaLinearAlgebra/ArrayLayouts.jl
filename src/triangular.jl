@@ -215,25 +215,40 @@ for UNIT in ('U', 'N')
         @eval @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{$UPLO,$UNIT,<:AbstractColumnMajor},
                                             <:AbstractStridedLayout}) =
             BLAS.trsv!($UPLO, 'N', $UNIT, triangulardata(M.A), M.B)
+        @eval @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{$UPLO,$UNIT,<:AbstractColumnMajor},
+                                            <:AbstractStridedLayout}) =
+            LAPACK.trtrs!($UPLO, 'N', $UNIT, triangulardata(M.A), M.B)
     end
 
     @eval begin
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',$UNIT,<:AbstractRowMajor},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('L', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
+        @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'U',$UNIT,<:AbstractRowMajor},
+                                                        <:AbstractStridedLayout}) =
+            LAPACK.trtrs!('L', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
 
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:AbstractRowMajor},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('U', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
+        @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:AbstractRowMajor},
+                                                        <:AbstractStridedLayout}) =
+            LAPACK.trtrs!('U', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
 
 
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('L', 'C', $UNIT, triangulardata(M.A)', M.B)
+        @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
+                                                        <:AbstractStridedLayout}) =
+            LAPACK.trtrs!('L', 'C', $UNIT, triangulardata(M.A)', M.B)            
 
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('U', 'C', $UNIT, triangulardata(M.A)', M.B)
+        @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
+                                                        <:AbstractStridedLayout}) =
+            LAPACK.trtrs!('U', 'C', $UNIT, triangulardata(M.A)', M.B)            
     end
 end
 
