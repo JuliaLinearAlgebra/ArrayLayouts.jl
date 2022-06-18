@@ -335,6 +335,14 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test axes(UpperTriangular(A)) == axes(UpperTriangular(view(A,1:5,1:5))) == axes(A)
         @test axes(Diagonal(x)) == axes(Diagonal(Vector(x)))
     end
+
+    @testset "adjtrans *" begin
+        A = MyMatrix(rand(5,5))
+        x = MyVector(rand(5))
+
+        @test x'A ≈ transpose(x)A ≈ x.A'A.A
+        @test x'A' ≈ x'transpose(A) ≈ transpose(x)A' ≈ transpose(x)transpose(A) ≈ x.A'A.A'
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
