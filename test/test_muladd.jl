@@ -321,6 +321,7 @@ Random.seed!(0)
 
                 @test all(mul(UpperTriangular(A),x) .===
                             copy(Lmul(UpperTriangular(A),x)) .===
+                            ArrayLayouts.lmul(UpperTriangular(A),x) .===
                             ArrayLayouts.lmul!(UpperTriangular(A),copy(x)) .===
                             copyto!(similar(x),Lmul(UpperTriangular(A),x)) .===
                             UpperTriangular(A)*x .===
