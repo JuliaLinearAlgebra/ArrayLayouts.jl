@@ -625,6 +625,8 @@ Random.seed!(0)
         @test Q*Q' ≈ mul(Q,Q')
         @test Q'*Q' ≈ mul(Q',Q')
         @test Q'*Q ≈ mul(Q',Q)
+        @test Q*UpperTriangular(B) ≈ mul(Q, UpperTriangular(B))
+        @test UpperTriangular(B)*Q ≈ mul(UpperTriangular(B), Q)
     end
 
     @testset "Mul" begin
