@@ -225,14 +225,14 @@ for UNIT in ('U', 'N')
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('L', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
         @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'U',$UNIT,<:AbstractRowMajor},
-                                                        <:AbstractStridedLayout}) =
+                                                        <:AbstractColumnMajor}) =
             LAPACK.trtrs!('L', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
 
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:AbstractRowMajor},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('U', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
         @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'L',$UNIT,<:AbstractRowMajor},
-                                                        <:AbstractStridedLayout}) =
+                                                        <:AbstractColumnMajor}) =
             LAPACK.trtrs!('U', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
 
 
@@ -240,14 +240,14 @@ for UNIT in ('U', 'N')
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('L', 'C', $UNIT, triangulardata(M.A)', M.B)
         @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'U',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
-                                                        <:AbstractStridedLayout}) =
+                                                        <:AbstractColumnMajor}) =
             LAPACK.trtrs!('L', 'C', $UNIT, triangulardata(M.A)', M.B)            
 
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('U', 'C', $UNIT, triangulardata(M.A)', M.B)
         @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'L',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
-                                                        <:AbstractStridedLayout}) =
+                                                        <:AbstractColumnMajor}) =
             LAPACK.trtrs!('U', 'C', $UNIT, triangulardata(M.A)', M.B)            
     end
 end
