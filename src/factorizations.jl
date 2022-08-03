@@ -123,7 +123,7 @@ adjointlayout(::Type, ::QRPackedQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRPac
 adjointlayout(::Type, ::QRCompactWYQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRCompactWYQLayout{SLAY,TLAY}()
 
 copy(M::Lmul{<:AbstractQLayout}) = copyto!(similar(M), M)
-mulreduce(M::Mul{<:AbstractQLayout,<:AbstractQLayout}) = MulAdd(M)
+mulreduce(M::Mul{<:AbstractQLayout,<:AbstractQLayout}) = Lmul(M)
 mulreduce(M::Mul{<:AbstractQLayout}) = Lmul(M)
 mulreduce(M::Mul{<:Any,<:AbstractQLayout}) = Rmul(M)
 mulreduce(M::Mul{<:TriangularLayout,<:AbstractQLayout}) = Rmul(M)
@@ -151,17 +151,17 @@ materialize!(M::Rmul{LAY}) where LAY<:AbstractQLayout = error("Overload material
 
 materialize!(M::Ldiv{<:AbstractQLayout}) = materialize!(Lmul(M.A',M.B))
 
-materialize!(M::Lmul{<:QRPackedQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
+materialize!(M::Lmul{<:QRPackedQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractQ{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
     LAPACK.ormqr!('L','N',M.A.factors,M.A.τ,M.B)
 
-materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
+materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractQ{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
     LAPACK.gemqrt!('L','N',M.A.factors,M.A.T,M.B)
 
-function materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractRowMajor,<:AbstractMatrix{T},<:AbstractMatrix{T}}) where T<:BlasReal
+function materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractRowMajor,<:AbstractQ{T},<:AbstractMatrix{T}}) where T<:BlasReal
     LAPACK.gemqrt!('R','T',M.A.factors,M.A.T,transpose(M.B))
     M.B
 end
-function materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:ConjLayout{<:AbstractRowMajor},<:AbstractMatrix{T},<:AbstractMatrix{T}}) where T<:BlasComplex
+function materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:ConjLayout{<:AbstractRowMajor},<:AbstractQ{T},<:AbstractMatrix{T}}) where T<:BlasComplex
     LAPACK.gemqrt!('R','C',M.A.factors,M.A.T,(M.B)')
     M.B
 end
@@ -196,18 +196,18 @@ end
 
 
 ### QcB
-materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
-    (A = M.A.parent; LAPACK.ormqr!('L','T',A.factors,A.τ,M.B))
-materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
-    (A = M.A.parent; LAPACK.ormqr!('L','C',A.factors,A.τ,M.B))
-materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
-    (A = M.A.parent; LAPACK.gemqrt!('L','T',A.factors,A.T,M.B))
-materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
-    (A = M.A.parent; LAPACK.gemqrt!('L','C',A.factors,A.T,M.B))
+materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AdjointQtype{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
+    (A = parent(M.A); LAPACK.ormqr!('L','T',A.factors,A.τ,M.B))
+materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AdjointQtype{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
+    (A = parent(M.A); LAPACK.ormqr!('L','C',A.factors,A.τ,M.B))
+materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AdjointQtype{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
+    (A = parent(M.A); LAPACK.gemqrt!('L','T',A.factors,A.T,M.B))
+materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AdjointQtype{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
+    (A = parent(M.A); LAPACK.gemqrt!('L','C',A.factors,A.T,M.B))
 function materialize!(M::Lmul{<:AdjQRPackedQLayout})
     adjA,B = M.A, M.B
     require_one_based_indexing(B)
-    A = adjA.parent
+    A = parent(adjA)
     mA, nA = size(A.factors)
     mB, nB = size(B,1), size(B,2)
     if mA != mB
@@ -233,9 +233,9 @@ function materialize!(M::Lmul{<:AdjQRPackedQLayout})
 end
 
 ## AQ
-materialize!(M::Rmul{<:AbstractStridedLayout,<:QRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractMatrix{T}}) where T<:BlasFloat =
+materialize!(M::Rmul{<:AbstractStridedLayout,<:QRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractQ{T}}) where T<:BlasFloat =
     LAPACK.ormqr!('R', 'N', M.B.factors, M.B.τ, M.A)
-materialize!(M::Rmul{<:AbstractStridedLayout,<:QRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractMatrix{T}}) where T<:BlasFloat =
+materialize!(M::Rmul{<:AbstractStridedLayout,<:QRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractQ{T}}) where T<:BlasFloat =
     LAPACK.gemqrt!('R','N', M.B.factors, M.B.T, M.A)
 function materialize!(M::Rmul{<:Any,<:QRPackedQLayout})
     A,Q = M.A,M.B
@@ -264,17 +264,17 @@ function materialize!(M::Rmul{<:Any,<:QRPackedQLayout})
 end
 
 ### AQc
-materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractMatrix{T}}) where T<:BlasReal =
-    (B = M.B.parent; LAPACK.ormqr!('R','T',B.factors,B.τ,M.A))
-materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractMatrix{T}}) where T<:BlasComplex =
-    (B = M.B.parent; LAPACK.ormqr!('R','C',B.factors,B.τ,M.A))
-materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractMatrix{T}}) where T<:BlasReal =
-    (B = M.B.parent; LAPACK.gemqrt!('R','T',B.factors,B.T,M.A))
-materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractMatrix{T}}) where T<:BlasComplex =
-    (B = M.B.parent; LAPACK.gemqrt!('R','C',B.factors,B.T,M.A))
+materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AdjointQtype{T}}) where T<:BlasReal =
+    (B = parent(M.B); LAPACK.ormqr!('R','T',B.factors,B.τ,M.A))
+materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AdjointQtype{T}}) where T<:BlasComplex =
+    (B = parent(M.B); LAPACK.ormqr!('R','C',B.factors,B.τ,M.A))
+materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AdjointQtype{T}}) where T<:BlasReal =
+    (B = parent(M.B); LAPACK.gemqrt!('R','T',B.factors,B.T,M.A))
+materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AdjointQtype{T}}) where T<:BlasComplex =
+    (B = parent(M.B); LAPACK.gemqrt!('R','C',B.factors,B.T,M.A))
 function materialize!(M::Rmul{<:Any,<:AdjQRPackedQLayout})
     A,adjQ = M.A,M.B
-    Q = adjQ.parent
+    Q = parent(adjQ)
     mQ, nQ = size(Q.factors)
     mA, nA = size(A,1), size(A,2)
     if nA != mQ

@@ -281,6 +281,9 @@ struct DualLayout{ML<:MemoryLayout} <: MemoryLayout end
 
 MemoryLayout(::Type{Transpose{T,P}}) where {T,P} = transposelayout(MemoryLayout(P))
 MemoryLayout(::Type{Adjoint{T,P}}) where {T,P} = adjointlayout(T, MemoryLayout(P))
+if VERSION >= v"1.9-"
+    MemoryLayout(::Type{AdjointQ{T,P}}) where {T,P} = adjointlayout(T, MemoryLayout(P))
+end
 MemoryLayout(::Type{AdjointAbsVec{T,P}}) where {T,P<:AbstractVector} = DualLayout{typeof(adjointlayout(T,MemoryLayout(P)))}()
 MemoryLayout(::Type{TransposeAbsVec{T,P}}) where {T,P<:AbstractVector} = DualLayout{typeof(transposelayout(MemoryLayout(P)))}()
 

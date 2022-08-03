@@ -39,6 +39,13 @@ import LinearAlgebra: AbstractTriangular, AbstractQ, QRCompactWYQ, QRPackedQ, ch
                         norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym, AdjointAbsVec,
                         TransposeAbsVec, cholcopy, checknonsingular, _apply_ipiv_rows!, ipiv2perm, RealHermSymComplexHerm, chkfullrank
 
+if VERSION >= v"1.9-"
+    using LinearAlgebra: AdjointQ
+    AdjointQtype{T} = AdjointQ{T}
+else
+    AdjointQtype{T} = Adjoint{T,<:AbstractQ}
+end
+
 import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
 import FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype
