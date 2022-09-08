@@ -80,7 +80,7 @@ The Default is `MulAdd`. Note that the lowered type must overload `copyto!` and 
 """
 mulreduce(M::Mul) = MulAdd(M)
 
-similar(M::Mul, ::Type{T}, axes) where {T,N} = similar(mulreduce(M), T, axes)
+similar(M::Mul, ::Type{T}, axes) where {T} = similar(mulreduce(M), T, axes)
 similar(M::Mul, ::Type{T}) where T = similar(mulreduce(M), T)
 similar(M::Mul) = similar(mulreduce(M))
 

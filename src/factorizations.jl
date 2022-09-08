@@ -114,9 +114,9 @@ struct AdjQRPackedQLayout{SLAY,TLAY} <: AbstractQLayout end
 struct QRCompactWYQLayout{SLAY,TLAY} <: AbstractQLayout end
 struct AdjQRCompactWYQLayout{SLAY,TLAY} <: AbstractQLayout end
 
-MemoryLayout(::Type{<:LinearAlgebra.QRPackedQ{<:Any,S}}) where {S,T} =
+MemoryLayout(::Type{<:LinearAlgebra.QRPackedQ{<:Any,S}}) where {S} =
     QRPackedQLayout{typeof(MemoryLayout(S)),DenseColumnMajor}()
-MemoryLayout(::Type{<:LinearAlgebra.QRCompactWYQ{<:Any,S}}) where {S,T} =
+MemoryLayout(::Type{<:LinearAlgebra.QRCompactWYQ{<:Any,S}}) where {S} =
     QRCompactWYQLayout{typeof(MemoryLayout(S)),DenseColumnMajor}()
 
 adjointlayout(::Type, ::QRPackedQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRPackedQLayout{SLAY,TLAY}()
