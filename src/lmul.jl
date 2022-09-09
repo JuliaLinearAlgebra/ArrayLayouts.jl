@@ -19,7 +19,7 @@ for Typ in (:Lmul, :Rmul)
         size(M::$Typ) = map(length,axes(M))
         axes(M::$Typ) = (axes(M.A,1),axes(M.B,2))
 
-        similar(M::$Typ, ::Type{T}, axes) where {T,N} = similar(Array{T}, axes)
+        similar(M::$Typ, ::Type{T}, axes) where {T} = similar(Array{T}, axes)
         similar(M::$Typ, ::Type{T}) where T = similar(M, T, axes(M))
         similar(M::$Typ) = similar(M, eltype(M))
     end

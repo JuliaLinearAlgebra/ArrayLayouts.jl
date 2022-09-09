@@ -591,7 +591,7 @@ transposelayout(ml::TridiagonalLayout) = ml
 transposelayout(ml::ConjLayout{DiagonalLayout}) = ml
 
 triangularlayout(::Type{<:TriangularLayout{'L','N'}}, ::TridiagonalLayout{DL,D,DU}) where {DL,D,DU} = BidiagonalLayout{D,DL}()
-triangularlayout(::Type{<:TriangularLayout{'U','N'}}, ::TridiagonalLayout{DL,D,DU}) where {UPLO,DL,D,DU} = BidiagonalLayout{D,DU}()
+triangularlayout(::Type{<:TriangularLayout{'U','N'}}, ::TridiagonalLayout{DL,D,DU}) where {DL,D,DU} = BidiagonalLayout{D,DU}()
 triangularlayout(::Type{<:TriangularLayout{'L','N'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) = BidiagonalLayout{FillLayout,FillLayout}()
 triangularlayout(::Type{<:TriangularLayout{'U','N'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) = BidiagonalLayout{FillLayout,FillLayout}()
 triangularlayout(::Type{<:TriangularLayout{UPLO,'U'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) where UPLO = BidiagonalLayout{FillLayout,FillLayout}()

@@ -102,7 +102,7 @@ end
 # work-around issue with complex conjugation of pointer
 unsafe_convert(::Type{Ptr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(ConjPtr{T}, parent(Ac))
 unsafe_convert(::Type{ConjPtr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(Ptr{T}, parent(Ac))
-function unsafe_convert(::Type{ConjPtr{T}}, V::SubArray{T,2}) where {T,N,P}
+function unsafe_convert(::Type{ConjPtr{T}}, V::SubArray{T,2}) where {T}
     kr, jr = parentindices(V)
     unsafe_convert(Ptr{T}, view(parent(V)', jr, kr))
 end

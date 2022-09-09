@@ -184,13 +184,13 @@ BLAS.trmm!('R', 'L', 'T', UNIT, one(T), transpose(triangulardata(A)), x)
 end
 
 @inline function materialize!(M::BlasMatRmulMat{<:AbstractStridedLayout,
-                                                <:TriangularLayout{'L',UNIT,<:ConjLayout{<:AbstractRowMajor}},T}) where {UPLO,UNIT,T<:BlasComplex}
+                                                <:TriangularLayout{'L',UNIT,<:ConjLayout{<:AbstractRowMajor}},T}) where {UNIT,T<:BlasComplex}
     x,A = M.A,M.B
     BLAS.trmm!('R', 'U', 'C', UNIT, one(T), triangulardata(A)', x)
 end
 
 @inline function materialize!(M::BlasMatRmulMat{<:AbstractStridedLayout,
-                                                <:TriangularLayout{'U',UNIT,<:ConjLayout{<:AbstractRowMajor}},T}) where {UPLO,UNIT,T<:BlasComplex}
+                                                <:TriangularLayout{'U',UNIT,<:ConjLayout{<:AbstractRowMajor}},T}) where {UNIT,T<:BlasComplex}
 x,A = M.A,M.B
 BLAS.trmm!('R', 'L', 'C', UNIT, one(T), triangulardata(A)', x)
 end
