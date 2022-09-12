@@ -628,7 +628,7 @@ supdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent
 
 
 rowsupport(_, A, k) = axes(A,2)
-""""
+"""
     rowsupport(A, k)
 
 gives an iterator containing the possible non-zero entries in the k-th row of A.
@@ -639,7 +639,7 @@ rowsupport(A) = rowsupport(A, axes(A,1))
 colsupport(_, A, j) = axes(A,1)
 
 
-""""
+"""
     colsupport(A, j)
 
 gives an iterator containing the possible non-zero entries in the j-th column of A.
