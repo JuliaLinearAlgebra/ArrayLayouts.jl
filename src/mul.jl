@@ -196,7 +196,7 @@ macro layoutmul(Typ)
 
         Base.:*(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::$Typ, B::LinearAlgebra.AbstractQ) = ArrayLayouts.mul(A,B)
-        if VERSION >= v"1.9-"
+        if isdefined(LinearAlgebra, AdjointQ)
             Base.:*(A::LinearAlgebra.AdjointQ, B::$Typ) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Typ, B::LinearAlgebra.AdjointQ) = ArrayLayouts.mul(A,B)
         end            
