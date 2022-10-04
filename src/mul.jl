@@ -196,6 +196,11 @@ macro layoutmul(Typ)
 
         Base.:*(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::$Typ, B::LinearAlgebra.AbstractQ) = ArrayLayouts.mul(A,B)
+        # disambiguation
+        Base.:*(A::Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}, B::$Typ) =
+            ArrayLayouts.mul(A,B)
+        Base.:*(A::$Typ, B::Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}) =
+            ArrayLayouts.mul(A,B)
         if isdefined(LinearAlgebra, :AdjointQ)
             Base.:*(A::LinearAlgebra.AdjointQ, B::$Typ) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Typ, B::LinearAlgebra.AdjointQ) = ArrayLayouts.mul(A,B)
