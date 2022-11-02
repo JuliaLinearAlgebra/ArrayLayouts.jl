@@ -38,7 +38,9 @@ length(M::MulAdd) = prod(size(M))
 size(M::MulAdd) = map(length,axes(M))
 axes(M::MulAdd) = axes(M.C)
 
-similar(M::MulAdd, ::Type{T}, axes) where {T,N} = similar(Array{T}, axes)
+similar(M::MulAdd, ::Type{T}, axes) where {T} = similar(Array{T}, axes)
+similar(M::MulAdd{<:DualLayout,<:Any,<:Any,<:Any,<:Adjoint}, ::Type{T}, axes) where {T} = similar(Array{T}, axes[2])'
+similar(M::MulAdd{<:DualLayout,<:Any,<:Any,<:Any,<:Transpose}, ::Type{T}, axes) where {T} = transpose(similar(Array{T}, axes[2]))
 similar(M::MulAdd, ::Type{T}) where T = similar(M, T, axes(M))
 similar(M::MulAdd) = similar(M, eltype(M))
 
@@ -72,7 +74,7 @@ copy(M::MulAdd) = copyto!(similar(M), M)
 _fill_copyto!(dest, C) = copyto!(dest, C)
 _fill_copyto!(dest, C::Zeros) = zero!(dest) # exploit special fill! overload
 
-@inline copyto!(dest::AbstractArray{T}, M::MulAdd) where T = 
+@inline copyto!(dest::AbstractArray{T}, M::MulAdd) where T =
     muladd!(M.α, unalias(dest,M.A), unalias(dest,M.B), M.β, _fill_copyto!(dest, M.C))
 
 # Modified from LinearAlgebra._generic_matmatmul!
@@ -96,8 +98,8 @@ function tiled_blasmul!(tile_size, α, A::AbstractMatrix{T}, B::AbstractMatrix{S
     @inbounds begin
         sz = (tile_size, tile_size)
         # FIXME: This code is completely invalid!!!
-        Atile = unsafe_wrap(Array, convert(Ptr{T}, pointer(Abuf[Threads.threadid()])), sz)
-        Btile = unsafe_wrap(Array, convert(Ptr{S}, pointer(Bbuf[Threads.threadid()])), sz)
+        Atile = Array{T}(undef, sz)
+        Btile = Array{S}(undef, sz)
 
         z1 = zero(A[1, 1]*B[1, 1] + A[1, 1]*B[1, 1])
         z = convert(promote_type(typeof(z1), R), z1)
@@ -117,8 +119,7 @@ function tiled_blasmul!(tile_size, α, A::AbstractMatrix{T}, B::AbstractMatrix{S
                 end
             end
         else
-            # FIXME: This code is completely invalid!!!
-            Ctile = unsafe_wrap(Array, convert(Ptr{R}, pointer(Cbuf[Threads.threadid()])), sz)
+            Ctile = Array{R}(undef, sz)
             for jb = 1:tile_size:nB
                 jlim = min(jb+tile_size-1,nB)
                 jlen = jlim-jb+1
@@ -371,6 +372,8 @@ scalarzero(::Type{<:AbstractArray{T}}) where T = scalarzero(T)
 
 fillzeros(::Type{T}, ax) where T<:Number = Zeros{T}(ax)
 mulzeros(::Type{T}, M) where T<:Number = fillzeros(T, axes(M))
+mulzeros(::Type{T}, M::Mul{<:DualLayout,<:Any,<:Adjoint}) where T<:Number = fillzeros(T, axes(M,2))'
+mulzeros(::Type{T}, M::Mul{<:DualLayout,<:Any,<:Transpose}) where T<:Number = transpose(fillzeros(T, axes(M,2)))
 
 # initiate array-valued MulAdd
 function _mulzeros!(dest::AbstractVector{T}, A, B) where T
@@ -413,3 +416,8 @@ function similar(M::MulAdd{<:Any,<:DualLayout,ZerosLayout}, ::Type{T}, (x,y)) wh
     trans = transtype(M.B)
     trans(similar(trans(M.B), T, y))
 end
+
+const ZerosLayouts = Union{ZerosLayout,DualLayout{ZerosLayout}}
+copy(M::MulAdd{<:ZerosLayouts, <:ZerosLayouts, <:ZerosLayouts}) = M.C
+copy(M::MulAdd{<:ZerosLayouts, <:Any, <:ZerosLayouts}) = M.C
+copy(M::MulAdd{<:Any, <:ZerosLayouts, <:ZerosLayouts}) = M.C

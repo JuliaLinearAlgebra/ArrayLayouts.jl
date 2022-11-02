@@ -86,11 +86,24 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
 
     @testset "Triangular \\ matrix" begin
         A = randn(5,5)
-        b = randn(5,5)
-        M =  Ldiv(UpperTriangular(A), b)
+        B = randn(5,5)
+        M =  Ldiv(UpperTriangular(A), B)
         @test Base.Broadcast.broadcastable(M) === M
-        @test UpperTriangular(A) \ b ≈ copyto!(similar(b) , Ldiv(UpperTriangular(A), b)) ≈
-            (b .= Ldiv(UpperTriangular(A), b))
+        @test UpperTriangular(A) \ B ≈ copyto!(similar(B) , Ldiv(UpperTriangular(A), B)) ≈ (B .= Ldiv(UpperTriangular(A), B))
+        @test UpperTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(UpperTriangular(A'), B)) ≈ (B .= Ldiv(UpperTriangular(A'), B))
+        @test LowerTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(LowerTriangular(A'), B)) ≈ (B .= Ldiv(LowerTriangular(A'), B))
+        @test UnitUpperTriangular(A) \ B ≈ copyto!(similar(B) , Ldiv(UnitUpperTriangular(A), B)) ≈ (B .= Ldiv(UnitUpperTriangular(A), B))
+        @test UnitUpperTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(UnitUpperTriangular(A'), B)) ≈ (B .= Ldiv(UnitUpperTriangular(A'), B))
+        @test UnitLowerTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(UnitLowerTriangular(A'), B)) ≈ (B .= Ldiv(UnitLowerTriangular(A'), B))        
+
+        C = randn(5,5) + im * randn(5,5)
+        D = randn(5,5) + im * randn(5,5)
+        @test UpperTriangular(C) \ D ≈ copyto!(similar(D) , Ldiv(UpperTriangular(C), D)) ≈ (D .= Ldiv(UpperTriangular(C), D))
+        @test UpperTriangular(C') \ D ≈ copyto!(similar(D) , Ldiv(UpperTriangular(C'), D)) ≈ (D .= Ldiv(UpperTriangular(C'), D))
+        @test LowerTriangular(C') \ D ≈ copyto!(similar(D) , Ldiv(LowerTriangular(C'), D)) ≈ (D .= Ldiv(LowerTriangular(C'), D))
+        @test UnitUpperTriangular(C) \ D ≈ copyto!(similar(D) , Ldiv(UnitUpperTriangular(C), D)) ≈ (D .= Ldiv(UnitUpperTriangular(C), D))
+        @test UnitUpperTriangular(C') \ D ≈ copyto!(similar(D) , Ldiv(UnitUpperTriangular(C'), D)) ≈ (D .= Ldiv(UnitUpperTriangular(C'), D))
+        @test UnitLowerTriangular(C') \ D ≈ copyto!(similar(D) , Ldiv(UnitLowerTriangular(C'), D)) ≈ (D .= Ldiv(UnitLowerTriangular(C'), D))
     end
 
     @testset "Int" begin

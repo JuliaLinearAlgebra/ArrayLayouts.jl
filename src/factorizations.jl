@@ -3,22 +3,33 @@ abstract type AbstractQRLayout <: MemoryLayout end
 """
    QRCompactWYLayout{SLAY,TLAY}()
 
-represents a Compact-WY QR factorization whose 
+represents a Compact-WY QR factorization whose
 factors are stored with layout SLAY and τ stored with layout TLAY
 """
 struct QRCompactWYLayout{SLAY,TLAY} <: AbstractQRLayout end
 """
     QRPackedLayout{SLAY,TLAY}()
 
-represents a Packed QR factorization whose 
+represents a Packed QR factorization whose
 factors are stored with layout SLAY and τ stored with layout TLAY
 """
 struct QRPackedLayout{SLAY,TLAY} <: AbstractQRLayout end
 
-MemoryLayout(::Type{<:LinearAlgebra.QRCompactWY{<:Any,MAT}}) where MAT = 
+
+"""
+    LULayout{SLAY}()
+
+represents a Packed QR factorization whose
+factors are stored with layout SLAY and τ stored with layout TLAY
+"""
+struct LULayout{SLAY} <: AbstractQRLayout end
+
+MemoryLayout(::Type{<:LinearAlgebra.QRCompactWY{<:Any,MAT}}) where MAT =
     QRCompactWYLayout{typeof(MemoryLayout(MAT)),DenseColumnMajor}()
-MemoryLayout(::Type{<:LinearAlgebra.QR{<:Any,MAT}}) where MAT = 
+MemoryLayout(::Type{<:LinearAlgebra.QR{<:Any,MAT}}) where MAT =
     QRPackedLayout{typeof(MemoryLayout(MAT)),DenseColumnMajor}()
+MemoryLayout(::Type{<:LinearAlgebra.LU{<:Any,MAT}}) where MAT =
+    LULayout{typeof(MemoryLayout(MAT))}()
 
 function materialize!(L::Ldiv{<:QRCompactWYLayout,<:Any,<:Any,<:AbstractVector})
     A,b = L.A, L.B
@@ -30,6 +41,15 @@ function materialize!(L::Ldiv{<:QRCompactWYLayout,<:Any,<:Any,<:AbstractMatrix})
     A,B = L.A, L.B
     ldiv!(UpperTriangular(A.R), view(lmul!(adjoint(A.Q), B), 1:size(A, 2), 1:size(B, 2)))
     B
+end
+
+materialize!(L::Ldiv{<:LULayout{<:AbstractColumnMajor},<:AbstractColumnMajor,<:LU{T},<:AbstractVecOrMat{T}}) where {T<:BlasFloat} =
+    LAPACK.getrs!('N', L.A.factors, L.A.ipiv, L.B)
+
+function materialize!(L::Ldiv{<:LULayout})
+    A,B = L.A,L.B
+    _apply_ipiv_rows!(A, B)
+    ldiv!(UpperTriangular(A.factors), ldiv!(UnitLowerTriangular(A.factors), B))
 end
 
 # Julia implementation similar to xgelsy
@@ -94,9 +114,9 @@ struct AdjQRPackedQLayout{SLAY,TLAY} <: AbstractQLayout end
 struct QRCompactWYQLayout{SLAY,TLAY} <: AbstractQLayout end
 struct AdjQRCompactWYQLayout{SLAY,TLAY} <: AbstractQLayout end
 
-MemoryLayout(::Type{<:LinearAlgebra.QRPackedQ{<:Any,S}}) where {S,T} = 
+MemoryLayout(::Type{<:LinearAlgebra.QRPackedQ{<:Any,S}}) where {S} =
     QRPackedQLayout{typeof(MemoryLayout(S)),DenseColumnMajor}()
-MemoryLayout(::Type{<:LinearAlgebra.QRCompactWYQ{<:Any,S}}) where {S,T} = 
+MemoryLayout(::Type{<:LinearAlgebra.QRCompactWYQ{<:Any,S}}) where {S} =
     QRCompactWYQLayout{typeof(MemoryLayout(S)),DenseColumnMajor}()
 
 adjointlayout(::Type, ::QRPackedQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRPackedQLayout{SLAY,TLAY}()
@@ -106,10 +126,12 @@ copy(M::Lmul{<:AbstractQLayout}) = copyto!(similar(M), M)
 mulreduce(M::Mul{<:AbstractQLayout,<:AbstractQLayout}) = MulAdd(M)
 mulreduce(M::Mul{<:AbstractQLayout}) = Lmul(M)
 mulreduce(M::Mul{<:Any,<:AbstractQLayout}) = Rmul(M)
+mulreduce(M::Mul{<:TriangularLayout,<:AbstractQLayout}) = Rmul(M)
+mulreduce(M::Mul{<:AbstractQLayout,<:TriangularLayout}) = Lmul(M)
 
 function copyto!(dest::AbstractArray{T}, M::Lmul{<:AbstractQLayout}) where T
     A,B = M.A,M.B
-    if size(dest,1) == size(B,1) 
+    if size(dest,1) == size(B,1)
         copyto!(dest, B)
     else
         copyto!(view(dest,1:size(B,1),:), B)
@@ -129,13 +151,13 @@ materialize!(M::Rmul{LAY}) where LAY<:AbstractQLayout = error("Overload material
 
 materialize!(M::Ldiv{<:AbstractQLayout}) = materialize!(Lmul(M.A',M.B))
 
-materialize!(M::Lmul{<:QRPackedQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat = 
-    LAPACK.ormqr!('L','N',M.A.factors,M.A.τ,M.B)    
+materialize!(M::Lmul{<:QRPackedQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
+    LAPACK.ormqr!('L','N',M.A.factors,M.A.τ,M.B)
 
-materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat = 
+materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractColumnMajor,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
     LAPACK.gemqrt!('L','N',M.A.factors,M.A.T,M.B)
 
-function materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractRowMajor,<:AbstractMatrix{T},<:AbstractMatrix{T}}) where T<:BlasReal 
+function materialize!(M::Lmul{<:QRCompactWYQLayout{<:AbstractColumnMajor,<:AbstractColumnMajor},<:AbstractRowMajor,<:AbstractMatrix{T},<:AbstractMatrix{T}}) where T<:BlasReal
     LAPACK.gemqrt!('R','T',M.A.factors,M.A.T,transpose(M.B))
     M.B
 end
@@ -176,11 +198,11 @@ end
 ### QcB
 materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
     (A = M.A.parent; LAPACK.ormqr!('L','T',A.factors,A.τ,M.B))
-materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex = 
+materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
     (A = M.A.parent; LAPACK.ormqr!('L','C',A.factors,A.τ,M.B))
 materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
     (A = M.A.parent; LAPACK.gemqrt!('L','T',A.factors,A.T,M.B))
-materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex = 
+materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
     (A = M.A.parent; LAPACK.gemqrt!('L','C',A.factors,A.T,M.B))
 function materialize!(M::Lmul{<:AdjQRPackedQLayout})
     adjA,B = M.A, M.B
@@ -285,10 +307,82 @@ _qr!(layout, axes, A, args...; kwds...) = error("Overload _qr!(::$(typeof(layout
 _lu(layout, axes, A; kwds...) = Base.invoke(lu, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
 _lu(layout, axes, A, pivot::P; kwds...) where P = Base.invoke(lu, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
 _lu!(layout, axes, A, args...; kwds...) = error("Overload _lu!(::$(typeof(layout)), axes, A)")
-_cholesky(layout, axes, A, ::Val{false}=Val(false); check::Bool = true) = cholesky!(cholcopy(A); check = check)
-_cholesky(layout, axes, A, ::Val{true}; tol = 0.0, check::Bool = true) = cholesky!(cholcopy(A), Val(true); tol = tol, check = check)
-_cholesky!(layout, axes, A, v::Val{tf}; kwds...) where tf = Base.invoke(cholesky!, Tuple{LinearAlgebra.RealHermSymComplexHerm,Val{tf}}, A, v; kwds...)
+_cholesky(layout, axes, A, ::CNoPivot=CNoPivot(); check::Bool = true) = cholesky!(cholcopy(A); check = check)
+_cholesky(layout, axes, A, ::CRowMaximum; tol = 0.0, check::Bool = true) = cholesky!(cholcopy(A), CRowMaximum(); tol = tol, check = check)
 _factorize(layout, axes, A) = qr(A) # Default to QR
+
+
+_factorize(::AbstractStridedLayout, axes, A) = lu(A)
+if VERSION < v"1.8-"
+    function _lu!(::AbstractColumnMajor, axes, A::AbstractMatrix{T}, pivot::Union{NoPivot, RowMaximum} = RowMaximum();
+                check::Bool = true) where T<:BlasFloat
+        if pivot === NoPivot()
+            return generic_lufact!(A, pivot; check = check)
+        end
+        lpt = LAPACK.getrf!(A)
+        check && checknonsingular(lpt[3])
+        return LU{T,typeof(A)}(lpt[1], lpt[2], lpt[3])
+    end
+else
+    function _lu!(::AbstractColumnMajor, axes, A::AbstractMatrix{T}, pivot::Union{NoPivot, RowMaximum} = RowMaximum();
+                check::Bool = true) where T<:BlasFloat
+        if pivot === NoPivot()
+            return generic_lufact!(A, pivot; check = check)
+        end
+        lpt = LAPACK.getrf!(A)
+        check && checknonsingular(lpt[3])
+        return LU{T,typeof(A),typeof(lpt[2])}(lpt[1], lpt[2], lpt[3])
+    end
+end
+
+# for some reason only defined for StridedMatrix in LinearAlgebra
+function getproperty(F::LU{T,<:LayoutMatrix}, d::Symbol) where T
+    m, n = size(F)
+    if d === :L
+        L = tril!(getfield(F, :factors)[1:m, 1:min(m,n)])
+        for i = 1:min(m,n); L[i,i] = one(T); end
+        return L
+    elseif d === :U
+        return triu!(getfield(F, :factors)[1:min(m,n), 1:n])
+    elseif d === :p
+        return ipiv2perm(getfield(F, :ipiv), m)
+    elseif d === :P
+        return Matrix{T}(I, m, m)[:,invperm(F.p)]
+    else
+        getfield(F, d)
+    end
+end
+
+
+# Cholesky factorization without pivoting (copied from stdlib/LinearAlgebra).
+
+# _chol!. Internal methods for calling unpivoted Cholesky
+## BLAS/LAPACK element types
+function _chol!(::SymmetricLayout{<:AbstractColumnMajor}, A::AbstractMatrix{<:BlasFloat}, ::Type{UpperTriangular})
+    C, info = LAPACK.potrf!('U', A)
+    return UpperTriangular(C), info
+end
+function _chol!(::SymmetricLayout{<:AbstractColumnMajor}, A::AbstractMatrix{<:BlasFloat}, ::Type{LowerTriangular})
+    C, info = LAPACK.potrf!('L', A)
+    return LowerTriangular(C), info
+end
+
+_chol!(_, A, UL) = LinearAlgebra._chol!(A, UL)
+
+function _cholesky!(layout, axes, A::RealHermSymComplexHerm, ::CNoPivot; check::Bool = true)
+    C, info = _chol!(layout, A.data, A.uplo == 'U' ? UpperTriangular : LowerTriangular)
+    check && LinearAlgebra.checkpositivedefinite(info)
+    return Cholesky(C.data, A.uplo, info)
+end
+
+function _cholesky!(::SymmetricLayout{<:AbstractColumnMajor}, axes, A::AbstractMatrix{<:BlasReal},
+    ::CRowMaximum; tol = 0.0, check::Bool = true)
+    AA, piv, rank, info = LAPACK.pstrf!(A.uplo, A.data, tol)
+    C = CholeskyPivoted{eltype(AA),typeof(AA)}(AA, A.uplo, piv, rank, tol, info)
+    check && chkfullrank(C)
+    return C
+end
+
 
 _inv_eye(_, ::Type{T}, axs::NTuple{2,Base.OneTo{Int}}) where T = Matrix{T}(I, map(length,axs)...)
 function _inv_eye(A, ::Type{T}, (rows,cols)) where T
@@ -310,15 +404,19 @@ end
 
 macro _layoutfactorizations(Typ)
     esc(quote
-        LinearAlgebra.cholesky(A::$Typ, args...; kwds...) = ArrayLayouts._cholesky(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
-        LinearAlgebra.cholesky!(A::$Typ, v::Val{false}=Val(false); check::Bool = true) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check)
+        LinearAlgebra.cholesky(A::$Typ, v::ArrayLayouts.CNoPivot = ArrayLayouts.CNoPivot(); kwds...) = ArrayLayouts._cholesky(ArrayLayouts.MemoryLayout(A), axes(A), A, v; kwds...)
+        LinearAlgebra.cholesky(A::$Typ, v::ArrayLayouts.CRowMaximum; kwds...) = ArrayLayouts._cholesky(ArrayLayouts.MemoryLayout(A), axes(A), A, v; kwds...)
+        LinearAlgebra.cholesky!(A::LinearAlgebra.RealHermSymComplexHerm{<:Real,<:$Typ}, v::ArrayLayouts.CNoPivot = ArrayLayouts.CNoPivot(); check::Bool = true) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check)
+        LinearAlgebra.cholesky!(A::LinearAlgebra.RealHermSymComplexHerm{<:Real,<:$Typ}, v::ArrayLayouts.CRowMaximum; check::Bool = true, tol = 0.0) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check, tol=tol)
         LinearAlgebra.qr(A::$Typ, args...; kwds...) = ArrayLayouts._qr(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.qr!(A::$Typ, args...; kwds...) = ArrayLayouts._qr!(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
-        LinearAlgebra.lu(A::$Typ, pivot::Union{Val{false}, Val{true}}; kwds...) = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(A), axes(A), A, pivot; kwds...)
+        LinearAlgebra.lu(A::$Typ, pivot::Union{ArrayLayouts.NoPivot,ArrayLayouts.RowMaximum}; kwds...) = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(A), axes(A), A, pivot; kwds...)
         LinearAlgebra.lu(A::$Typ{T}; kwds...) where T = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(A), axes(A), A; kwds...)
         LinearAlgebra.lu!(A::$Typ, args...; kwds...) = ArrayLayouts._lu!(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.factorize(A::$Typ) = ArrayLayouts._factorize(ArrayLayouts.MemoryLayout(A), axes(A), A)
         LinearAlgebra.inv(A::$Typ) = ArrayLayouts._inv(ArrayLayouts.MemoryLayout(A), axes(A), A)
+        LinearAlgebra.ldiv!(L::LU{<:Any,<:$Typ}, B) = ArrayLayouts.ldiv!(L, B)
+        LinearAlgebra.ldiv!(L::LU{<:Any,<:$Typ}, B::$Typ) = ArrayLayouts.ldiv!(L, B)
     end)
 end
 
@@ -339,4 +437,5 @@ function ldiv!(C::Cholesky{<:Any,<:AbstractMatrix}, B::LayoutArray)
     end
 end
 
+LinearAlgebra.ldiv!(L::LU{<:Any,<:LayoutMatrix}, B::LayoutVector) = ArrayLayouts.ldiv!(L, B)
 

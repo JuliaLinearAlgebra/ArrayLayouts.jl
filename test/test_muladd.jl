@@ -1,4 +1,4 @@
-using ArrayLayouts, FillArrays, Random, LinearAlgebra, Test
+using ArrayLayouts, FillArrays, Random, StableRNGs, LinearAlgebra, Test
 import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul, zero!
 
 Random.seed!(0)
@@ -268,7 +268,7 @@ Random.seed!(0)
             @test copyto!(similar(C), MulAdd(1.0, A, B, 0.0, C)) ≈ A*B
         end
 
-        @testset "no allocation" begin        
+        @testset "no allocation" begin
             A = randn(5,5); x = randn(5); y = randn(5); c = similar(y);
             muladd!(2.0, A, x, 3.0, y)
             @test @allocated(muladd!(2.0, A, x, 3.0, y)) == 0
@@ -289,7 +289,7 @@ Random.seed!(0)
         @testset "Scalar * Vector" begin
             A, x =  [1 2; 3 4] , [[1,2],[3,4]]
             @test muladd!(1.0,A,x,0.0, 1.0*x) == A*x
-        end 
+        end
 
         @testset "adjoint" begin
             A = randn(5,5)
@@ -318,17 +318,18 @@ Random.seed!(0)
 
                 @test similar(L) isa Vector{Float64}
                 @test similar(L,Int) isa Vector{Int}
-                
-                @test all(mul(UpperTriangular(A),x) .=== 
+
+                @test all(mul(UpperTriangular(A),x) .===
                             copy(Lmul(UpperTriangular(A),x)) .===
+                            ArrayLayouts.lmul(UpperTriangular(A),x) .===
                             ArrayLayouts.lmul!(UpperTriangular(A),copy(x)) .===
                             copyto!(similar(x),Lmul(UpperTriangular(A),x)) .===
                             UpperTriangular(A)*x .===
                             BLAS.trmv!('U', 'N', 'N', A, copy(x)))
-                @test all(copyto!(similar(x),Lmul(UnitUpperTriangular(A),x)) .=== 
+                @test all(copyto!(similar(x),Lmul(UnitUpperTriangular(A),x)) .===
                             UnitUpperTriangular(A)*x .===
                             BLAS.trmv!('U', 'N', 'U', A, copy(x)))
-                @test all(copyto!(similar(x),Lmul(LowerTriangular(A),x)) .=== 
+                @test all(copyto!(similar(x),Lmul(LowerTriangular(A),x)) .===
                             LowerTriangular(A)*x .===
                             BLAS.trmv!('L', 'N', 'N', A, copy(x)))
                 @test all(ArrayLayouts.lmul!(UnitLowerTriangular(A),copy(x)) .===
@@ -442,7 +443,7 @@ Random.seed!(0)
                     @test all(copy(Lmul(transpose(UpperTriangular(A)), B)) .=== transpose(UpperTriangular(A))B)
                     @test all(copy(Lmul(transpose(UnitUpperTriangular(A)), B)) .=== transpose(UnitUpperTriangular(A))B)
                     @test all(copy(Lmul(transpose(LowerTriangular(A)), B)) .=== transpose(LowerTriangular(A))B)
-                    @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), B)) .=== transpose(UnitLowerTriangular(A))B)                
+                    @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), B)) .=== transpose(UnitLowerTriangular(A))B)
                 end
 
                 for T in (Float64, ComplexF64)
@@ -460,7 +461,7 @@ Random.seed!(0)
                     @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), b)) ≈ transpose(UnitLowerTriangular(A))b)
 
                     B = big.(randn(T,100,100))
-                    
+
                     @test all(copy(Lmul(UpperTriangular(A)', B)) ≈ UpperTriangular(A)'B)
                     @test all(copy(Lmul(UnitUpperTriangular(A)', B)) ≈ UnitUpperTriangular(A)'B)
                     @test all(copy(Lmul(LowerTriangular(A)', B)) ≈ LowerTriangular(A)'B)
@@ -469,7 +470,7 @@ Random.seed!(0)
                     @test all(copy(Lmul(transpose(UpperTriangular(A)), B)) ≈ transpose(UpperTriangular(A))B)
                     @test all(copy(Lmul(transpose(UnitUpperTriangular(A)), B)) ≈ transpose(UnitUpperTriangular(A))B)
                     @test all(copy(Lmul(transpose(LowerTriangular(A)), B)) ≈ transpose(LowerTriangular(A))B)
-                    @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), B)) ≈ transpose(UnitLowerTriangular(A))B)                
+                    @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), B)) ≈ transpose(UnitLowerTriangular(A))B)
                 end
             end
 
@@ -500,7 +501,7 @@ Random.seed!(0)
 
                 @test similar(R) isa Matrix{T}
                 @test similar(R,Int) isa Matrix{Int}
-                
+
                 R2 = deepcopy(R)
                 @test all(mul(A, UpperTriangular(B)) .=== BLAS.trmm('R', 'U', 'N', 'N', one(T), B, A) .=== copyto!(similar(R2), R2) .=== materialize!(R))
                 @test R.A ≠ A
@@ -530,9 +531,9 @@ Random.seed!(0)
             A = randn(5,5)
             B = Diagonal(randn(5))
             @test MemoryLayout(B) == DiagonalLayout{DenseColumnMajor}()
-            
+
             @test A*B == ArrayLayouts.rmul!(copy(A),B) == mul(A,B)
-            @test B*A == ArrayLayouts.lmul!(B,copy(A)) == mul(B,A) 
+            @test B*A == ArrayLayouts.lmul!(B,copy(A)) == mul(B,A)
             @test B*B == ArrayLayouts.lmul!(B, copy(B)) == mul(B, B)
         end
 
@@ -587,7 +588,7 @@ Random.seed!(0)
 
         B = randn(5,5)
         C = randn(5,5)
-        @test materialize(MulAdd(2.0,Diagonal(A),Diagonal(B),3.0,Diagonal(C))) == 
+        @test materialize(MulAdd(2.0,Diagonal(A),Diagonal(B),3.0,Diagonal(C))) ==
             muladd!(2.0,Diagonal(A),Diagonal(B),3.0,Diagonal(copy(C))) == 2.0Diagonal(A)*Diagonal(B) + 3.0*Diagonal(C)
         @test_broken materialize(MulAdd(2.0,Diagonal(A),Diagonal(B),3.0,Diagonal(C))) isa Diagonal
 
@@ -624,13 +625,15 @@ Random.seed!(0)
         @test Q*Q' ≈ mul(Q,Q')
         @test Q'*Q' ≈ mul(Q',Q')
         @test Q'*Q ≈ mul(Q',Q)
+        @test Q*UpperTriangular(B) ≈ mul(Q, UpperTriangular(B))
+        @test UpperTriangular(B)*Q ≈ mul(UpperTriangular(B), Q)
     end
 
     @testset "Mul" begin
         A = randn(5,5)
         b = randn(5)
         B = randn(5,5)
-        
+
         M = Mul(A,b)
         @test size(M) == (size(M,1),) == (5,)
         @test length(M) == 5
@@ -657,7 +660,8 @@ Random.seed!(0)
     @testset "Dot" begin
         a = randn(5)
         b = randn(5)
-        @test ArrayLayouts.dot(a,b) == mul(a',b) == dot(a,b)
+        @test ArrayLayouts.dot(a,b) == mul(a',b)
+        @test ArrayLayouts.dot(a,b) ≈ dot(a,b)
         @test eltype(Dot(a,1:5)) == Float64
     end
 
@@ -685,5 +689,12 @@ Random.seed!(0)
         @test typeof(mul(Diag,BidiagL)) <: Bidiagonal
         @test typeof(mul(Diag,Tridiag)) <: Tridiagonal
         @test typeof(mul(Diag,SymTri))  <: Tridiagonal
+    end
+
+    @testset "tiled_blasmul!" begin
+        rng = StableRNG(1)
+        X = randn(rng, ComplexF64, 8, 4)
+        Y = randn(rng, 8, 2)
+        @test mul(Y',X) ≈ Y'X
     end
 end

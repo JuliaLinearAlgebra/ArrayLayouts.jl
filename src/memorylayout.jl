@@ -591,7 +591,7 @@ transposelayout(ml::TridiagonalLayout) = ml
 transposelayout(ml::ConjLayout{DiagonalLayout}) = ml
 
 triangularlayout(::Type{<:TriangularLayout{'L','N'}}, ::TridiagonalLayout{DL,D,DU}) where {DL,D,DU} = BidiagonalLayout{D,DL}()
-triangularlayout(::Type{<:TriangularLayout{'U','N'}}, ::TridiagonalLayout{DL,D,DU}) where {UPLO,DL,D,DU} = BidiagonalLayout{D,DU}()
+triangularlayout(::Type{<:TriangularLayout{'U','N'}}, ::TridiagonalLayout{DL,D,DU}) where {DL,D,DU} = BidiagonalLayout{D,DU}()
 triangularlayout(::Type{<:TriangularLayout{'L','N'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) = BidiagonalLayout{FillLayout,FillLayout}()
 triangularlayout(::Type{<:TriangularLayout{'U','N'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) = BidiagonalLayout{FillLayout,FillLayout}()
 triangularlayout(::Type{<:TriangularLayout{UPLO,'U'}}, ::TridiagonalLayout{FillLayout,FillLayout,FillLayout}) where UPLO = BidiagonalLayout{FillLayout,FillLayout}()
@@ -628,7 +628,7 @@ supdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent
 
 
 rowsupport(_, A, k) = axes(A,2)
-""""
+"""
     rowsupport(A, k)
 
 gives an iterator containing the possible non-zero entries in the k-th row of A.
@@ -639,7 +639,7 @@ rowsupport(A) = rowsupport(A, axes(A,1))
 colsupport(_, A, j) = axes(A,1)
 
 
-""""
+"""
     colsupport(A, j)
 
 gives an iterator containing the possible non-zero entries in the j-th column of A.
@@ -693,3 +693,23 @@ function colsupport(::HermitianLayout, A, j)
 end
 rowsupport(::Union{SymmetricLayout,HermitianLayout}, A, j) = colsupport(A, j)
 
+
+
+function _sym_axes(A)
+    ax = axes(parent(A),2)
+    (ax, ax)
+end
+
+###
+# axes overloads to support block indexing
+###
+
+axes(A::HermOrSym{<:Any,<:LayoutMatrix}) = _sym_axes(A)
+axes(A::HermOrSym{<:Any,<:SubArray{<:Any,2,<:LayoutMatrix}}) = _sym_axes(A)
+axes(A::AbstractTriangular{<:Any,<:LayoutMatrix}) = axes(parent(A))
+axes(A::AbstractTriangular{<:Any,<:SubArray{<:Any,2,<:LayoutMatrix}}) = axes(parent(A))
+
+function axes(D::Diagonal{<:Any,<:LayoutVector})
+    a = axes(parent(D),1)
+    (a,a)
+end

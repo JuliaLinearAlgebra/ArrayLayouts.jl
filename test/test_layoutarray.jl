@@ -1,5 +1,5 @@
-using ArrayLayouts, LinearAlgebra, Test
-import ArrayLayouts: sub_materialize, @_layoutlmul
+using ArrayLayouts, LinearAlgebra, FillArrays, Base64, Test
+import ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum
 
 struct MyMatrix <: LayoutMatrix{Float64}
     A::Matrix{Float64}
@@ -9,8 +9,10 @@ Base.getindex(A::MyMatrix, k::Int, j::Int) = A.A[k,j]
 Base.setindex!(A::MyMatrix, v, k::Int, j::Int) = setindex!(A.A, v, k, j)
 Base.size(A::MyMatrix) = size(A.A)
 Base.strides(A::MyMatrix) = strides(A.A)
+Base.elsize(::Type{MyMatrix}) = sizeof(Float64)
 Base.unsafe_convert(::Type{Ptr{T}}, A::MyMatrix) where T = Base.unsafe_convert(Ptr{T}, A.A)
 MemoryLayout(::Type{MyMatrix}) = DenseColumnMajor()
+Base.copy(A::MyMatrix) = MyMatrix(copy(A.A))
 
 struct MyVector <: LayoutVector{Float64}
     A::Vector{Float64}
@@ -20,6 +22,7 @@ Base.getindex(A::MyVector, k::Int) = A.A[k]
 Base.setindex!(A::MyVector, v, k::Int) = setindex!(A.A, v, k)
 Base.size(A::MyVector) = size(A.A)
 Base.strides(A::MyVector) = strides(A.A)
+Base.elsize(::Type{MyVector}) = sizeof(Float64)
 Base.unsafe_convert(::Type{Ptr{T}}, A::MyVector) where T = Base.unsafe_convert(Ptr{T}, A.A)
 MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
@@ -45,6 +48,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         v = view(a,1:3)
         @test copy(v) == sub_materialize(v) == a[1:3]
         @test dot(v,a) == dot(v,a.A) == dot(a,v) == dot(a.A,v) == dot(v,v) == 14
+        @test norm(v) == norm(a) == norm([1,2,3])
 
         V = view(a',:,1:3)
         @test copy(V) == sub_materialize(V) == (a')[:,1:3]
@@ -83,18 +87,28 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
         @testset "factorizations" begin
             @test qr(A).factors ≈ qr(A.A).factors
-            @test qr(A,Val(true)).factors ≈ qr(A.A,Val(true)).factors
+            @test qr(A,ColumnNorm()).factors ≈ qr(A.A,ColumnNorm()).factors
             @test lu(A).factors ≈ lu(A.A).factors
-            @test lu(A,Val(true)).factors ≈ lu(A.A,Val(true)).factors
+            @test lu(A,RowMaximum()).factors ≈ lu(A.A,RowMaximum()).factors
             @test_throws ErrorException qr!(A)
-            @test_throws ErrorException lu!(A)
+            @test lu!(copy(A)).factors ≈ lu(A.A).factors
+            b = randn(5)
+            @test all(A \ b .≡ A.A \ b)
+            @test all(lu(A).L .≡ lu(A.A).L)
+            @test all(lu(A).U .≡ lu(A.A).U)
+            @test lu(A).p == lu(A.A).p
+            @test lu(A).P == lu(A.A).P
 
             @test qr(A) isa LinearAlgebra.QRCompactWY
             @test inv(A) ≈ inv(A.A)
 
             S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I))
-            @test cholesky(S).U ≈ cholesky!(deepcopy(S)).U
-            @test cholesky(S,Val(true)).U ≈ cholesky(Matrix(S),Val(true)).U
+            @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
+            @test cholesky(S,CRowMaximum()).U ≈ cholesky(Matrix(S),CRowMaximum()).U
+
+            S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I),:L)
+            @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
+            @test cholesky(S,CRowMaximum()).U ≈ cholesky(Matrix(S),CRowMaximum()).U
         end
         Bin = randn(5,5)
         B = MyMatrix(copy(Bin))
@@ -124,6 +138,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test mul!(copy(B), A, Bin, 2, 3) ≈ 2A*Bin + 3B
             @test mul!(copy(B), A, Bin', 2, 3) ≈ 2A*Bin' + 3B
             @test mul!(copy(B), Bin', A, 2, 3) ≈ 2Bin'*A + 3B
+
+            @test mul!(copy(B), A, Diagonal(Bin), 2, 3) ≈ 2A*Diagonal(Bin) + 3B
+            @test mul!(copy(B), Diagonal(Bin), A, 2, 3) ≈ 2Diagonal(Bin)*A + 3B
         end
 
         @testset "generic_blasmul!" begin
@@ -169,6 +186,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             A = MyMatrix(randn(5,5))
             b = randn(5)
             @test dot(b, A, b) ≈ b'*(A*b) ≈ b'A*b
+            @test dot(b, A, b) ≈ transpose(b)*(A*b) ≈ transpose(b)A*b
         end
 
         @testset "dual vector * symmetric (#40)" begin
@@ -203,7 +221,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         C = randn(ComplexF64,5,5)
         @test ArrayLayouts.lmul!(2, Hermitian(copy(C))) == ArrayLayouts.rmul!(Hermitian(copy(C)), 2) == 2Hermitian(C)
 
-        
+
         @test ldiv!(2, deepcopy(b)) == rdiv!(deepcopy(b), 2) == 2\b
         @test ldiv!(2, deepcopy(A)) == rdiv!(deepcopy(A), 2) == 2\A
         @test ldiv!(2, deepcopy(A)') == rdiv!(deepcopy(A)', 2) == 2\A'
@@ -230,7 +248,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         B = randn(5,5)
         B̃ = MyMatrix(B)
         @test D*D ≈ Matrix(D)^2
-        @test_broken D^2 ≈ D*D
+        if VERSION ≥ v"1.7-"
+            @test D^2 ≈ D*D
+        end
         @test D*B ≈ Matrix(D)*B
         @test B*D ≈ B*Matrix(D)
         @test D*B̃ ≈ Matrix(D)*B̃
@@ -243,6 +263,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test D\B̃ ≈ Matrix(D)\B̃
         @test B̃\D ≈ B̃\Matrix(D)
         @test D\D̃ ≈ D̃\D
+        @test B̃/D ≈ B̃/Matrix(D)
     end
 
     @testset "Adj/Trans" begin
@@ -259,7 +280,31 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test Transpose(T) * A ≈ Transpose(T) * A.A
         @test Transpose(T)A' ≈ Adjoint(T)A' ≈ Adjoint(T)Transpose(A) ≈ Transpose(T)Transpose(A)
         @test Transpose(A)Adjoint(T) ≈ A'Adjoint(T) ≈ A'Transpose(T) ≈ Transpose(A)Transpose(T)
+
+        @test Zeros(5)' * A ≡ Zeros(5)'
+        @test transpose(Zeros(5)) * A ≡ transpose(Zeros(5))
+
+        @test A' * Zeros(5) ≡ Zeros(5)
+        @test Zeros(3,5) * A ≡ Zeros(3,5)
+        @test A * Zeros(5,3) ≡ Zeros(5,3)
+        @test A' * Zeros(5,3) ≡ Zeros(5,3)
+        @test transpose(A) * Zeros(5,3) ≡ Zeros(5,3)
+        @test A' * Zeros(5) ≡ Zeros(5)
+        @test transpose(A) * Zeros(5) ≡ Zeros(5)
+
+        b = MyVector(randn(5))
+        @test A' * b ≈ A' * b.A
     end
+
+    @testset "AbstractQ" begin
+        A = MyMatrix(randn(5,5))
+        Q = qr(randn(5,5)).Q
+        @test Q'*A ≈ Q'*A.A
+        @test Q*A ≈ Q*A.A
+        @test A*Q ≈ A.A*Q
+        @test A*Q' ≈ A.A*Q'
+    end
+
 
     @testset "concat" begin
         a = MyVector(randn(5))
@@ -271,6 +316,33 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test [Array(a) A A] == [Array(a) Array(A) Array(A)]
         @test [a A A] == [Array(a) Array(A) Array(A)]
         @test [a Array(A) A] == [Array(a) Array(A) Array(A)]
+    end
+
+    @testset "dot" begin
+        a = MyVector(randn(5))
+        @test dot(a, Zeros(5)) ≡ dot(Zeros(5), a) ≡ 0.0
+    end
+
+    @testset "layout_getindex scalar" begin
+        A = MyMatrix(rand(5,4))
+        @test A[6] == ArrayLayouts.layout_getindex(A,6) == A[1,2]
+        @test A[1,2] == A[CartesianIndex(1,2)] == ArrayLayouts.layout_getindex(A,CartesianIndex(1,2))
+    end
+
+    @testset "structured axes" begin
+        A = MyMatrix(rand(5,5))
+        x = MyVector(rand(5))
+        @test axes(Symmetric(A)) == axes(Symmetric(view(A,1:5,1:5))) == axes(A)
+        @test axes(UpperTriangular(A)) == axes(UpperTriangular(view(A,1:5,1:5))) == axes(A)
+        @test axes(Diagonal(x)) == axes(Diagonal(Vector(x)))
+    end
+
+    @testset "adjtrans *" begin
+        A = MyMatrix(rand(5,5))
+        x = MyVector(rand(5))
+
+        @test x'A ≈ transpose(x)A ≈ x.A'A.A
+        @test x'A' ≈ x'transpose(A) ≈ transpose(x)A' ≈ transpose(x)transpose(A) ≈ x.A'A.A'
     end
 end
 

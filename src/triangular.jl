@@ -184,13 +184,13 @@ BLAS.trmm!('R', 'L', 'T', UNIT, one(T), transpose(triangulardata(A)), x)
 end
 
 @inline function materialize!(M::BlasMatRmulMat{<:AbstractStridedLayout,
-                                                <:TriangularLayout{'L',UNIT,<:ConjLayout{<:AbstractRowMajor}},T}) where {UPLO,UNIT,T<:BlasComplex}
+                                                <:TriangularLayout{'L',UNIT,<:ConjLayout{<:AbstractRowMajor}},T}) where {UNIT,T<:BlasComplex}
     x,A = M.A,M.B
     BLAS.trmm!('R', 'U', 'C', UNIT, one(T), triangulardata(A)', x)
 end
 
 @inline function materialize!(M::BlasMatRmulMat{<:AbstractStridedLayout,
-                                                <:TriangularLayout{'U',UNIT,<:ConjLayout{<:AbstractRowMajor}},T}) where {UPLO,UNIT,T<:BlasComplex}
+                                                <:TriangularLayout{'U',UNIT,<:ConjLayout{<:AbstractRowMajor}},T}) where {UNIT,T<:BlasComplex}
 x,A = M.A,M.B
 BLAS.trmm!('R', 'L', 'C', UNIT, one(T), triangulardata(A)', x)
 end
@@ -215,31 +215,46 @@ for UNIT in ('U', 'N')
         @eval @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{$UPLO,$UNIT,<:AbstractColumnMajor},
                                             <:AbstractStridedLayout}) =
             BLAS.trsv!($UPLO, 'N', $UNIT, triangulardata(M.A), M.B)
+        @eval @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{$UPLO,$UNIT,<:AbstractColumnMajor},
+                                            <:AbstractStridedLayout}) =
+            LAPACK.trtrs!($UPLO, 'N', $UNIT, triangulardata(M.A), M.B)
     end
 
     @eval begin
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',$UNIT,<:AbstractRowMajor},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('L', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
+        @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'U',$UNIT,<:AbstractRowMajor},
+                                                        <:AbstractColumnMajor}) =
+            LAPACK.trtrs!('L', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
 
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:AbstractRowMajor},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('U', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
+        @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'L',$UNIT,<:AbstractRowMajor},
+                                                        <:AbstractColumnMajor}) =
+            LAPACK.trtrs!('U', 'T', $UNIT, transpose(triangulardata(M.A)), M.B)
 
 
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'U',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('L', 'C', $UNIT, triangulardata(M.A)', M.B)
+        @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'U',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
+                                                        <:AbstractColumnMajor}) =
+            LAPACK.trtrs!('L', 'C', $UNIT, triangulardata(M.A)', M.B)            
 
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('U', 'C', $UNIT, triangulardata(M.A)', M.B)
+        @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'L',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
+                                                        <:AbstractColumnMajor}) =
+            LAPACK.trtrs!('U', 'C', $UNIT, triangulardata(M.A)', M.B)            
     end
 end
 
 function materialize!(M::MatLdivMat{<:Union{TriangularLayout,BidiagonalLayout}})
     A,X = M.A,M.B
-    size(A,2) == size(X,1) || thow(DimensionMismatch("Dimensions must match"))
+    size(A,2) == size(X,1) || throw(DimensionMismatch("Dimensions must match"))
     @views for j in axes(X,2)
         ldiv!(A, X[:,j])
     end
@@ -330,7 +345,7 @@ function _bidiag_backsub!(M)
         bj -= ev[j] * bj1
         dvj = dv[j]
         if iszero(dvj)
-            throw(SingularEbception(j))
+            throw(SingularException(j))
         end
         bj   = dvj\bj
         b[j] = bj1 = bj
@@ -350,7 +365,7 @@ function _bidiag_forwardsub!(M)
         bj -= ev[j - 1] * bj1
         dvj = dv[j]
         if iszero(dvj)
-            throw(SingularEbception(j))
+            throw(SingularException(j))
         end
         bj   = dvj\bj
         b[j] = bj1 = bj

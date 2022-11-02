@@ -22,7 +22,7 @@ import Base: AbstractArray, AbstractMatrix, AbstractVector,
          AbstractMatrix, AbstractArray, checkindex, unsafe_length, OneTo, one, zero,
         to_shape, _sub2ind, print_matrix, print_matrix_row, print_matrix_vdots,
       checkindex, Slice, @propagate_inbounds, @_propagate_inbounds_meta,
-      _in_range, _range, _rangestyle, Ordered,
+      _in_range, _range, Ordered,
       ArithmeticWraps, floatrange, reverse, unitrange_last,
       AbstractArray, AbstractVector, axes, (:), _sub2ind_recurse, broadcast, promote_eltypeof,
       similar, @_gc_preserve_end, @_gc_preserve_begin,
@@ -34,13 +34,14 @@ import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcas
                         combine_eltypes, DefaultArrayStyle, instantiate, materialize,
                         materialize!, eltypes
 
-import LinearAlgebra: AbstractTriangular, AbstractQ, checksquare, pinv, fill!, tilebufsize, Abuf, Bbuf, Cbuf, factorize, qr, lu, cholesky,
-                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym, copy_oftype,
-                        AdjointAbsVec, TransposeAbsVec, cholcopy
+import LinearAlgebra: AbstractTriangular, AbstractQ, QRCompactWYQ, QRPackedQ, checksquare, pinv,
+                        fill!, tilebufsize, factorize, qr, lu, cholesky,
+                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym, AdjointAbsVec,
+                        TransposeAbsVec, cholcopy, checknonsingular, _apply_ipiv_rows!, ipiv2perm, RealHermSymComplexHerm, chkfullrank
 
 import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
-import FillArrays: AbstractFill, getindex_value, axes_print_matrix_row
+import FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype
 
 import Base: require_one_based_indexing
 
@@ -52,6 +53,21 @@ export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, Dot,
         UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout, DualLayout,
         colsupport, rowsupport, layout_getindex, QLayout, LayoutArray, LayoutMatrix, LayoutVector,
         RangeCumsum
+
+if VERSION < v"1.7-"
+    const ColumnNorm = Val{true}
+    const RowMaximum = Val{true}
+    const NoPivot = Val{false}
+end
+
+if VERSION < v"1.8-"
+    const CRowMaximum = Val{true}
+    const CNoPivot = Val{false}
+else
+    const CRowMaximum = RowMaximum
+    const CNoPivot = NoPivot
+end
+        
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle})
@@ -74,7 +90,9 @@ strides(A::Transpose) = _transpose_strides(strides(parent(A))...)
 """
     ConjPtr{T}
 
-represents that the entry is the complex-conjugate of the pointed to entry.
+A memory address referring to complex conjugated data of type T. However, there is no guarantee
+that the memory is actually valid, or that it actually represents the complex conjugate of data of
+the specified type.
 """
 struct ConjPtr{T}
     ptr::Ptr{T}
@@ -84,10 +102,18 @@ end
 # work-around issue with complex conjugation of pointer
 unsafe_convert(::Type{Ptr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(ConjPtr{T}, parent(Ac))
 unsafe_convert(::Type{ConjPtr{T}}, Ac::Adjoint{<:Complex}) where T<:Complex = unsafe_convert(Ptr{T}, parent(Ac))
-function unsafe_convert(::Type{ConjPtr{T}}, V::SubArray{T,2}) where {T,N,P}
+function unsafe_convert(::Type{ConjPtr{T}}, V::SubArray{T,2}) where {T}
     kr, jr = parentindices(V)
     unsafe_convert(Ptr{T}, view(parent(V)', jr, kr))
 end
+
+Base.elsize(::Type{<:Adjoint{<:Complex,P}}) where P<:AbstractVecOrMat = conjelsize(P)
+conjelsize(::Type{<:Adjoint{<:Complex,P}}) where P<:AbstractVecOrMat = Base.elsize(P)
+conjelsize(::Type{<:Transpose{<:Any, P}}) where {P<:AbstractVecOrMat} = conjelsize(P)
+conjelsize(::Type{<:PermutedDimsArray{<:Any, <:Any, <:Any, <:Any, P}}) where {P} = conjelsize(P)
+conjelsize(::Type{<:ReshapedArray{<:Any,<:Any,P}}) where {P} = conjelsize(P)
+conjelsize(::Type{<:SubArray{<:Any,<:Any,P}}) where {P} = conjelsize(P)
+conjelsize(A::AbstractArray) = conjelsize(typeof(A))
 
 include("memorylayout.jl")
 include("mul.jl")
@@ -101,12 +127,21 @@ include("factorizations.jl")
 @inline sub_materialize(_, V, _) = Array(V)
 @inline sub_materialize(L, V) = sub_materialize(L, V, axes(V))
 @inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(V), V)
-@inline sub_materialize(V::AbstractArray) = V # Anything not a SubArray is already materialized
+@inline sub_materialize(V) = V # Anything not a SubArray is already materialized
 
 copy(A::SubArray{<:Any,N,<:LayoutArray}) where N = sub_materialize(A)
 copy(A::SubArray{<:Any,N,<:AdjOrTrans{<:Any,<:LayoutArray}}) where N = sub_materialize(A)
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
+function layout_getindex(A::AbstractArray, k::Int...)
+    @_propagate_inbounds_meta
+    Base.error_if_canonical_getindex(IndexStyle(A), A, k...)
+    Base._getindex(IndexStyle(A), A, k...)
+end
+
+
+# avoid 0-dimensional views
+Base.@propagate_inbounds layout_getindex(A::AbstractArray, I::CartesianIndex) = A[to_indices(A, (I,))...]
 
 macro _layoutgetindex(Typ)
     esc(quote
@@ -161,6 +196,11 @@ getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
 getindex(A::LayoutVector, kr::Colon) = layout_getindex(A, kr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::Colon) = layout_getindex(A, kr, jr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) = layout_getindex(A, kr, jr)
+
+*(a::Zeros{<:Any,2}, b::LayoutMatrix) = FillArrays.mult_zeros(a, b)
+*(a::LayoutMatrix, b::Zeros{<:Any,2}) = FillArrays.mult_zeros(a, b)
+*(a::Transpose{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 2}) = FillArrays.mult_zeros(a, b)
+*(a::Adjoint{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 2}) = FillArrays.mult_zeros(a, b)
 
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 *(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = mul(A, B)
@@ -232,13 +272,19 @@ Base.map(::typeof(copy), D::Diagonal{<:LayoutArray}) = Diagonal(map(copy, D.diag
 Base.permutedims(D::Diagonal{<:Any,<:LayoutVector}) = D
 
 
-zero!(A::AbstractArray{T}) where T = fill!(A,zero(T))
-function zero!(A::AbstractArray{<:AbstractArray})
+zero!(A) = zero!(MemoryLayout(A), A)
+zero!(_, A) = fill!(A,zero(eltype(A)))
+function zero!(_, A::AbstractArray{<:AbstractArray})
     for a in A
         zero!(a)
     end
     A
 end
+
+_norm(_, A, p) = Base.invoke(norm, Tuple{Any,Real}, A, p)
+LinearAlgebra.norm(A::LayoutArray, p::Real=2) = _norm(MemoryLayout(A), A, p)
+LinearAlgebra.norm(A::SubArray{<:Any,N,<:LayoutArray}, p::Real=2) where N = _norm(MemoryLayout(A), A, p)
+
 
 _fill_lmul!(β, A::AbstractArray{T}) where T = iszero(β) ? zero!(A) : lmul!(β, A)
 
@@ -300,6 +346,9 @@ end
 # printing
 ###
 
+const LayoutVecOrMat{T} = Union{LayoutVector{T},LayoutMatrix{T}}
+const LayoutVecOrMats{T} = Union{LayoutVecOrMat{T},SubArray{T,1,<:LayoutVecOrMat},SubArray{T,2,<:LayoutVecOrMat}}
+
 layout_replace_in_print_matrix(_, A, i, j, s) =
     i in colsupport(A,j) ? s : Base.replace_with_centered_mark(s)
 
@@ -309,7 +358,7 @@ Base.replace_in_print_matrix(A::Union{LayoutVector,
                                       UnitUpperTriangular{<:Any,<:LayoutMatrix},
                                       LowerTriangular{<:Any,<:LayoutMatrix},
                                       UnitLowerTriangular{<:Any,<:LayoutMatrix},
-                                      AdjOrTrans{<:Any,<:LayoutMatrix},
+                                      AdjOrTrans{<:Any,<:LayoutVecOrMat},
                                       HermOrSym{<:Any,<:LayoutMatrix},
                                       SubArray{<:Any,2,<:LayoutMatrix}}, i::Integer, j::Integer, s::AbstractString) =
     layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)
@@ -323,7 +372,7 @@ Base.print_matrix_row(io::IO,
         HermOrSym{<:Any,<:LayoutMatrix},
         SubArray{<:Any,2,<:LayoutMatrix},
         Diagonal{<:Any,<:LayoutVector}}, A::Vector,
-        i::Integer, cols::AbstractVector, sep::AbstractString) =
+        i::Integer, cols::AbstractVector, sep::AbstractString, idxlast::Integer=last(axes(X, 2))) =
         axes_print_matrix_row(axes(X), io, X, A, i, cols, sep)
 
 
@@ -333,8 +382,7 @@ include("cumsum.jl")
 # support overloading hcat/vcat for ∞-arrays
 ###
 
-const LayoutVecOrMat{T} = Union{LayoutVector{T},LayoutMatrix{T}}
-const LayoutVecOrMats{T} = Union{LayoutVecOrMat{T},SubArray{T,1,<:LayoutVecOrMat},SubArray{T,2,<:LayoutVecOrMat}}
+
 
 typed_hcat(::Type{T}, ::Tuple, A...) where T = Base._typed_hcat(T, A)
 typed_vcat(::Type{T}, ::Tuple, A...) where T = Base._typed_vcat(T, A)

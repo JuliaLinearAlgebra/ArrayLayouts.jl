@@ -30,9 +30,13 @@ axes(M::Mul) = _mul_axes(axes(M.A), axes(M.B))
 
 # The following design is to support QuasiArrays.jl where indices
 # may not be `Int`
+
+zeroeltype(M) = zero(eltype(M)) # allow special casing where we know more about zero
+zeroeltype(M::Mul{<:Any,<:Any,<:SubArray}) = zeroeltype(Mul(parent(M.A), M.B))
+
 function _getindex(::Type{Tuple{AA}}, M::Mul, (k,)::Tuple{AA}) where AA
     A,B = M.A, M.B
-    ret = zero(eltype(M))
+    ret = zeroeltype(M)
     for j = rowsupport(A, k) ∩ colsupport(B,1)
         ret += A[k,j] * B[j]
     end
@@ -41,7 +45,7 @@ end
 
 function _getindex(::Type{Tuple{AA,BB}}, M::Mul, (k, j)::Tuple{AA,BB}) where {AA,BB}
     A,B = M.A,M.B
-    ret = zero(eltype(M))
+    ret = zeroeltype(M)
     @inbounds for ℓ in (rowsupport(A,k) ∩ colsupport(B,j))
         ret += A[k,ℓ] * B[ℓ,j]
     end
@@ -76,7 +80,7 @@ The Default is `MulAdd`. Note that the lowered type must overload `copyto!` and 
 """
 mulreduce(M::Mul) = MulAdd(M)
 
-similar(M::Mul, ::Type{T}, axes) where {T,N} = similar(mulreduce(M), T, axes)
+similar(M::Mul, ::Type{T}, axes) where {T} = similar(mulreduce(M), T, axes)
 similar(M::Mul, ::Type{T}) where T = similar(mulreduce(M), T)
 similar(M::Mul) = similar(mulreduce(M))
 
@@ -91,7 +95,7 @@ function check_mul_axes(A, B, C...)
 end
 
 # we need to special case AbstractQ as it allows non-compatiple multiplication
-function check_mul_axes(A::AbstractQ, B, C...)
+function check_mul_axes(A::Union{QRCompactWYQ,QRPackedQ}, B, C...)
     axes(A.factors, 1) == axes(B, 1) || axes(A.factors, 2) == axes(B, 1) ||
         throw(DimensionMismatch("First axis of B, $(axes(B,1)) must match either axes of A, $(axes(A))"))
     check_mul_axes(B, C...)
@@ -172,6 +176,10 @@ macro layoutmul(Typ)
             ArrayLayouts.mul!(dest,A,B,α,β)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::AbstractMatrix, B::$Typ, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::Diagonal, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::Diagonal, B::$Typ, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::$Typ, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
 
@@ -182,6 +190,9 @@ macro layoutmul(Typ)
         Base.:*(A::AbstractMatrix, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::LinearAlgebra.AdjointAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::LinearAlgebra.TransposeAbsVec, B::$Typ) = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.AdjointAbsVec{<:Any,<:Zeros{<:Any,1}}, B::$Typ) = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.TransposeAbsVec{<:Any,<:Zeros{<:Any,1}}, B::$Typ) = ArrayLayouts.mul(A,B)
+        Base.:*(A::LinearAlgebra.Transpose{T,<:$Typ}, B::Zeros{T,1}) where T<:Real = ArrayLayouts.mul(A,B)
 
         Base.:*(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.mul(A,B)
         Base.:*(A::$Typ, B::LinearAlgebra.AbstractQ) = ArrayLayouts.mul(A,B)
@@ -224,6 +235,7 @@ macro layoutmul(Typ)
             Base.:*(A::LinearAlgebra.TransposeAbsVec, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::AbstractVector) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::ArrayLayouts.LayoutVector) = ArrayLayouts.mul(A,B)
+            Base.:*(A::$Mod{<:Any,<:$Typ}, B::Zeros{<:Any,1}) = ArrayLayouts.mul(A,B)
 
             Base.:*(A::$Mod{<:Any,<:$Typ}, B::$Typ) = ArrayLayouts.mul(A,B)
             Base.:*(A::$Typ, B::$Mod{<:Any,<:$Typ}) = ArrayLayouts.mul(A,B)
@@ -240,6 +252,10 @@ macro layoutmul(Typ)
 end
 
 @veclayoutmul LayoutVector
+*(A::Adjoint{<:Any,<:LayoutVector}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Adjoint{<:Any,<:LayoutVector}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Transpose{<:Any,<:LayoutVector}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Transpose{<:Any,<:LayoutVector}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A,B)
 
 
 ###
@@ -267,6 +283,8 @@ dot(a, b) = materialize(Dot(a, b))
 @inline LinearAlgebra.dot(a::LayoutArray, b::LayoutArray) = dot(a,b)
 @inline LinearAlgebra.dot(a::LayoutArray, b::AbstractArray) = dot(a,b)
 @inline LinearAlgebra.dot(a::AbstractArray, b::LayoutArray) = dot(a,b)
+@inline LinearAlgebra.dot(a::LayoutVector, b::AbstractFill{<:Any,1}) = FillArrays._fill_dot(a,b)
+@inline LinearAlgebra.dot(a::AbstractFill{<:Any,1}, b::LayoutVector) = FillArrays._fill_dot(a,b)
 @inline LinearAlgebra.dot(a::LayoutArray{<:Number}, b::SparseArrays.SparseVectorUnion{<:Number}) = dot(a,b)
 @inline LinearAlgebra.dot(a::SparseArrays.SparseVectorUnion{<:Number}, b::LayoutArray{<:Number}) = dot(a,b)
 
@@ -286,8 +304,9 @@ LinearAlgebra.dot(x::AbstractVector, A::Symmetric{<:Real,<:LayoutMatrix}, y::Abs
 
 # allow overloading for infinite or lazy case
 @inline _power_by_squaring(_, _, A, p) = Base.invoke(Base.power_by_squaring, Tuple{AbstractMatrix,Integer}, A, p)
-@inline _apply(_, _, op, A::AbstractMatrix, Λ::UniformScaling) = Base.invoke(op, Tuple{AbstractMatrix,UniformScaling}, A, Λ)
-@inline _apply(_, _, op, Λ::UniformScaling, A::AbstractMatrix) = Base.invoke(op, Tuple{UniformScaling,AbstractMatrix}, Λ, A)
+# TODO: Remove unnecessary _apply
+_apply(_, _, op, Λ::UniformScaling, A::AbstractMatrix) = op(Diagonal(Fill(Λ.λ,(axes(A,1),))), A)
+_apply(_, _, op, A::AbstractMatrix, Λ::UniformScaling) = op(A, Diagonal(Fill(Λ.λ,(axes(A,1),))))
 
 for Typ in (:LayoutMatrix, :(Symmetric{<:Any,<:LayoutMatrix}), :(Hermitian{<:Any,<:LayoutMatrix}),
             :(Adjoint{<:Any,<:LayoutMatrix}), :(Transpose{<:Any,<:LayoutMatrix}))
