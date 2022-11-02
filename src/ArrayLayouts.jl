@@ -1,59 +1,41 @@
 module ArrayLayouts
 using Base: _typed_hcat
 using Base, Base.Broadcast, LinearAlgebra, FillArrays, SparseArrays
-import LinearAlgebra.BLAS
+using LinearAlgebra.BLAS
 
-import Base: AbstractArray, AbstractMatrix, AbstractVector,
-        ReinterpretArray, ReshapedArray, AbstractCartesianIndex, Slice,
-             RangeIndex, BroadcastStyle, copyto!, length, broadcastable, axes,
-             getindex, eltype, tail, IndexStyle, IndexLinear, getproperty,
-             *, +, -, /, \, ==, isinf, isfinite, sign, angle, show, isless,
-         fld, cld, div, min, max, minimum, maximum, mod,
-         <, ≤, >, ≥, promote_rule, convert, copy,
-         size, step, isempty, length, first, last, ndims,
-         getindex, setindex!, intersect, @_inline_meta, inv,
-         sort, sort!, issorted, sortperm, diff, cumsum, sum, in, broadcast,
-         eltype, parent, real, imag,
-         conj, transpose, adjoint, permutedims, vec,
-         exp, log, sqrt, cos, sin, tan, csc, sec, cot,
-                   cosh, sinh, tanh, csch, sech, coth,
-                   acos, asin, atan, acsc, asec, acot,
-                   acosh, asinh, atanh, acsch, asech, acoth, (:),
-         AbstractMatrix, AbstractArray, checkindex, unsafe_length, OneTo, one, zero,
-        to_shape, _sub2ind, print_matrix, print_matrix_row, print_matrix_vdots,
-      checkindex, Slice, @propagate_inbounds, @_propagate_inbounds_meta,
-      _in_range, _range, Ordered,
-      ArithmeticWraps, floatrange, reverse, unitrange_last,
-      AbstractArray, AbstractVector, axes, (:), _sub2ind_recurse, broadcast, promote_eltypeof,
-      similar, @_gc_preserve_end, @_gc_preserve_begin,
-      @nexprs, @ncall, @ntuple, tuple_type_tail,
-      all, any, isbitsunion, issubset, replace_in_print_matrix, replace_with_centered_mark,
-      strides, unsafe_convert, first_index, unalias, union
+using Base: AbstractCartesianIndex, OneTo, RangeIndex, ReinterpretArray, ReshapedArray,
+            Slice, tuple_type_tail, unalias,
+            @propagate_inbounds, @_propagate_inbounds_meta
 
-import Base.Broadcast: BroadcastStyle, AbstractArrayStyle, Broadcasted, broadcasted,
-                        combine_eltypes, DefaultArrayStyle, instantiate, materialize,
-                        materialize!, eltypes
+import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, union, sort!,
+                ==, *, +, -, /, \, copy, copyto!, similar, getindex, strides,
+                unsafe_convert
 
-import LinearAlgebra: AbstractTriangular, AbstractQ, QRCompactWYQ, QRPackedQ, checksquare, pinv,
-                        fill!, tilebufsize, factorize, qr, lu, cholesky,
-                        norm2, norm1, normInf, normMinusInf, qr, lu, qr!, lu!, AdjOrTrans, HermOrSym, AdjointAbsVec,
-                        TransposeAbsVec, cholcopy, checknonsingular, _apply_ipiv_rows!, ipiv2perm, RealHermSymComplexHerm, chkfullrank
+using Base.Broadcast: Broadcasted
+
+import Base.Broadcast: BroadcastStyle, broadcastable, instantiate, materialize, materialize!
+
+using LinearAlgebra: AbstractTriangular, AbstractQ, QRCompactWYQ, QRPackedQ, checksquare,
+                        pinv, tilebufsize, cholcopy,
+                        norm2, norm1, normInf, normMinusInf,
+                        AdjOrTrans, HermOrSym, RealHermSymComplexHerm, AdjointAbsVec, TransposeAbsVec,
+                        checknonsingular, _apply_ipiv_rows!, ipiv2perm, chkfullrank
 
 AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
 
-import LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
+using LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
-import FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype
+using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype
 
-import Base: require_one_based_indexing
+using Base: require_one_based_indexing
 
 export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, Dot,
-        lmul, rmul, mul, ldiv, rdiv, mul, MemoryLayout, AbstractStridedLayout,
+        lmul, mul, ldiv, rdiv, mul, MemoryLayout, AbstractStridedLayout,
         DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor, UnitStride,
         DiagonalLayout, ScalarLayout, SymTridiagonalLayout, TridiagonalLayout, BidiagonalLayout,
         HermitianLayout, SymmetricLayout, TriangularLayout,
         UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout, DualLayout,
-        colsupport, rowsupport, layout_getindex, QLayout, LayoutArray, LayoutMatrix, LayoutVector,
+        colsupport, rowsupport, layout_getindex, AbstractQLayout, LayoutArray, LayoutMatrix, LayoutVector,
         RangeCumsum
 
 if VERSION < v"1.7-"
@@ -83,7 +65,8 @@ abstract type LayoutArray{T,N} <: AbstractArray{T,N} end
 const LayoutMatrix{T} = LayoutArray{T,2}
 const LayoutVector{T} = LayoutArray{T,1}
 
-## TODO: Following are type piracy whch may be removed in Julia v1.5
+## TODO: Following are type piracy which may be removed in Julia v1.5
+## No, it can't, because strides(::AdjointAbsMat) is defined only for real eltype!
 _transpose_strides(a) = (a,1)
 _transpose_strides(a,b) = (b,a)
 strides(A::Adjoint) = _transpose_strides(strides(parent(A))...)

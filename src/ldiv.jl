@@ -133,6 +133,8 @@ macro _layoutldiv(Typ)
         LinearAlgebra.ldiv!(A::$Typ, x::StridedMatrix) = ArrayLayouts.ldiv!(A,x)
 
         LinearAlgebra.ldiv!(A::Factorization, x::$Typ) = ArrayLayouts.ldiv!(A,x)
+        LinearAlgebra.ldiv!(A::LU, x::$Typ) = ArrayLayouts.ldiv!(A,x)
+        LinearAlgebra.ldiv!(A::Cholesky, x::$Typ) = ArrayLayouts.ldiv!(A,x)
 
         LinearAlgebra.ldiv!(A::Bidiagonal, B::$Typ) = ArrayLayouts.ldiv!(A,B)
 

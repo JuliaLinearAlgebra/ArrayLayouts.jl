@@ -1,5 +1,5 @@
 using ArrayLayouts, LinearAlgebra, FillArrays, Base64, Test
-import ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum
+using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum
 
 
 struct MyMatrix <: LayoutMatrix{Float64}
