@@ -9,7 +9,7 @@ using Base: AbstractCartesianIndex, OneTo, RangeIndex, ReinterpretArray, Reshape
 
 import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, union, sort!,
                 ==, *, +, -, /, \, copy, copyto!, similar, getproperty, getindex, strides,
-                unsafe_convert
+                reverse, unsafe_convert
 
 using Base.Broadcast: Broadcasted
 
@@ -130,16 +130,16 @@ Base.@propagate_inbounds layout_getindex(A::AbstractArray, I::CartesianIndex) = 
 
 macro _layoutgetindex(Typ)
     esc(quote
-        @inline Base.getindex(A::$Typ, kr::Colon, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
-        @inline Base.getindex(A::$Typ, kr::Colon, jr::AbstractUnitRange) = ArrayLayouts.layout_getindex(A, kr, jr)
-        @inline Base.getindex(A::$Typ, kr::AbstractUnitRange, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
-        @inline Base.getindex(A::$Typ, kr::AbstractUnitRange, jr::AbstractUnitRange) = ArrayLayouts.layout_getindex(A, kr, jr)
-        @inline Base.getindex(A::$Typ, kr::AbstractVector, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
-        @inline Base.getindex(A::$Typ, kr::Colon, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
-        @inline Base.getindex(A::$Typ, kr::Colon, jr::Integer) = ArrayLayouts.layout_getindex(A, kr, jr)
-        @inline Base.getindex(A::$Typ, kr::AbstractVector, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
-        @inline Base.getindex(A::$Typ, kr::Integer, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
-        @inline Base.getindex(A::$Typ, kr::Integer, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::Colon, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::Colon, jr::AbstractUnitRange) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::AbstractUnitRange, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::AbstractUnitRange, jr::AbstractUnitRange) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::AbstractVector, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::Colon, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::Colon, jr::Integer) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::AbstractVector, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::Integer, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::Integer, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
     end)
 end
 
@@ -228,7 +228,7 @@ end
 
 
 _copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} =
-    Base.invoke(copyto!, Tuple{AbstractArray{T,N},AbstractArray{V,N}}, dest, src)
+    invoke(copyto!, Tuple{AbstractArray{T,N},AbstractArray{V,N}}, dest, src)
 
 
 _copyto!(dest, src) = _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
@@ -266,7 +266,7 @@ function zero!(_, A::AbstractArray{<:AbstractArray})
     A
 end
 
-_norm(_, A, p) = Base.invoke(norm, Tuple{Any,Real}, A, p)
+_norm(_, A, p) = invoke(norm, Tuple{Any,Real}, A, p)
 LinearAlgebra.norm(A::LayoutArray, p::Real=2) = _norm(MemoryLayout(A), A, p)
 LinearAlgebra.norm(A::SubArray{<:Any,N,<:LayoutArray}, p::Real=2) where N = _norm(MemoryLayout(A), A, p)
 
@@ -338,7 +338,7 @@ layout_replace_in_print_matrix(_, A, i, j, s) =
     i in colsupport(A,j) ? s : Base.replace_with_centered_mark(s)
 
 Base.replace_in_print_matrix(A::Union{LayoutVector,
-                                        LayoutMatrix,
+                                      LayoutMatrix,
                                       UpperTriangular{<:Any,<:LayoutMatrix},
                                       UnitUpperTriangular{<:Any,<:LayoutMatrix},
                                       LowerTriangular{<:Any,<:LayoutMatrix},

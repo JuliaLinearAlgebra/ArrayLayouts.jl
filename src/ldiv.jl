@@ -105,8 +105,8 @@ const BlasMatLdivMat{styleA, styleB, T<:BlasFloat} = MatLdivMat{styleA, styleB, 
 const MatRdivMat{styleA, styleB, T, V} = Rdiv{styleA, styleB, <:AbstractMatrix{T}, <:AbstractMatrix{V}}
 const BlasMatRdivMat{styleA, styleB, T<:BlasFloat} = MatRdivMat{styleA, styleB, T, T}
 
-materialize!(M::Ldiv{ScalarLayout}) = Base.invoke(LinearAlgebra.ldiv!, Tuple{Number,AbstractArray}, M.A, M.B)
-materialize!(M::Rdiv{<:Any,ScalarLayout}) = Base.invoke(LinearAlgebra.rdiv!, Tuple{AbstractArray,Number}, M.A, M.B)
+materialize!(M::Ldiv{ScalarLayout}) = invoke(LinearAlgebra.ldiv!, Tuple{Number,AbstractArray}, M.A, M.B)
+materialize!(M::Rdiv{<:Any,ScalarLayout}) = invoke(LinearAlgebra.rdiv!, Tuple{AbstractArray,Number}, M.A, M.B)
 
 function materialize!(M::Ldiv{ScalarLayout,<:SymmetricLayout})
     ldiv!(M.A, symmetricdata(M.B))
@@ -139,42 +139,42 @@ macro _layoutldiv(Typ)
         LinearAlgebra.ldiv!(A::Bidiagonal, B::$Typ) = ArrayLayouts.ldiv!(A,B)
 
 
-        Base.:\(A::$Typ, x::AbstractVector) = ArrayLayouts.ldiv(A,x)
-        Base.:\(A::$Typ, x::AbstractMatrix) = ArrayLayouts.ldiv(A,x)
+        (\)(A::$Typ, x::AbstractVector) = ArrayLayouts.ldiv(A,x)
+        (\)(A::$Typ, x::AbstractMatrix) = ArrayLayouts.ldiv(A,x)
 
-        Base.:\(x::AbstractMatrix, A::$Typ) = ArrayLayouts.ldiv(x,A)
-        Base.:\(x::UpperTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
-        Base.:\(x::LowerTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
-        Base.:\(x::Diagonal, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        (\)(x::AbstractMatrix, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        (\)(x::UpperTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        (\)(x::LowerTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        (\)(x::Diagonal, A::$Typ) = ArrayLayouts.ldiv(x,A)
 
-        Base.:\(A::Bidiagonal{<:Number}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(A,B)
-        Base.:\(A::Bidiagonal, B::$Typ) = ArrayLayouts.ldiv(A,B)
-        Base.:\(transA::Transpose{<:Number,<:Bidiagonal{<:Number}}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(transA,B)
-        Base.:\(transA::Transpose{<:Any,<:Bidiagonal}, B::$Typ) = ArrayLayouts.ldiv(transA,B)
-        Base.:\(adjA::Adjoint{<:Number,<:Bidiagonal{<:Number}}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(adjA,B)
-        Base.:\(adjA::Adjoint{<:Any,<:Bidiagonal}, B::$Typ) = ArrayLayouts.ldiv(adjA,B)
+        (\)(A::Bidiagonal{<:Number}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(A,B)
+        (\)(A::Bidiagonal, B::$Typ) = ArrayLayouts.ldiv(A,B)
+        (\)(transA::Transpose{<:Number,<:Bidiagonal{<:Number}}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(transA,B)
+        (\)(transA::Transpose{<:Any,<:Bidiagonal}, B::$Typ) = ArrayLayouts.ldiv(transA,B)
+        (\)(adjA::Adjoint{<:Number,<:Bidiagonal{<:Number}}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(adjA,B)
+        (\)(adjA::Adjoint{<:Any,<:Bidiagonal}, B::$Typ) = ArrayLayouts.ldiv(adjA,B)
 
-        Base.:\(x::$Typ, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        (\)(x::$Typ, A::$Typ) = ArrayLayouts.ldiv(x,A)
 
-        Base.:/(A::$Typ, x::AbstractVector) = ArrayLayouts.rdiv(A,x)
-        Base.:/(A::$Typ, x::AbstractMatrix) = ArrayLayouts.rdiv(A,x)
+        (/)(A::$Typ, x::AbstractVector) = ArrayLayouts.rdiv(A,x)
+        (/)(A::$Typ, x::AbstractMatrix) = ArrayLayouts.rdiv(A,x)
 
-        Base.:/(x::AbstractMatrix, A::$Typ) = ArrayLayouts.rdiv(x,A)
-        Base.:/(D::Diagonal, A::$Typ) = ArrayLayouts.rdiv(D,A)
-        Base.:/(A::$Typ, D::Diagonal) = ArrayLayouts.rdiv(A,D)
+        (/)(x::AbstractMatrix, A::$Typ) = ArrayLayouts.rdiv(x,A)
+        (/)(D::Diagonal, A::$Typ) = ArrayLayouts.rdiv(D,A)
+        (/)(A::$Typ, D::Diagonal) = ArrayLayouts.rdiv(A,D)
 
-        Base.:/(x::$Typ, A::$Typ) = ArrayLayouts.rdiv(x,A)
+        (/)(x::$Typ, A::$Typ) = ArrayLayouts.rdiv(x,A)
     end
     if Typ ≠ :LayoutVector
         ret = quote
             $ret
-            Base.:\(A::$Typ, x::LayoutVector) = ArrayLayouts.ldiv(A,x)
+            (\)(A::$Typ, x::LayoutVector) = ArrayLayouts.ldiv(A,x)
         end
     end
     if Typ ≠ :LayoutMatrix
         ret = quote
             $ret
-            Base.:\(A::$Typ, x::LayoutMatrix) = ArrayLayouts.ldiv(A,x)
+            (\)(A::$Typ, x::LayoutMatrix) = ArrayLayouts.ldiv(A,x)
         end
     end
     esc(ret)

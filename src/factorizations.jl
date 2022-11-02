@@ -300,12 +300,12 @@ function materialize!(M::Rmul{<:Any,<:AdjQRPackedQLayout})
 end
 
 
-__qr(layout, lengths, A; kwds...) = Base.invoke(qr, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
+__qr(layout, lengths, A; kwds...) = invoke(qr, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
 _qr(layout, axes, A; kwds...) = __qr(layout, map(length, axes), A; kwds...)
-_qr(layout, axes, A, pivot::P; kwds...) where P = Base.invoke(qr, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
+_qr(layout, axes, A, pivot::P; kwds...) where P = invoke(qr, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
 _qr!(layout, axes, A, args...; kwds...) = error("Overload _qr!(::$(typeof(layout)), axes, A)")
-_lu(layout, axes, A; kwds...) = Base.invoke(lu, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
-_lu(layout, axes, A, pivot::P; kwds...) where P = Base.invoke(lu, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
+_lu(layout, axes, A; kwds...) = invoke(lu, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
+_lu(layout, axes, A, pivot::P; kwds...) where P = invoke(lu, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
 _lu!(layout, axes, A, args...; kwds...) = error("Overload _lu!(::$(typeof(layout)), axes, A)")
 _cholesky(layout, axes, A, ::CNoPivot=CNoPivot(); check::Bool = true) = cholesky!(cholcopy(A); check = check)
 _cholesky(layout, axes, A, ::CRowMaximum; tol = 0.0, check::Bool = true) = cholesky!(cholcopy(A), CRowMaximum(); tol = tol, check = check)
@@ -384,7 +384,7 @@ function _cholesky!(::SymmetricLayout{<:AbstractColumnMajor}, axes, A::AbstractM
 end
 
 
-_inv_eye(_, ::Type{T}, axs::NTuple{2,Base.OneTo{Int}}) where T = Matrix{T}(I, map(length,axs)...)
+_inv_eye(_, ::Type{T}, axs::NTuple{2,OneTo{Int}}) where T = Matrix{T}(I, map(length,axs)...)
 function _inv_eye(A, ::Type{T}, (rows,cols)) where T
     dest = zero!(similar(A, T, (cols,rows)))
     dest[diagind(dest)] .= one(T)
@@ -414,7 +414,7 @@ macro _layoutfactorizations(Typ)
         LinearAlgebra.lu(A::$Typ{T}; kwds...) where T = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(A), axes(A), A; kwds...)
         LinearAlgebra.lu!(A::$Typ, args...; kwds...) = ArrayLayouts._lu!(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.factorize(A::$Typ) = ArrayLayouts._factorize(ArrayLayouts.MemoryLayout(A), axes(A), A)
-        LinearAlgebra.inv(A::$Typ) = ArrayLayouts._inv(ArrayLayouts.MemoryLayout(A), axes(A), A)
+        Base.inv(A::$Typ) = ArrayLayouts._inv(ArrayLayouts.MemoryLayout(A), axes(A), A)
         LinearAlgebra.ldiv!(L::LU{<:Any,<:$Typ}, B) = ArrayLayouts.ldiv!(L, B)
         LinearAlgebra.ldiv!(L::LU{<:Any,<:$Typ}, B::$Typ) = ArrayLayouts.ldiv!(L, B)
     end)

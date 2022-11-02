@@ -31,7 +31,7 @@ last(r::RangeCumsum) = sum(r.range)
 diff(r::RangeCumsum) = r.range[2:end]
 isempty(r::RangeCumsum) = isempty(r.range)
 
-union(a::RangeCumsum{<:Any,<:Base.OneTo}, b::RangeCumsum{<:Any,<:Base.OneTo}) = 
-    RangeCumsum(Base.OneTo(max(last(a.range),last(b.range))))
+union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) = 
+    RangeCumsum(OneTo(max(last(a.range), last(b.range))))
 
 sort!(a::RangeCumsum{<:Any,<:AbstractUnitRange}) = a
