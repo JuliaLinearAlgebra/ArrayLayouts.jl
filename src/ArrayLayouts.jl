@@ -8,7 +8,7 @@ using Base: AbstractCartesianIndex, OneTo, RangeIndex, ReinterpretArray, Reshape
             @propagate_inbounds, @_propagate_inbounds_meta
 
 import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, union, sort!,
-                ==, *, +, -, /, \, copy, copyto!, similar, getindex, strides,
+                ==, *, +, -, /, \, copy, copyto!, similar, getproperty, getindex, strides,
                 unsafe_convert
 
 using Base.Broadcast: Broadcasted
