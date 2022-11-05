@@ -21,8 +21,6 @@ using LinearAlgebra: AbstractTriangular, AbstractQ, QRCompactWYQ, QRPackedQ, che
                         AdjOrTrans, HermOrSym, RealHermSymComplexHerm, AdjointAbsVec, TransposeAbsVec,
                         checknonsingular, _apply_ipiv_rows!, ipiv2perm, chkfullrank
 
-AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
-
 using LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
 using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype

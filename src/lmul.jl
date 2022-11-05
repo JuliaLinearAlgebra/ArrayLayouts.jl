@@ -70,8 +70,8 @@ copyto!(dest::AbstractArray, M::Rmul) = _rmul_copyto!(dest, M)
 materialize!(M::Lmul) = LinearAlgebra.lmul!(M.A,M.B)
 materialize!(M::Rmul) = LinearAlgebra.rmul!(M.A,M.B)
 
-materialize!(M::Lmul{ScalarLayout}) = Base.invoke(LinearAlgebra.lmul!, Tuple{Number,AbstractArray}, M.A, M.B)
-materialize!(M::Rmul{<:Any,ScalarLayout}) = Base.invoke(LinearAlgebra.rmul!, Tuple{AbstractArray,Number}, M.A, M.B)
+materialize!(M::Lmul{ScalarLayout}) = invoke(LinearAlgebra.lmul!, Tuple{Number,AbstractArray}, M.A, M.B)
+materialize!(M::Rmul{<:Any,ScalarLayout}) = invoke(LinearAlgebra.rmul!, Tuple{AbstractArray,Number}, M.A, M.B)
 
 function materialize!(M::Lmul{ScalarLayout,<:SymmetricLayout})
     lmul!(M.A, symmetricdata(M.B))

@@ -132,6 +132,7 @@ macro veclayoutmul(Typ)
         (*)(A::LinearAlgebra.TransposeAbsVec{T,<:$Typ{T}}, B::AbstractVector{T}) where T<:Real = ArrayLayouts.mul(A,B)
 
         (*)(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.mul(A,B)
+        (*)(A::$Typ, B::LinearAlgebra.LQPackedQ) = ArrayLayouts.mul(A,B)
     end
     for Struc in (:AbstractTriangular, :Diagonal)
         ret = quote
@@ -196,15 +197,6 @@ macro layoutmul(Typ)
 
         (*)(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.mul(A,B)
         (*)(A::$Typ, B::LinearAlgebra.AbstractQ) = ArrayLayouts.mul(A,B)
-        # disambiguation
-        (*)(A::Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}, B::$Typ) =
-            ArrayLayouts.mul(A,B)
-        (*)(A::$Typ, B::Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}) =
-            ArrayLayouts.mul(A,B)
-        if isdefined(LinearAlgebra, :AdjointQ)
-            (*)(A::LinearAlgebra.AdjointQ, B::$Typ) = ArrayLayouts.mul(A,B)
-            (*)(A::$Typ, B::LinearAlgebra.AdjointQ) = ArrayLayouts.mul(A,B)
-        end            
     end
     for Struc in (:AbstractTriangular, :Diagonal)
         ret = quote
