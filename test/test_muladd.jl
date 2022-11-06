@@ -1,5 +1,5 @@
 using ArrayLayouts, FillArrays, Random, StableRNGs, LinearAlgebra, Test
-import ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul, zero!
+using ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul, zero!
 
 Random.seed!(0)
 @testset "Multiplication" begin

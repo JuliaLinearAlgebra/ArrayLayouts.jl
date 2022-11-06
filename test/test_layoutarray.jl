@@ -1,5 +1,5 @@
 using ArrayLayouts, LinearAlgebra, FillArrays, Base64, Test
-import ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum
+using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum
 
 struct MyMatrix <: LayoutMatrix{Float64}
     A::Matrix{Float64}
@@ -65,8 +65,8 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         end
         b = randn(5)
         for Tri in (UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriangular)
-            @test ldiv!(Tri(A), copy(b)) ≈ ldiv!(Tri(A.A), copy(b))
-            @test lmul!(Tri(A), copy(b)) ≈ lmul!(Tri(A.A), copy(b))
+            @test ldiv!(Tri(A), copy(b)) ≈ ldiv!(Tri(A.A), copy(b)) ≈ Tri(A.A) \ MyVector(b)
+            @test lmul!(Tri(A), copy(b)) ≈ lmul!(Tri(A.A), copy(b)) ≈ Tri(A.A) * MyVector(b)
         end
 
         @test copyto!(MyMatrix(Array{Float64}(undef,5,5)), A) == A
@@ -93,7 +93,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test_throws ErrorException qr!(A)
             @test lu!(copy(A)).factors ≈ lu(A.A).factors
             b = randn(5)
-            @test all(A \ b .≡ A.A \ b)
+            @test all(A \ b .≡ A.A \ b .≡ A.A \ MyVector(b) .≡ ldiv!(lu(A.A), copy(MyVector(b))))
             @test all(lu(A).L .≡ lu(A.A).L)
             @test all(lu(A).U .≡ lu(A.A).U)
             @test lu(A).p == lu(A.A).p
@@ -104,7 +104,10 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
             S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I))
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
-            @test cholesky(S,CRowMaximum()).U ≈ cholesky(Matrix(S),CRowMaximum()).U
+            @test cholesky(S, CRowMaximum()).U ≈ cholesky(Matrix(S), CRowMaximum()).U
+            @test cholesky(S) \ b ≈ cholesky(Matrix(S)) \ b ≈ cholesky(Matrix(S)) \ MyVector(b)
+            @test cholesky(S, CRowMaximum()) \ b ≈ cholesky(Matrix(S), CRowMaximum()) \ b
+            @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(MyVector(b)))
 
             S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I),:L)
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
@@ -163,6 +166,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             t̃ = copy(t)
             T̃ = copy(T)
             B = Bidiagonal(randn(5),randn(4),:U)
+            D = Diagonal(randn(5))
             @test ldiv!(A, copy(x)) ≈ A\x
             @test A\t ≈ A\t̃
             # QR is not general enough
@@ -172,6 +176,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test_broken A/T ≈ A/T̃
             @test_broken ldiv!(A, T) ≈ A\T
             @test B\A ≈ B\Matrix(A)
+            @test D \ A ≈ D \ Matrix(A)
             @test transpose(B)\A ≈ transpose(B)\Matrix(A) ≈ Transpose(B)\A ≈ Adjoint(B)\A
             @test B'\A ≈ B'\Matrix(A)
             @test A\A ≈ I

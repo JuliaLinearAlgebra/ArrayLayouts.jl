@@ -221,7 +221,7 @@ function _default_blasmul!(::IndexCartesian, α, A::AbstractMatrix, B::AbstractV
 end
 
 default_blasmul!(α, A::AbstractMatrix, B::AbstractVector, β, C::AbstractVector) =
-    _default_blasmul!(Base.IndexStyle(typeof(A)), α, A, B, β, C)
+    _default_blasmul!(IndexStyle(typeof(A)), α, A, B, β, C)
 
 function materialize!(M::MatMulMatAdd)
     α, A, B, β, C = M.α, M.A, M.B, M.β, M.C

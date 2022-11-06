@@ -27,10 +27,10 @@ end
 
 
 
-const MatLmulVec{StyleA,StyleB} = Lmul{StyleA,StyleB,<:AbstractMatrix,<:AbstractVector}
+const MatLmulVec{StyleA,StyleB} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix,AbstractQ},<:AbstractVector}
 const MatLmulMat{StyleA,StyleB} = Lmul{StyleA,StyleB,<:AbstractMatrix,<:AbstractMatrix}
 
-const BlasMatLmulVec{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:AbstractMatrix{T},<:AbstractVector{T}}
+const BlasMatLmulVec{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix{T},AbstractQ{T}},<:AbstractVector{T}}
 const BlasMatLmulMat{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:AbstractMatrix{T},<:AbstractMatrix{T}}
 
 const MatRmulMat{StyleA,StyleB} = Rmul{StyleA,StyleB,<:AbstractMatrix,<:AbstractMatrix}
@@ -70,8 +70,8 @@ copyto!(dest::AbstractArray, M::Rmul) = _rmul_copyto!(dest, M)
 materialize!(M::Lmul) = LinearAlgebra.lmul!(M.A,M.B)
 materialize!(M::Rmul) = LinearAlgebra.rmul!(M.A,M.B)
 
-materialize!(M::Lmul{ScalarLayout}) = Base.invoke(LinearAlgebra.lmul!, Tuple{Number,AbstractArray}, M.A, M.B)
-materialize!(M::Rmul{<:Any,ScalarLayout}) = Base.invoke(LinearAlgebra.rmul!, Tuple{AbstractArray,Number}, M.A, M.B)
+materialize!(M::Lmul{ScalarLayout}) = invoke(LinearAlgebra.lmul!, Tuple{Number,AbstractArray}, M.A, M.B)
+materialize!(M::Rmul{<:Any,ScalarLayout}) = invoke(LinearAlgebra.rmul!, Tuple{AbstractArray,Number}, M.A, M.B)
 
 function materialize!(M::Lmul{ScalarLayout,<:SymmetricLayout})
     lmul!(M.A, symmetricdata(M.B))

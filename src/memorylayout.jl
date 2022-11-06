@@ -344,13 +344,13 @@ function permutelayout(layout::Union{IncreasingStrides,DecreasingStrides}, ::Val
     return StridedLayout()
 end
 
-Base.reverse(::DenseRowMajor) = DenseColumnMajor()
-Base.reverse(::RowMajor) = ColumnMajor()
-Base.reverse(::DenseColumnMajor) = DenseRowMajor()
-Base.reverse(::ColumnMajor) = RowMajor()
-Base.reverse(::IncreasingStrides) = DecreasingStrides()
-Base.reverse(::DecreasingStrides) = IncreasingStrides()
-Base.reverse(::AbstractStridedLayout) = StridedLayout()
+reverse(::DenseRowMajor) = DenseColumnMajor()
+reverse(::RowMajor) = ColumnMajor()
+reverse(::DenseColumnMajor) = DenseRowMajor()
+reverse(::ColumnMajor) = RowMajor()
+reverse(::IncreasingStrides) = DecreasingStrides()
+reverse(::DecreasingStrides) = IncreasingStrides()
+reverse(::AbstractStridedLayout) = StridedLayout()
 
 
 # MemoryLayout of Symmetric/Hermitian
@@ -495,7 +495,7 @@ triangularlayout(::Type{Tri}, ::MemoryLayout) where Tri = Tri{UnknownLayout}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML<:AbstractColumnMajor} = Tri{ML}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML<:AbstractRowMajor} = Tri{ML}()
 triangularlayout(::Type{Tri}, ::ML) where {Tri, ML<:ConjLayout{<:AbstractRowMajor}} = Tri{ML}()
-sublayout(layout::TriangularLayout, ::Type{<:Tuple{<:Union{Slice,Base.OneTo},<:Union{Slice,Base.OneTo}}}) = layout
+sublayout(layout::TriangularLayout, ::Type{<:Tuple{<:Union{Slice,OneTo},<:Union{Slice,OneTo}}}) = layout
 conjlayout(::Type{<:Complex}, ::TriangularLayout{UPLO,UNIT,ML}) where {UPLO,UNIT,ML} =
     TriangularLayout{UPLO,UNIT,ConjLayout{ML}}()
 
@@ -509,7 +509,7 @@ end
 triangulardata(A::AbstractTriangular) = parent(A)
 triangulardata(A::Adjoint) = Adjoint(triangulardata(parent(A)))
 triangulardata(A::Transpose) = Transpose(triangulardata(parent(A)))
-triangulardata(A::SubArray{<:Any,2,<:Any,<:Tuple{<:Union{Slice,Base.OneTo},<:Union{Slice,Base.OneTo}}}) =
+triangulardata(A::SubArray{<:Any,2,<:Any,<:Tuple{<:Union{Slice,OneTo},<:Union{Slice,OneTo}}}) =
     view(triangulardata(parent(A)), parentindices(A)...)
 
 ###
