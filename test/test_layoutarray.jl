@@ -93,7 +93,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test_throws ErrorException qr!(A)
             @test lu!(copy(A)).factors ≈ lu(A.A).factors
             b = randn(5)
-            @test all(A \ b .≡ A.A \ b .≡ A.A \ MyVector(b) .≡ ldiv!(lu(A.A)), copy(MyVector(b)))
+            @test all(A \ b .≡ A.A \ b .≡ A.A \ MyVector(b) .≡ ldiv!(lu(A.A), copy(MyVector(b))))
             @test all(lu(A).L .≡ lu(A.A).L)
             @test all(lu(A).U .≡ lu(A.A).U)
             @test lu(A).p == lu(A.A).p
