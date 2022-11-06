@@ -144,7 +144,9 @@ macro _layoutldiv(Typ)
 
         (\)(x::AbstractMatrix, A::$Typ) = ArrayLayouts.ldiv(x,A)
         (\)(x::UpperTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        (\)(x::UnitUpperTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
         (\)(x::LowerTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        (\)(x::UnitLowerTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
         (\)(x::Diagonal, A::$Typ) = ArrayLayouts.ldiv(x,A)
 
         (\)(A::Bidiagonal{<:Number}, B::$Typ{<:Number}) = ArrayLayouts.ldiv(A,B)
