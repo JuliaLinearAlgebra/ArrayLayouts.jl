@@ -1,7 +1,6 @@
 using ArrayLayouts, LinearAlgebra, FillArrays, Base64, Test
 using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum
 
-
 struct MyMatrix <: LayoutMatrix{Float64}
     A::Matrix{Float64}
 end
@@ -184,6 +183,8 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test_broken A/A ≈ I
             @test A\MyVector(x) ≈ A\x
             @test A\MyMatrix(X) ≈ A\X
+
+            @test_broken A/A ≈ A.A / A.A
         end
 
         @testset "dot" begin
@@ -389,4 +390,7 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     @test lmul!(U, copy(B)) ≈ U * B
 
     @test_skip lmul!(U,view(copy(B),collect(1:5),1:5)) ≈ U * B
+
+    @test MyMatrix(A) / U ≈ A / U
+    @test_broken U / MyMatrix(A) ≈ U / A
 end
