@@ -143,6 +143,7 @@ macro _layoutldiv(Typ)
         (\)(A::$Typ, x::AbstractMatrix) = ArrayLayouts.ldiv(A,x)
 
         (\)(x::AbstractMatrix, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        (\)(x::LinearAlgebra.HermOrSym, A::$Typ) = ArrayLayouts.ldiv(x,A)
         (\)(x::UpperTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
         (\)(x::UnitUpperTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
         (\)(x::LowerTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
