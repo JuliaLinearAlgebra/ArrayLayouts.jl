@@ -94,6 +94,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test lu!(copy(A)).factors ≈ lu(A.A).factors
             b = randn(5)
             @test all(A \ b .≡ A.A \ b .≡ A.A \ MyVector(b) .≡ ldiv!(lu(A.A), copy(MyVector(b))))
+            @test all(A \ b .≡ ldiv!(lu(A), copy(MyVector(b))) .≡ ldiv!(lu(A), copy(b)))
             @test all(lu(A).L .≡ lu(A.A).L)
             @test all(lu(A).U .≡ lu(A.A).U)
             @test lu(A).p == lu(A.A).p
@@ -105,6 +106,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I))
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
             @test cholesky(S, CRowMaximum()).U ≈ cholesky(Matrix(S), CRowMaximum()).U
+            @test cholesky!(deepcopy(S), CRowMaximum()).U ≈ cholesky(Matrix(S), CRowMaximum()).U
             @test cholesky(S) \ b ≈ cholesky(Matrix(S)) \ b ≈ cholesky(Matrix(S)) \ MyVector(b)
             @test cholesky(S, CRowMaximum()) \ b ≈ cholesky(Matrix(S), CRowMaximum()) \ b
             @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(MyVector(b)))
