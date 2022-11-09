@@ -94,6 +94,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test lu!(copy(A)).factors ≈ lu(A.A).factors
             b = randn(5)
             @test all(A \ b .≡ A.A \ b .≡ A.A \ MyVector(b) .≡ ldiv!(lu(A.A), copy(MyVector(b))))
+            @test all(A \ b .≡ ldiv!(lu(A), copy(MyVector(b))) .≡ ldiv!(lu(A), copy(b)))
             @test all(lu(A).L .≡ lu(A.A).L)
             @test all(lu(A).U .≡ lu(A.A).U)
             @test lu(A).p == lu(A.A).p
@@ -105,13 +106,26 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I))
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
             @test cholesky(S, CRowMaximum()).U ≈ cholesky(Matrix(S), CRowMaximum()).U
+            @test cholesky!(deepcopy(S), CRowMaximum()).U ≈ cholesky(Matrix(S), CRowMaximum()).U
             @test cholesky(S) \ b ≈ cholesky(Matrix(S)) \ b ≈ cholesky(Matrix(S)) \ MyVector(b)
             @test cholesky(S, CRowMaximum()) \ b ≈ cholesky(Matrix(S), CRowMaximum()) \ b
             @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(MyVector(b)))
+            @test cholesky(S) \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
+            @test cholesky(S) \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
+            if VERSION >= v"1.9-"
+                @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
+                @test S \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
+            end
 
-            S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I),:L)
+            S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I), :L)
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
             @test cholesky(S,CRowMaximum()).U ≈ cholesky(Matrix(S),CRowMaximum()).U
+            @test cholesky(S) \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
+            @test cholesky(S) \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
+            if VERSION >= v"1.9-"
+                @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
+                @test S \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
+            end
         end
         Bin = randn(5,5)
         B = MyMatrix(copy(Bin))
@@ -173,18 +187,18 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test_broken ldiv!(A, t) ≈ A\t
             @test ldiv!(A, copy(X)) ≈ A\X
             @test A\T ≈ A\T̃
-            @test_broken A/T ≈ A/T̃
+            VERSION >= v"1.9-" && @test A/T ≈ A/T̃
             @test_broken ldiv!(A, T) ≈ A\T
             @test B\A ≈ B\Matrix(A)
             @test D \ A ≈ D \ Matrix(A)
             @test transpose(B)\A ≈ transpose(B)\Matrix(A) ≈ Transpose(B)\A ≈ Adjoint(B)\A
             @test B'\A ≈ B'\Matrix(A)
             @test A\A ≈ I
-            @test_broken A/A ≈ I
+            VERSION >= v"1.9-" && @test A/A ≈ I
             @test A\MyVector(x) ≈ A\x
             @test A\MyMatrix(X) ≈ A\X
 
-            @test_broken A/A ≈ A.A / A.A
+            VERSION >= v"1.9-" && @test A/A ≈ A.A / A.A
         end
 
         @testset "dot" begin
@@ -392,5 +406,5 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     @test_skip lmul!(U,view(copy(B),collect(1:5),1:5)) ≈ U * B
 
     @test MyMatrix(A) / U ≈ A / U
-    @test_broken U / MyMatrix(A) ≈ U / A
+    VERSION >= v"1.9-" && @test U / MyMatrix(A) ≈ U / A
 end
