@@ -134,6 +134,13 @@ macro veclayoutmul(Typ)
         (*)(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.mul(A,B)
         (*)(A::$Typ, B::LinearAlgebra.LQPackedQ) = ArrayLayouts.mul(A,B)
     end
+    if isdefined(LinearAlgebra, :AdjointQ)
+        const FlexibleLeftQs = Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}
+        # disambiguation for flexible left-mul Qs
+        (*)(A::FlexibleLeftQs, B::$Typ) = ArrayLayouts.mul(A,B)
+        # flexible right-mul/adjoint left-mul Qs
+        (*)(A::LinearAlgebra.AdjointQ{<:Any,<:LinearAlgebra.LQPackedQ}, B::$Typ) = ArrayLayouts.mul(A,B)
+    end
     for Struc in (:AbstractTriangular, :Diagonal)
         ret = quote
             $ret
@@ -197,6 +204,15 @@ macro layoutmul(Typ)
 
         (*)(A::LinearAlgebra.AbstractQ, B::$Typ) = ArrayLayouts.mul(A,B)
         (*)(A::$Typ, B::LinearAlgebra.AbstractQ) = ArrayLayouts.mul(A,B)
+    end
+    if isdefined(LinearAlgebra, :AdjointQ)
+        const FlexibleLeftQs = Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}
+        # disambiguation for flexible left-mul/adjoint right-mul Qs
+        (*)(A::FlexibleLeftQs, B::$Typ) = ArrayLayouts.mul(A,B)
+        (*)(A::$Typ, B::LinearAlgebra.AdjointQ{<:Any,<:FlexibleLeftQs}) = ArrayLayouts.mul(A,B)
+        # disambiguation for flexible right-mul/adjoint left-mul Qs
+        (*)(A::$Typ, B::LinearAlgebra.LQPackedQ) = ArrayLayouts.mul(A,B)
+        (*)(A::LinearAlgebra.AdjointQ{<:Any,<:LinearAlgebra.LQPackedQ}, B::$Typ) = ArrayLayouts.mul(A,B)
     end
     for Struc in (:AbstractTriangular, :Diagonal)
         ret = quote

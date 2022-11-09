@@ -283,6 +283,9 @@ MemoryLayout(::Type{Transpose{T,P}}) where {T,P} = transposelayout(MemoryLayout(
 MemoryLayout(::Type{Adjoint{T,P}}) where {T,P} = adjointlayout(T, MemoryLayout(P))
 MemoryLayout(::Type{AdjointAbsVec{T,P}}) where {T,P<:AbstractVector} = DualLayout{typeof(adjointlayout(T,MemoryLayout(P)))}()
 MemoryLayout(::Type{TransposeAbsVec{T,P}}) where {T,P<:AbstractVector} = DualLayout{typeof(transposelayout(MemoryLayout(P)))}()
+if isdefined(LinearAlgebra, :AdjointQ)
+    MemoryLayout(::Type{LinearAlgebra.AdjointQ{T,P}}) where {T,P} = adjointlayout(T, MemoryLayout(P))
+end
 
 transposelayout(_) = UnknownLayout()
 transposelayout(::StridedLayout) = StridedLayout()
