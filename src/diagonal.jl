@@ -35,8 +35,8 @@ function materialize!(M::Ldiv{<:DiagonalLayout})
     M.B
 end
 
-copy(M::Ldiv{<:DiagonalLayout,<:DiagonalLayout}) = diagonal(inv.(M.A.diag) .* M.B.diag)
-copy(M::Ldiv{<:DiagonalLayout}) = inv.(M.A.diag) .* M.B
+copy(M::Ldiv{<:DiagonalLayout,<:DiagonalLayout}) = diagonal(M.A.diag .\ M.B.diag)
+copy(M::Ldiv{<:DiagonalLayout}) = M.A.diag .\ M.B
 copy(M::Ldiv{<:DiagonalLayout{<:AbstractFillLayout}}) = inv(getindex_value(M.A.diag)) .* M.B
 copy(M::Ldiv{<:DiagonalLayout{<:AbstractFillLayout},<:DiagonalLayout}) = diagonal(inv(getindex_value(M.A.diag)) .* M.B.diag)
 
