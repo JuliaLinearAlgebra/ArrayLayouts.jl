@@ -108,10 +108,12 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test cholesky(S) \ b ≈ cholesky(Matrix(S)) \ b ≈ cholesky(Matrix(S)) \ MyVector(b)
             @test cholesky(S, CRowMaximum()) \ b ≈ cholesky(Matrix(S), CRowMaximum()) \ b
             @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(MyVector(b)))
+            @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
 
-            S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I),:L)
+            S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I), :L)
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
             @test cholesky(S,CRowMaximum()).U ≈ cholesky(Matrix(S),CRowMaximum()).U
+            @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
         end
         Bin = randn(5,5)
         B = MyMatrix(copy(Bin))
