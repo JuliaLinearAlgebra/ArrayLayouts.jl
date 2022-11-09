@@ -144,6 +144,9 @@ macro _layoutldiv(Typ)
 
         (\)(x::AbstractMatrix, A::$Typ) = ArrayLayouts.ldiv(x,A)
         (\)(x::LinearAlgebra.HermOrSym, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        if VERSION < v"1.9-" # disambiguation
+            \(x::LinearAlgebra.HermOrSym{<:Any,<:StridedMatrix}, A::$Typ) = ArrayLayouts.ldiv(x,A)
+        end
         (\)(x::UpperTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
         (\)(x::UnitUpperTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
         (\)(x::LowerTriangular, A::$Typ) = ArrayLayouts.ldiv(x,A)
