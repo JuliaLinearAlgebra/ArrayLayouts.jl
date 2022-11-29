@@ -196,14 +196,14 @@ end
 
 
 ### QcB
-materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
-    (A = M.A.parent; LAPACK.ormqr!('L','T',A.factors,A.τ,M.B))
-materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
-    (A = M.A.parent; LAPACK.ormqr!('L','C',A.factors,A.τ,M.B))
-materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
-    (A = M.A.parent; LAPACK.gemqrt!('L','T',A.factors,A.T,M.B))
-materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AbstractMatrix{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
-    (A = M.A.parent; LAPACK.gemqrt!('L','C',A.factors,A.T,M.B))
+materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AdjointQtype{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
+    (A = parent(M.A); LAPACK.ormqr!('L','T',A.factors,A.τ,M.B))
+materialize!(M::Lmul{<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AdjointQtype{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
+    (A = parent(M.A); LAPACK.ormqr!('L','C',A.factors,A.τ,M.B))
+materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AdjointQtype{T},<:AbstractVecOrMat{T}}) where T<:BlasFloat =
+    (A = parent(M.A); LAPACK.gemqrt!('L','T',A.factors,A.T,M.B))
+materialize!(M::Lmul{<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractStridedLayout,<:AdjointQtype{T},<:AbstractVecOrMat{T}}) where T<:BlasComplex =
+    (A = parent(M.A); LAPACK.gemqrt!('L','C',A.factors,A.T,M.B))
 function materialize!(M::Lmul{<:AdjQRPackedQLayout})
     adjA,B = M.A, M.B
     require_one_based_indexing(B)
@@ -264,14 +264,14 @@ function materialize!(M::Rmul{<:Any,<:QRPackedQLayout})
 end
 
 ### AQc
-materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractMatrix{T}}) where T<:BlasReal =
-    (B = M.B.parent; LAPACK.ormqr!('R','T',B.factors,B.τ,M.A))
-materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractMatrix{T}}) where T<:BlasComplex =
-    (B = M.B.parent; LAPACK.ormqr!('R','C',B.factors,B.τ,M.A))
-materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractMatrix{T}}) where T<:BlasReal =
-    (B = M.B.parent; LAPACK.gemqrt!('R','T',B.factors,B.T,M.A))
-materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AbstractMatrix{T}}) where T<:BlasComplex =
-    (B = M.B.parent; LAPACK.gemqrt!('R','C',B.factors,B.T,M.A))
+materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AdjointQtype{T}}) where T<:BlasReal =
+    (B = parent(M.B); LAPACK.ormqr!('R','T',B.factors,B.τ,M.A))
+materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRPackedQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AdjointQtype{T}}) where T<:BlasComplex =
+    (B = parent(M.B); LAPACK.ormqr!('R','C',B.factors,B.τ,M.A))
+materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AdjointQtype{T}}) where T<:BlasReal =
+    (B = parent(M.B); LAPACK.gemqrt!('R','T',B.factors,B.T,M.A))
+materialize!(M::Rmul{<:AbstractStridedLayout,<:AdjQRCompactWYQLayout{<:AbstractStridedLayout,<:AbstractStridedLayout},<:AbstractVecOrMat{T},<:AdjointQtype{T}}) where T<:BlasComplex =
+    (B = parent(M.B); LAPACK.gemqrt!('R','C',B.factors,B.T,M.A))
 function materialize!(M::Rmul{<:Any,<:AdjQRPackedQLayout})
     A,adjQ = M.A,M.B
     Q = parent(adjQ)
@@ -379,6 +379,8 @@ function _cholesky!(::SymmetricLayout{<:AbstractColumnMajor}, axes, A::AbstractM
     ::CRowMaximum; tol = 0.0, check::Bool = true)
     AA, piv, rank, info = LAPACK.pstrf!(A.uplo, A.data, tol)
     C = CholeskyPivoted{eltype(AA),typeof(AA)}(AA, A.uplo, piv, rank, tol, info)
+    # TODO: when lower bound on julia is above v1.8, replace the above line by the following 
+    # C = CholeskyPivoted{eltype(AA),typeof(AA),typeof(piv)}(AA, A.uplo, piv, rank, tol, info)
     check && chkfullrank(C)
     return C
 end

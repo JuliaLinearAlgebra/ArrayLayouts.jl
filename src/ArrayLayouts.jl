@@ -23,6 +23,8 @@ using LinearAlgebra: AbstractTriangular, AbstractQ, QRCompactWYQ, QRPackedQ, che
 
 using LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
+AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
+
 using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype
 
 using Base: require_one_based_indexing
