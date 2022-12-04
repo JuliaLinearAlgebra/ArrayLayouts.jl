@@ -37,7 +37,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test a[1:3] == a.A[1:3]
         @test a[:] == a
         @test (a')[1,:] == (a')[1,1:3] == a
-        @test stringmime("text/plain", a) == "3-element MyVector:\n 1.0\n 2.0\n 3.0"
+        @test stringmime("text/plain", a) == "3-element MyVector{Float64}:\n 1.0\n 2.0\n 3.0"
         @test B*a ≈ B*a.A
         @test B'*a ≈ B'*a.A
         @test transpose(B)*a ≈ transpose(B)*a.A
@@ -129,7 +129,8 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
             @testset "ldiv!" begin
                 c = MyVector(randn(5))
-                @test ldiv!(qr(A), MyVector(copy(c))) ≈ ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
+                @test_broken ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
+                @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c)))
                 @test_throws ErrorException ldiv!(eigen(randn(5,5)), c)
                 @test ArrayLayouts.ldiv!(svd(A.A), copy(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c 
                 if VERSION ≥ v"1.8"
