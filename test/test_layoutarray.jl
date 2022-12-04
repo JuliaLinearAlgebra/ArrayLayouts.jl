@@ -14,8 +14,8 @@ Base.unsafe_convert(::Type{Ptr{T}}, A::MyMatrix) where T = Base.unsafe_convert(P
 MemoryLayout(::Type{MyMatrix}) = DenseColumnMajor()
 Base.copy(A::MyMatrix) = MyMatrix(copy(A.A))
 
-struct MyVector <: LayoutVector{Float64}
-    A::Vector{Float64}
+struct MyVector{T} <: LayoutVector{T}
+    A::Vector{T}
 end
 
 Base.getindex(A::MyVector, k::Int) = A.A[k]
@@ -138,8 +138,14 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
                 B = Bidiagonal(randn(5), randn(4), :U)
                 @test ldiv!(B, MyVector(copy(c))) ≈ B \ c
-                @test ldiv!(transpose(B), MyVector(copy(c))) ≈ transpose(B) \ c
+                @test ldiv!(Transpose(B), MyVector(copy(c))) ≈ transpose(B) \ c
                 @test ldiv!(B', MyVector(copy(c))) ≈ B' \ c
+
+                @test ldiv!(cholesky(S), MyVector(copy(c))) ≈ S \ c
+
+                @test B \ MyVector(fill([1.,2],5)) ≈ B \ fill([1.,2],5)
+                @test Transpose(B) \ MyVector(fill([1.,2],5)) ≈ transpose(B) \ fill([1.,2],5)
+                @test Adjoint(B) \ MyVector(fill([1.,2],5)) ≈ transpose(B) \ fill([1.,2],5)
             end
         end
         Bin = randn(5,5)
