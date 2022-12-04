@@ -126,6 +126,19 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
                 @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
                 @test S \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
             end
+
+            @testset "ldiv!" begin
+                c = MyVector(randn(5))
+                @test ldiv!(qr(A), MyVector(copy(c))) ≈ ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
+                @test_throws ErrorException ldiv!(eigen(randn(5,5)), c)
+                @test ArrayLayouts.ldiv!(svd(A.A), copy(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c 
+                @test ArrayLayouts.ldiv!(similar(c), transpose(lu(A.A)), copy(c)) ≈ A'\c
+
+                B = Bidiagonal(randn(5), randn(4), :U)
+                @test ldiv!(B, MyVector(copy(c))) ≈ B \ c
+                @test ldiv!(transpose(B), MyVector(copy(c))) ≈ transpose(B) \ c
+                @test ldiv!(B', MyVector(copy(c))) ≈ B' \ c
+            end
         end
         Bin = randn(5,5)
         B = MyMatrix(copy(Bin))
