@@ -14,8 +14,8 @@ Base.unsafe_convert(::Type{Ptr{T}}, A::MyMatrix) where T = Base.unsafe_convert(P
 MemoryLayout(::Type{MyMatrix}) = DenseColumnMajor()
 Base.copy(A::MyMatrix) = MyMatrix(copy(A.A))
 
-struct MyVector <: LayoutVector{Float64}
-    A::Vector{Float64}
+struct MyVector{T} <: LayoutVector{T}
+    A::Vector{T}
 end
 
 Base.getindex(A::MyVector, k::Int) = A.A[k]
@@ -37,7 +37,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test a[1:3] == a.A[1:3]
         @test a[:] == a
         @test (a')[1,:] == (a')[1,1:3] == a
-        @test stringmime("text/plain", a) == "3-element MyVector:\n 1.0\n 2.0\n 3.0"
+        @test stringmime("text/plain", a) == "3-element MyVector{Float64}:\n 1.0\n 2.0\n 3.0"
         @test B*a ≈ B*a.A
         @test B'*a ≈ B'*a.A
         @test transpose(B)*a ≈ transpose(B)*a.A
@@ -125,6 +125,28 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             if VERSION >= v"1.9-"
                 @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
                 @test S \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
+            end
+
+            @testset "ldiv!" begin
+                c = MyVector(randn(5))
+                @test_broken ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
+                @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c)))
+                @test_throws ErrorException ldiv!(eigen(randn(5,5)), c)
+                @test ArrayLayouts.ldiv!(svd(A.A), copy(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c 
+                if VERSION ≥ v"1.8"
+                    @test ArrayLayouts.ldiv!(similar(c), transpose(lu(A.A)), copy(c)) ≈ A'\c
+                end
+
+                B = Bidiagonal(randn(5), randn(4), :U)
+                @test ldiv!(B, MyVector(copy(c))) ≈ B \ c
+                @test ldiv!(Transpose(B), MyVector(copy(c))) ≈ transpose(B) \ c
+                @test ldiv!(B', MyVector(copy(c))) ≈ B' \ c
+
+                @test ldiv!(cholesky(S), MyVector(copy(c))) ≈ S \ c
+
+                @test B \ MyVector(fill([1.,2],5)) ≈ B \ fill([1.,2],5)
+                @test Transpose(B) \ MyVector(fill([1.,2],5)) ≈ transpose(B) \ fill([1.,2],5)
+                @test Adjoint(B) \ MyVector(fill([1.,2],5)) ≈ transpose(B) \ fill([1.,2],5)
             end
         end
         Bin = randn(5,5)
