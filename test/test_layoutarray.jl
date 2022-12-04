@@ -132,7 +132,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
                 @test ldiv!(qr(A), MyVector(copy(c))) ≈ ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
                 @test_throws ErrorException ldiv!(eigen(randn(5,5)), c)
                 @test ArrayLayouts.ldiv!(svd(A.A), copy(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c 
-                @test ArrayLayouts.ldiv!(similar(c), transpose(lu(A.A)), copy(c)) ≈ A'\c
+                if VERSION ≥ v"1.8"
+                    @test ArrayLayouts.ldiv!(similar(c), transpose(lu(A.A)), copy(c)) ≈ A'\c
+                end
 
                 B = Bidiagonal(randn(5), randn(4), :U)
                 @test ldiv!(B, MyVector(copy(c))) ≈ B \ c
