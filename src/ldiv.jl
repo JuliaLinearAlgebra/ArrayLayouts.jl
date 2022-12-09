@@ -135,6 +135,7 @@ macro _layoutldiv(Typ)
         LinearAlgebra.ldiv!(A::Factorization, x::$Typ; kwds...) = ArrayLayouts.ldiv!(A,x; kwds...)
         LinearAlgebra.ldiv!(A::LU, x::$Typ; kwds...) = ArrayLayouts.ldiv!(A,x; kwds...)
         LinearAlgebra.ldiv!(A::Cholesky, x::$Typ; kwds...) = ArrayLayouts.ldiv!(A,x; kwds...)
+        LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY, x::$Typ; kwds...) = ArrayLayouts.ldiv!(A,x; kwds...)
 
         LinearAlgebra.ldiv!(A::Bidiagonal, B::$Typ; kwds...) = ArrayLayouts.ldiv!(A,B; kwds...)
 

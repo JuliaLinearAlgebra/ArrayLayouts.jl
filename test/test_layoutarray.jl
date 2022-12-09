@@ -129,7 +129,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
             @testset "ldiv!" begin
                 c = MyVector(randn(5))
-                @test_broken ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
+                @test ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
                 @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c)))
                 @test_throws ErrorException ldiv!(eigen(randn(5,5)), c)
                 @test ArrayLayouts.ldiv!(svd(A.A), copy(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c 
