@@ -134,7 +134,11 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
                 else
                     @test ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
                 end
-                @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c)))
+                if VERSION < v"1.9-" || VERSION >= v"1.10"
+                    @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c)))
+                else
+                    @test_throws MethodError ldiv!(qr(A), MyVector(copy(c)))
+                end
                 @test_throws ErrorException ldiv!(eigen(randn(5,5)), c)
                 @test ArrayLayouts.ldiv!(svd(A.A), copy(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c 
                 if VERSION ≥ v"1.8"
