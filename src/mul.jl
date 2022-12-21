@@ -118,8 +118,6 @@ mul!(dest::AbstractArray, A::AbstractArray, B::AbstractArray, α::Number, β::Nu
 
 broadcastable(M::Mul) = M
 
-const FlexibleLeftQs = Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}
-
 macro veclayoutmul(Typ)
     ret = quote
         (*)(A::AbstractMatrix, B::$Typ) = ArrayLayouts.mul(A,B)
@@ -139,6 +137,7 @@ macro veclayoutmul(Typ)
         ret = quote
             $ret
 
+            const FlexibleLeftQs = Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}
             # disambiguation for flexible left-mul Qs
             (*)(A::FlexibleLeftQs, B::$Typ) = ArrayLayouts.mul(A,B)
             # flexible right-mul/adjoint left-mul Qs
@@ -213,6 +212,7 @@ macro layoutmul(Typ)
         ret = quote
             $ret
 
+            const FlexibleLeftQs = Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}
             # disambiguation for flexible left-mul/adjoint right-mul Qs
             (*)(A::FlexibleLeftQs, B::$Typ) = ArrayLayouts.mul(A,B)
             (*)(A::$Typ, B::LinearAlgebra.AdjointQ{<:Any,<:FlexibleLeftQs}) = ArrayLayouts.mul(A,B)
