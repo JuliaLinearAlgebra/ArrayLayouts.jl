@@ -102,7 +102,7 @@ function _check_mul_axes(A, adjQ::AdjointQtype{<:Any,<:FlexibleLeftQs})
         throw(DimensionMismatch("Second axis of A, $(axes(A,2)) must match either axes of B, $(axes(Q.factors))"))
 end
 _check_mul_axes(Q::FlexibleLeftQs, adjQ::AdjointQtype{<:Any,<:FlexibleLeftQs}) =
-    Base.@invoke _check_mul_axes(Q::Any, adjQ::Any)
+    invoke(_check_mul_axes, Tuple{Any,Any}, Q, adjQ)
 function check_mul_axes(A, B, C...)
     _check_mul_axes(A, B)
     check_mul_axes(B, C...)
