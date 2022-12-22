@@ -615,9 +615,11 @@ Random.seed!(0)
         Q = qr(randn(5,5)).Q
         b = randn(5)
         B = randn(5,5)
+        @test Q*1.0 == ArrayLayouts.lmul!(Q, Matrix{Float64}(I, 5, 5))
         @test Q*b == ArrayLayouts.lmul!(Q, copy(b)) == mul(Q,b)
         @test Q*B == ArrayLayouts.lmul!(Q, copy(B)) == mul(Q,B)
         @test B*Q == ArrayLayouts.rmul!(copy(B), Q) == mul(B,Q)
+        @test 1.0*Q == ArrayLayouts.rmul!(Matrix{Float64}(I, 5, 5), Q)
         @test Q*Q ≈ mul(Q,Q)
         @test Q'*b == ArrayLayouts.lmul!(Q', copy(b)) == mul(Q',b)
         @test Q'*B == ArrayLayouts.lmul!(Q', copy(B)) == mul(Q',B)
@@ -627,6 +629,21 @@ Random.seed!(0)
         @test Q'*Q ≈ mul(Q',Q)
         @test Q*UpperTriangular(B) ≈ mul(Q, UpperTriangular(B))
         @test UpperTriangular(B)*Q ≈ mul(UpperTriangular(B), Q)
+
+        Q = qr(randn(7,5)).Q
+        b = randn(5)
+        B = randn(5,5)
+        @test Q*1.0 == ArrayLayouts.lmul!(Q, Matrix{Float64}(I, 7, 7))
+        @test Q*b == mul(Q,b)
+        @test Q*B == mul(Q,B)
+        @test 1.0*Q == ArrayLayouts.rmul!(Matrix{Float64}(I, 7, 7), Q)
+        @test Q*Q ≈ mul(Q,Q)
+        @test B*Q' == mul(B,Q')
+        @test Q*Q' ≈ mul(Q,Q')
+        @test Q'*Q' ≈ mul(Q',Q')
+        @test Q'*Q ≈ mul(Q',Q)
+        @test Q*UpperTriangular(B) ≈ mul(Q, UpperTriangular(B))
+        @test UpperTriangular(B)*Q' ≈ mul(UpperTriangular(B), Q')
     end
 
     @testset "Mul" begin

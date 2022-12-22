@@ -15,8 +15,8 @@ using Base.Broadcast: Broadcasted
 
 import Base.Broadcast: BroadcastStyle, broadcastable, instantiate, materialize, materialize!
 
-using LinearAlgebra: AbstractTriangular, AbstractQ, QRCompactWYQ, QRPackedQ, checksquare,
-                        pinv, tilebufsize, cholcopy,
+using LinearAlgebra: AbstractQ, QRCompactWYQ, QRPackedQ, HessenbergQ,
+                        AbstractTriangular, checksquare, pinv, tilebufsize, cholcopy,
                         norm2, norm1, normInf, normMinusInf,
                         AdjOrTrans, HermOrSym, RealHermSymComplexHerm, AdjointAbsVec, TransposeAbsVec,
                         checknonsingular, _apply_ipiv_rows!, ipiv2perm, chkfullrank
