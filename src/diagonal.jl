@@ -17,7 +17,9 @@ end
 
 copy(M::Lmul{<:DiagonalLayout,<:DiagonalLayout}) = diagonal(diagonaldata(M.A) .* diagonaldata(M.B))
 copy(M::Lmul{<:DiagonalLayout}) = diagonaldata(M.A) .* M.B
-copy(M::Rmul{<:Any,<:DiagonalLayout}) = M.A .* permutedims(diagonaldata(M.B))
+_permutedims(A::AbstractArray{<:Number}) = transpose(A)
+_permutedims(A::AbstractArray) = permutedims(A)
+copy(M::Rmul{<:Any,<:DiagonalLayout}) = M.A .* _permutedims(diagonaldata(M.B))
 
 
 
