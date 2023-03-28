@@ -88,7 +88,21 @@ check_mul_axes(A) = nothing
 _check_mul_axes(::Number, ::Number) = nothing
 _check_mul_axes(::Number, _) = nothing
 _check_mul_axes(_, ::Number) = nothing
-_check_mul_axes(A, B) = axes(A,2) == axes(B,1) || throw(DimensionMismatch("Second axis of A, $(axes(A,2)), and first axis of B, $(axes(B,1)) must match"))
+_check_mul_axes(A, B) = axes(A, 2) == axes(B, 1) || throw(DimensionMismatch("Second axis of A, $(axes(A,2)), and first axis of B, $(axes(B,1)) must match"))
+# we need to special case AbstractQ as it allows non-compatiple multiplication
+const FlexibleLeftQs = Union{QRCompactWYQ,QRPackedQ,HessenbergQ}
+_check_mul_axes(::FlexibleLeftQs, ::Number) = nothing
+_check_mul_axes(Q::FlexibleLeftQs, B) =
+    axes(Q.factors, 1) == axes(B, 1) || axes(Q.factors, 2) == axes(B, 1) ||
+        throw(DimensionMismatch("First axis of B, $(axes(B,1)) must match either axes of A, $(axes(Q.factors))"))
+_check_mul_axes(::Number, ::AdjointQtype{<:Any,<:FlexibleLeftQs}) = nothing
+function _check_mul_axes(A, adjQ::AdjointQtype{<:Any,<:FlexibleLeftQs})
+    Q = parent(adjQ)
+    axes(A, 2) == axes(Q.factors, 1) || axes(A, 2) == axes(Q.factors, 2) ||
+        throw(DimensionMismatch("Second axis of A, $(axes(A,2)) must match either axes of B, $(axes(Q.factors))"))
+end
+_check_mul_axes(Q::FlexibleLeftQs, adjQ::AdjointQtype{<:Any,<:FlexibleLeftQs}) =
+    invoke(_check_mul_axes, Tuple{Any,Any}, Q, adjQ)
 function check_mul_axes(A, B, C...)
     _check_mul_axes(A, B)
     check_mul_axes(B, C...)
@@ -118,8 +132,6 @@ mul!(dest::AbstractArray, A::AbstractArray, B::AbstractArray, α::Number, β::Nu
 
 broadcastable(M::Mul) = M
 
-const FlexibleLeftQs = Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}
-
 macro veclayoutmul(Typ)
     ret = quote
         (*)(A::AbstractMatrix, B::$Typ) = ArrayLayouts.mul(A,B)
@@ -139,6 +151,7 @@ macro veclayoutmul(Typ)
         ret = quote
             $ret
 
+            const FlexibleLeftQs = Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}
             # disambiguation for flexible left-mul Qs
             (*)(A::FlexibleLeftQs, B::$Typ) = ArrayLayouts.mul(A,B)
             # flexible right-mul/adjoint left-mul Qs
@@ -213,6 +226,7 @@ macro layoutmul(Typ)
         ret = quote
             $ret
 
+            const FlexibleLeftQs = Union{LinearAlgebra.HessenbergQ, LinearAlgebra.QRCompactWYQ, LinearAlgebra.QRPackedQ}
             # disambiguation for flexible left-mul/adjoint right-mul Qs
             (*)(A::FlexibleLeftQs, B::$Typ) = ArrayLayouts.mul(A,B)
             (*)(A::$Typ, B::LinearAlgebra.AdjointQ{<:Any,<:FlexibleLeftQs}) = ArrayLayouts.mul(A,B)
