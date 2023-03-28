@@ -101,15 +101,15 @@ function check_mul_axes(A::Union{QRCompactWYQ,QRPackedQ}, B, C...)
     check_mul_axes(B, C...)
 end
 
-function instantiate(M::Mul)
+@inline function instantiate(M::Mul)
     @boundscheck check_mul_axes(M.A, M.B)
     M
 end
 
-materialize(M::Mul) = copy(instantiate(M))
+@inline materialize(M::Mul) = copy(instantiate(M))
 @inline mul(A, B) = materialize(Mul(A,B))
 
-copy(M::Mul) = copy(mulreduce(M))
+@inline copy(M::Mul) = copy(mulreduce(M))
 @inline copyto!(dest, M::Mul) = copyto!(dest, mulreduce(M))
 @inline copyto!(dest::AbstractArray, M::Mul) = copyto!(dest, mulreduce(M))
 mul!(dest::AbstractArray, A::AbstractArray, B::AbstractArray) = copyto!(dest, Mul(A,B))
