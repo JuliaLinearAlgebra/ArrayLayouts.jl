@@ -49,8 +49,18 @@ rmul!(A, B; kwds...) = materialize!(Rmul(A, B); kwds...)
 
 materialize(L::Lmul) = copy(instantiate(L))
 
-copy(M::Lmul) = lmul!(M.A, copyto!(similar(M), M.B))
-copy(M::Rmul) = rmul!(copyto!(similar(M), M.A), M.B)
+# needed since in orthogonal case dimensions might mismatch and
+# so need to make sure extra entries are zero
+function _zero_copyto!(dest, A)
+    if axes(dest) == axes(A)
+        copyto!(dest, A)
+    else
+        copyto!(zero!(dest), A)
+    end
+end
+
+copy(M::Lmul) = lmul!(M.A, _zero_copyto!(similar(M), M.B))
+copy(M::Rmul) = rmul!(_zero_copyto!(similar(M), M.A), M.B)
 
 @inline function _lmul_copyto!(dest, M)
     M.B ≡ dest || copyto!(dest, M.B)
