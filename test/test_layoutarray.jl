@@ -323,6 +323,8 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test D * A' ≈ D * A.A'
         @test A' * D ≈ A.A' * D
 
+        @test T * D ≈ T .* D.diag'
+        @test D * T ≈ D.diag .* T
         @test A * Adjoint(T) ≈ A.A * Adjoint(T)
         @test A * Transpose(T) ≈ A.A * Transpose(T)
         @test Adjoint(T) * A ≈ Adjoint(T) * A.A
