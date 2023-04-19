@@ -192,6 +192,8 @@ getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) =
 *(A::AbstractMatrix, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 *(A::Diagonal{<:Any,<:LayoutVector}, B::LayoutMatrix) = mul(A, B)
 *(A::LayoutMatrix, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::UpperTriangular, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Diagonal{<:Any,<:LayoutVector}, B::UpperTriangular) = mul(A, B)
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal) = mul(A, B)
 *(A::Diagonal, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 
