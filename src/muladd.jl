@@ -165,13 +165,27 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
     (iszero(mA) || iszero(nB)) && return C
     iszero(nA) && return C
 
-    @inbounds for k in colsupport(A), j in rowsupport(B,rowsupport(A,k))
-        z2 = zero(A[k, 1]*B[1, j] + A[k, 1]*B[1, j])
-        Ctmp = convert(promote_type(eltype(C), typeof(z2)), z2)
-        @simd for ν = rowsupport(A,k) ∩ colsupport(B,j)
-            Ctmp = muladd(A[k, ν],B[ν, j],Ctmp)
+    r = rowsupport(B,rowsupport(A,first(colsupport(A))))
+    jindsid = all(k -> rowsupport(B,rowsupport(A,k)) == r, colsupport(A))
+
+    if jindsid
+        @inbounds for j in rowsupport(B,rowsupport(A,1)), k in colsupport(A)
+            z2 = zero(A[k, 1]*B[1, j] + A[k, 1]*B[1, j])
+            Ctmp = convert(promote_type(eltype(C), typeof(z2)), z2)
+            @simd for ν = rowsupport(A,k) ∩ colsupport(B,j)
+                Ctmp = muladd(A[k, ν],B[ν, j],Ctmp)
+            end
+            C[k,j] = muladd(α,Ctmp, C[k,j])
         end
-        C[k,j] = muladd(α,Ctmp, C[k,j])
+    else
+        @inbounds for k in colsupport(A), j in rowsupport(B,rowsupport(A,k))
+            z2 = zero(A[k, 1]*B[1, j] + A[k, 1]*B[1, j])
+            Ctmp = convert(promote_type(eltype(C), typeof(z2)), z2)
+            @simd for ν = rowsupport(A,k) ∩ colsupport(B,j)
+                Ctmp = muladd(A[k, ν],B[ν, j],Ctmp)
+            end
+            C[k,j] = muladd(α,Ctmp, C[k,j])
+        end
     end
     C
 end
