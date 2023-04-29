@@ -182,7 +182,7 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
             _default_blasmul_loop!(α, A, B, β, C, k, j)
         end
     else
-        @inbounds for k in colsupport(A), j in rowsupport(B,rowsupport(A,k))
+        for k in colsupport(A), j in rowsupport(B,rowsupport(A,k))
             _default_blasmul_loop!(α, A, B, β, C, k, j)
         end
     end
