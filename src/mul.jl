@@ -190,6 +190,8 @@ macro layoutmul(Typ)
     ret = quote
         LinearAlgebra.mul!(dest::AbstractVector, A::$Typ, b::AbstractVector) =
             ArrayLayouts.mul!(dest,A,b)
+        LinearAlgebra.mul!(dest::AbstractVector, A::$Typ, b::AbstractVector, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,b,α,β)
 
         LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::AbstractMatrix) =
             ArrayLayouts.mul!(dest,A,B)
