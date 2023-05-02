@@ -154,6 +154,15 @@ function tiled_blasmul!(tile_size, α, A::AbstractMatrix{T}, B::AbstractMatrix{S
     C
 end
 
+@inline function _default_blasmul_loop!(α, A, B, β, C, k, j)
+    z2 = @inbounds zero(A[k, 1]*B[1, j] + A[k, 1]*B[1, j])
+    Ctmp = convert(promote_type(eltype(C), typeof(z2)), z2)
+    @simd for ν = rowsupport(A,k) ∩ colsupport(B,j)
+        Ctmp = @inbounds muladd(A[k, ν],B[ν, j],Ctmp)
+    end
+    @inbounds C[k,j] = muladd(α,Ctmp, C[k,j])
+end
+
 function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::AbstractMatrix)
     mA, nA = size(A)
     mB, nB = size(B)
@@ -165,13 +174,17 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
     (iszero(mA) || iszero(nB)) && return C
     iszero(nA) && return C
 
-    @inbounds for k in colsupport(A), j in rowsupport(B,rowsupport(A,k))
-        z2 = zero(A[k, 1]*B[1, j] + A[k, 1]*B[1, j])
-        Ctmp = convert(promote_type(eltype(C), typeof(z2)), z2)
-        @simd for ν = rowsupport(A,k) ∩ colsupport(B,j)
-            Ctmp = muladd(A[k, ν],B[ν, j],Ctmp)
+    r = rowsupport(B,rowsupport(A,first(colsupport(A))))
+    jindsid = all(k -> rowsupport(B,rowsupport(A,k)) == r, colsupport(A))
+
+    if jindsid
+        for j in rowsupport(B,rowsupport(A,1)), k in colsupport(A)
+            _default_blasmul_loop!(α, A, B, β, C, k, j)
         end
-        C[k,j] = muladd(α,Ctmp, C[k,j])
+    else
+        for k in colsupport(A), j in rowsupport(B,rowsupport(A,k))
+            _default_blasmul_loop!(α, A, B, β, C, k, j)
+        end
     end
     C
 end
