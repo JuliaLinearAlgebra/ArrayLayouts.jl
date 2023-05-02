@@ -366,9 +366,9 @@ end
 BroadcastStyle(::Type{<:MulAdd}) = ApplyBroadcastStyle()
 
 scalarone(::Type{T}) where T = one(T)
-scalarone(::Type{<:AbstractArray{T}}) where T = scalarone(T)
+scalarone(::Type{A}) where {A<:AbstractArray} = scalarone(eltype(A))
 scalarzero(::Type{T}) where T = zero(T)
-scalarzero(::Type{<:AbstractArray{T}}) where T = scalarzero(T)
+scalarzero(::Type{A}) where {A<:AbstractArray} = scalarzero(eltype(A))
 
 fillzeros(::Type{T}, ax) where T<:Number = Zeros{T}(ax)
 mulzeros(::Type{T}, M) where T<:Number = fillzeros(T, axes(M))
