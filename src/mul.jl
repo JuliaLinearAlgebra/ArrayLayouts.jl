@@ -203,10 +203,6 @@ macro layoutmul(Typ)
             ArrayLayouts.mul!(dest,A,B,α,β)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::AbstractMatrix, B::$Typ, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
-        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::Diagonal, α::Number, β::Number) =
-            ArrayLayouts.mul!(dest,A,B,α,β)
-        LinearAlgebra.mul!(dest::AbstractMatrix, A::Diagonal, B::$Typ, α::Number, β::Number) =
-            ArrayLayouts.mul!(dest,A,B,α,β)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::$Typ, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
 
@@ -237,9 +233,16 @@ macro layoutmul(Typ)
             (*)(A::LinearAlgebra.AdjointQ{<:Any,<:LinearAlgebra.LQPackedQ}, B::$Typ) = ArrayLayouts.mul(A,B)
         end
     end
-    for Struc in (:AbstractTriangular, :Diagonal)
+    for Struc in (:AbstractTriangular, :Diagonal, :Bidiagonal, :SymTridiagonal, :Tridiagonal)
+        # starting from Julia v1.10, the last four could be put into a single Union to
+        # reduce the number of mul! methods; or perhaps addressed as some common supertype
         ret = quote
             $ret
+
+            LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::LinearAlgebra.$Struc, α::Number, β::Number) =
+                ArrayLayouts.mul!(dest,A,B,α,β)
+            LinearAlgebra.mul!(dest::AbstractMatrix, A::LinearAlgebra.$Struc, B::$Typ, α::Number, β::Number) =
+                ArrayLayouts.mul!(dest,A,B,α,β)
 
             (*)(A::LinearAlgebra.$Struc, B::$Typ) = ArrayLayouts.mul(A,B)
             (*)(A::$Typ, B::LinearAlgebra.$Struc) = ArrayLayouts.mul(A,B)
