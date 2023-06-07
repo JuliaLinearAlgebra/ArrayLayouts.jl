@@ -298,7 +298,14 @@ adjointlayout(::Type{T}, ::DualLayout{ML}) where {T,ML} = adjointlayout(T, ML())
 adjointlayout(::Type{T}, M::MemoryLayout) where T = transposelayout(conjlayout(T, M))
 sublayout(::DualLayout{ML}, ::Type{<:Tuple{KR,JR}}) where {ML,KR<:Slice,JR} = DualLayout{typeof(sublayout(ML(),Tuple{KR,JR}))}()
 sublayout(::DualLayout{ML}, INDS::Type) where ML = sublayout(ML(), INDS)
-sub_materialize(::DualLayout{ML}, A) where ML = sub_materialize(adjointlayout(eltype(A), ML()), A')'
+
+# try to maintain "type" of parent ie adjoint/transpose when materialising, even though layouts are equivalent
+# to preserve special overloads
+_dual_adjoint(a::SubArray{<:Any, 2, <:Any, <:Tuple{Slice,Any}}) = view(parent(a)', parentindices(a)[2])
+_dual_transpose(a::SubArray{<:Any, 2, <:Any, <:Tuple{Slice,Any}}) = view(transpose(parent(a)), parentindices(a)[2])
+sub_materialize(::DualLayout{ML}, A::AbstractMatrix{<:Real}) where ML = sub_materialize(adjointlayout(eltype(A), ML()), _dual_adjoint(A))'
+sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML<:ConjLayout = sub_materialize(adjointlayout(eltype(A), ML()), _dual_adjoint(A))'
+sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML = transpose(sub_materialize(adjointlayout(eltype(A), ML()), _dual_transpose(A)))
 
 _copyto!(dlay, ::DualLayout{ML}, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N,ML} = 
     _copyto!(dlay, ML(), dest, src)
