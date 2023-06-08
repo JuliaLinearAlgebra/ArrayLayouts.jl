@@ -89,7 +89,13 @@ struct FooNumber <: Number end
             @test (a')[:,1:3] == layout_getindex(a',:,1:3)
             @test (a')[1:1,1:3] == layout_getindex(a',1:1,1:3)
             @test layout_getindex(a',:,1:3) isa Adjoint
+            @test layout_getindex(transpose(a),:,1:3) isa Adjoint
+            @test layout_getindex((a .+ im)',:,1:3) isa Adjoint
+            @test layout_getindex(transpose(a .+ im),:,1:3) isa Transpose
             @test layout_getindex(a',1:1,1:3) isa Array
+
+            @test layout_getindex((a .+ im)',:,1:3) == (a .+ im)[1:3]'
+            @test layout_getindex(transpose(a .+ im),:,1:3) == transpose((a .+ im)[1:3])
 
             @test ArrayLayouts._copyto!(similar(a'), a') == a'
         end
@@ -181,7 +187,9 @@ struct FooNumber <: Number end
         @test colsupport(Symmetric(A),2) ≡ colsupport(Symmetric(A),1:2) ≡ 
                 rowsupport(Symmetric(A),2) ≡ rowsupport(Symmetric(A),1:2) ≡ 1:2
                 @test colsupport(Hermitian(A),2) ≡ colsupport(Hermitian(A),1:2) ≡ 
-                rowsupport(Hermitian(A),2) ≡ rowsupport(Hermitian(A),1:2) ≡ 1:2
+                rowsupport(Hermitian(A),2) ≡ rowsupport(Hermitian(A),1:2) ≡
+                colsupport(Symmetric(A,:L),2) ≡ colsupport(Hermitian(A,:L),2) ≡
+                rowsupport(Symmetric(A,:L),2) ≡ rowsupport(Hermitian(A,:L),2) ≡ 1:2
 
         B = [1.0+im 2; 3 4]
         @test MemoryLayout(Symmetric(B)) == SymmetricLayout{DenseColumnMajor}()
@@ -298,6 +306,9 @@ struct FooNumber <: Number end
         @test layout_getindex(Fill(1,10), 1:3) ≡ Fill(1,3)
         @test layout_getindex(Ones{Int}(1,10), 1, 1:3) ≡ Ones{Int}(3)
         @test layout_getindex(Zeros{Int}(5,10,12), 1, 1:3,4:6) ≡ Zeros{Int}(3,3)
+
+        @test isempty(colsupport(Zeros(5,10), 2))
+        @test isempty(rowsupport(Zeros(5,10), 2))
 
         # views of Fill no longer create Sub Arrays, but are supported
         # as there was no strong need to delete their support
