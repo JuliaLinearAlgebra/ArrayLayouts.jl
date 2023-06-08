@@ -89,7 +89,13 @@ struct FooNumber <: Number end
             @test (a')[:,1:3] == layout_getindex(a',:,1:3)
             @test (a')[1:1,1:3] == layout_getindex(a',1:1,1:3)
             @test layout_getindex(a',:,1:3) isa Adjoint
+            @test layout_getindex(transpose(a),:,1:3) isa Adjoint
+            @test layout_getindex((a .+ im)',:,1:3) isa Adjoint
+            @test layout_getindex(transpose(a .+ im),:,1:3) isa Transpose
             @test layout_getindex(a',1:1,1:3) isa Array
+
+            @test layout_getindex((a .+ im)',:,1:3) == (a .+ im)[1:3]'
+            @test layout_getindex(transpose(a .+ im),:,1:3) == transpose((a .+ im)[1:3])
 
             @test ArrayLayouts._copyto!(similar(a'), a') == a'
         end

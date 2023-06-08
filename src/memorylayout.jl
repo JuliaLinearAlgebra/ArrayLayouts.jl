@@ -305,7 +305,7 @@ _dual_adjoint(a::SubArray{<:Any, 2, <:Any, <:Tuple{Slice,Any}}) = view(parent(a)
 _dual_transpose(a::SubArray{<:Any, 2, <:Any, <:Tuple{Slice,Any}}) = view(transpose(parent(a)), parentindices(a)[2])
 sub_materialize(::DualLayout{ML}, A::AbstractMatrix{<:Real}) where ML = sub_materialize(adjointlayout(eltype(A), ML()), _dual_adjoint(A))'
 sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML<:ConjLayout = sub_materialize(adjointlayout(eltype(A), ML()), _dual_adjoint(A))'
-sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML = transpose(sub_materialize(adjointlayout(eltype(A), ML()), _dual_transpose(A)))
+sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML = transpose(sub_materialize(transposelayout(ML()), _dual_transpose(A)))
 
 _copyto!(dlay, ::DualLayout{ML}, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N,ML} = 
     _copyto!(dlay, ML(), dest, src)
