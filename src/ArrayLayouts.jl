@@ -51,7 +51,7 @@ else
     const CRowMaximum = RowMaximum
     const CNoPivot = NoPivot
 end
-        
+
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle})

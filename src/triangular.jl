@@ -241,14 +241,14 @@ for UNIT in ('U', 'N')
             BLAS.trsv!('L', 'C', $UNIT, triangulardata(M.A)', M.B)
         @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'U',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
                                                         <:AbstractColumnMajor}) =
-            LAPACK.trtrs!('L', 'C', $UNIT, triangulardata(M.A)', M.B)            
+            LAPACK.trtrs!('L', 'C', $UNIT, triangulardata(M.A)', M.B)
 
         @inline materialize!(M::BlasMatLdivVec{<:TriangularLayout{'L',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
                                                         <:AbstractStridedLayout}) =
             BLAS.trsv!('U', 'C', $UNIT, triangulardata(M.A)', M.B)
         @inline materialize!(M::BlasMatLdivMat{<:TriangularLayout{'L',$UNIT,<:ConjLayout{<:AbstractRowMajor}},
                                                         <:AbstractColumnMajor}) =
-            LAPACK.trtrs!('U', 'C', $UNIT, triangulardata(M.A)', M.B)            
+            LAPACK.trtrs!('U', 'C', $UNIT, triangulardata(M.A)', M.B)
     end
 end
 
@@ -339,7 +339,7 @@ function _bidiag_backsub!(M)
     dv = diagonaldata(A)
     ev = supdiagonaldata(A)
     b[N] = bj1 = dv[N]\b[N]
-    
+
     @inbounds for j = (N - 1):-1:1
         bj  = b[j]
         bj -= ev[j] * bj1
@@ -350,7 +350,7 @@ function _bidiag_backsub!(M)
         bj   = dvj\bj
         b[j] = bj1 = bj
     end
-    
+
     b
 end
 
@@ -374,7 +374,7 @@ function _bidiag_forwardsub!(M)
 end
 
 #Generic solver using naive substitution, based on LinearAlgebra/src/bidiag.jl
-function materialize!(M::MatLdivVec{<:BidiagonalLayout}) 
+function materialize!(M::MatLdivVec{<:BidiagonalLayout})
     A,b = M.A,M.B
     require_one_based_indexing(A, b)
     N = size(A, 2)
