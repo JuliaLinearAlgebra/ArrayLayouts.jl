@@ -1,6 +1,18 @@
+abstract type AbstractLRDiv{AType, BType} end
+
+@inline BroadcastStyle(::Type{<:AbstractLRDiv}) = ApplyBroadcastStyle()
+@inline broadcastable(M::AbstractLRDiv) = M
+
+similar(A::AbstractLRDiv, ::Type{T}, axes) where T = similar(Array{T}, axes)
+similar(A::AbstractLRDiv, ::Type{T}) where T = similar(A, T, axes(A))
+similar(A::AbstractLRDiv) = similar(A, eltype(A))
+
+@inline copy(M::AbstractLRDiv; kwds...) = copyto!(similar(M), M; kwds...)
+@inline materialize(M::AbstractLRDiv; kwds...) = copy(instantiate(M); kwds...)
+
 for Typ in (:Ldiv, :Rdiv)
     @eval begin
-        struct $Typ{StyleA, StyleB, AType, BType}
+        struct $Typ{StyleA, StyleB, AType, BType} <: AbstractLRDiv{AType, BType}
             A::AType
             B::BType
         end
@@ -10,16 +22,6 @@ for Typ in (:Ldiv, :Rdiv)
 
         @inline $Typ(A::AType, B::BType) where {AType,BType} =
             $Typ{typeof(MemoryLayout(AType)),typeof(MemoryLayout(BType)),AType,BType}(A, B)
-
-        @inline BroadcastStyle(::Type{<:$Typ}) = ApplyBroadcastStyle()
-        @inline broadcastable(M::$Typ) = M
-
-        similar(A::$Typ, ::Type{T}, axes) where T = similar(Array{T}, axes)
-        similar(A::$Typ, ::Type{T}) where T = similar(A, T, axes(A))
-        similar(A::$Typ) = similar(A, eltype(A))
-
-        @inline copy(M::$Typ; kwds...) = copyto!(similar(M), M; kwds...)
-        @inline materialize(M::$Typ; kwds...) = copy(instantiate(M); kwds...)
     end
 end
 

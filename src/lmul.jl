@@ -1,27 +1,32 @@
+abstract type AbstractLRMul{TypeA, TypeB} end
+
+BroadcastStyle(::Type{<:AbstractLRMul}) = ApplyBroadcastStyle()
+broadcastable(M::AbstractLRMul) = M
+
+size(M::AbstractLRMul) = map(length,axes(M))
+size(M::AbstractLRMul, p::Int) = size(M)[p]
+length(M::AbstractLRMul) = prod(size(M))
+axes(M::AbstractLRMul) = (axes(M.A,1),axes(M.B,2))
+axes(M::AbstractLRMul, p::Int) = axes(M)[p]
+
+eltype(::AbstractLRMul{A,B}) where {A,B} = promote_type(eltype(A), eltype(B))
+
+similar(M::AbstractLRMul, ::Type{T}, axes) where {T} = similar(Array{T}, axes)
+similar(M::AbstractLRMul, ::Type{T}) where T = similar(M, T, axes(M))
+similar(M::AbstractLRMul) = similar(M, eltype(M))
+
 for Typ in (:Lmul, :Rmul)
     @eval begin
-        struct $Typ{StyleA, StyleB, TypeA, TypeB}
+        struct $Typ{StyleA, StyleB, TypeA, TypeB} <: AbstractLRMul{TypeA, TypeB}
             A::TypeA
             B::TypeB
         end
 
-        $Typ(A::TypeA, B::TypeB) where {TypeA,TypeB} = $Typ{typeof(MemoryLayout(TypeA)),typeof(MemoryLayout(TypeB)),TypeA,TypeB}(A,B)
+        function $Typ(A::TypeA, B::TypeB) where {TypeA,TypeB}
+            $Typ{typeof(MemoryLayout(TypeA)),typeof(MemoryLayout(TypeB)),TypeA,TypeB}(A,B)
+        end
 
         $Typ(M::Mul) = $Typ(M.A, M.B)
-
-        BroadcastStyle(::Type{<:$Typ}) = ApplyBroadcastStyle()
-        broadcastable(M::$Typ) = M
-
-        eltype(::$Typ{<:Any,<:Any,A,B}) where {A,B} = promote_type(eltype(A), eltype(B))
-        size(M::$Typ, p::Int) = size(M)[p]
-        axes(M::$Typ, p::Int) = axes(M)[p]
-        length(M::$Typ) = prod(size(M))
-        size(M::$Typ) = map(length,axes(M))
-        axes(M::$Typ) = (axes(M.A,1),axes(M.B,2))
-
-        similar(M::$Typ, ::Type{T}, axes) where {T} = similar(Array{T}, axes)
-        similar(M::$Typ, ::Type{T}) where T = similar(M, T, axes(M))
-        similar(M::$Typ) = similar(M, eltype(M))
     end
 end
 
