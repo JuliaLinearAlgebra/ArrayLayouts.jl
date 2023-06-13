@@ -76,7 +76,7 @@ AbstractStridedLayout
 
 is returned by `MemoryLayout(A)` if an array `A` has storage in memory
 equivalent to an `Array`, so that `stride(A,1) == 1` and
-`stride(A,i) ≡ size(A,i-1) * stride(A,i-1)` for `2 ≤ i ≤ ndims(A)`. In particular,
+`stride(A,i) ≡ size(A,i-1) * stride(A,i-1)` for `2 ≤ i ≤ ndims(A)`. In particular,
 if `A` is a matrix then `strides(A) == `(1, size(A,1))`.
 
 Arrays with `DenseColumnMajor` memory layout must conform to the `DenseArray` interface.
@@ -88,7 +88,7 @@ DenseColumnMajor
 
 is returned by `MemoryLayout(A)` if an array `A` has storage in memory
 as a column major array, so that `stride(A,1) == 1` and
-`stride(A,i) ≥ size(A,i-1) * stride(A,i-1)` for `2 ≤ i ≤ ndims(A)`.
+`stride(A,i) ≥ size(A,i-1) * stride(A,i-1)` for `2 ≤ i ≤ ndims(A)`.
 
 Arrays with `ColumnMajor` memory layout must conform to the `DenseArray` interface.
 """
@@ -99,7 +99,7 @@ ColumnMajor
 
 is returned by `MemoryLayout(A)` if an array `A` has storage in memory
 as a strided array with  increasing strides, so that `stride(A,1) ≥ 1` and
-`stride(A,i) ≥ size(A,i-1) * stride(A,i-1)` for `2 ≤ i ≤ ndims(A)`.
+`stride(A,i) ≥ size(A,i-1) * stride(A,i-1)` for `2 ≤ i ≤ ndims(A)`.
 """
 IncreasingStrides
 
@@ -108,7 +108,7 @@ IncreasingStrides
 
 is returned by `MemoryLayout(A)` if an array `A` has storage in memory
 as a row major array with dense entries, so that `stride(A,ndims(A)) == 1` and
-`stride(A,i) ≡ size(A,i+1) * stride(A,i+1)` for `1 ≤ i ≤ ndims(A)-1`. In particular,
+`stride(A,i) ≡ size(A,i+1) * stride(A,i+1)` for `1 ≤ i ≤ ndims(A)-1`. In particular,
 if `A` is a matrix then `strides(A) == `(size(A,2), 1)`.
 """
 DenseRowMajor
@@ -118,7 +118,7 @@ DenseRowMajor
 
 is returned by `MemoryLayout(A)` if an array `A` has storage in memory
 as a row major array, so that `stride(A,ndims(A)) == 1` and
-stride(A,i) ≥ size(A,i+1) * stride(A,i+1)` for `1 ≤ i ≤ ndims(A)-1`.
+stride(A,i) ≥ size(A,i+1) * stride(A,i+1)` for `1 ≤ i ≤ ndims(A)-1`.
 
 If `A` is a matrix  with `RowMajor` memory layout, then
 `transpose(A)` should return a matrix whose layout is `ColumnMajor`.
@@ -130,7 +130,7 @@ RowMajor
 
 is returned by `MemoryLayout(A)` if an array `A` has storage in memory
 as a strided array with decreasing strides, so that `stride(A,ndims(A)) ≥ 1` and
-stride(A,i) ≥ size(A,i+1) * stride(A,i+1)` for `1 ≤ i ≤ ndims(A)-1`.
+stride(A,i) ≥ size(A,i+1) * stride(A,i+1)` for `1 ≤ i ≤ ndims(A)-1`.
 """
 DecreasingStrides
 
@@ -307,7 +307,7 @@ sub_materialize(::DualLayout{ML}, A::AbstractMatrix{<:Real}) where ML = sub_mate
 sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML<:ConjLayout = sub_materialize(adjointlayout(eltype(A), ML()), _dual_adjoint(A))'
 sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML = transpose(sub_materialize(transposelayout(ML()), _dual_transpose(A)))
 
-_copyto!(dlay, ::DualLayout{ML}, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N,ML} = 
+_copyto!(dlay, ::DualLayout{ML}, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N,ML} =
     _copyto!(dlay, ML(), dest, src)
 
 # Layouts of PermutedDimsArrays
@@ -374,8 +374,8 @@ as a symmetrized version of `layout`, where the entries used are dictated by the
 
 A matrix that has memory layout `SymmetricLayout(layout, uplo)` must overrided
 `symmetricdata(A)` to return a matrix `B` such that `MemoryLayout(B) == layout` and
-`A[k,j] == B[k,j]` for `j ≥ k` if `uplo == 'U'` (`j ≤ k` if `uplo == 'L'`) and
-`A[k,j] == B[j,k]` for `j < k` if `uplo == 'U'` (`j > k` if `uplo == 'L'`).
+`A[k,j] == B[k,j]` for `j ≥ k` if `uplo == 'U'` (`j ≤ k` if `uplo == 'L'`) and
+`A[k,j] == B[j,k]` for `j < k` if `uplo == 'U'` (`j > k` if `uplo == 'L'`).
 """
 struct SymmetricLayout{ML<:MemoryLayout} <: MemoryLayout end
 
@@ -389,8 +389,8 @@ as a hermitianized version of `layout`, where the entries used are dictated by t
 
 A matrix that has memory layout `HermitianLayout(layout, uplo)` must overrided
 `hermitiandata(A)` to return a matrix `B` such that `MemoryLayout(B) == layout` and
-`A[k,j] == B[k,j]` for `j ≥ k` if `uplo == 'U'` (`j ≤ k` if `uplo == 'L'`) and
-`A[k,j] == conj(B[j,k])` for `j < k` if `uplo == 'U'` (`j > k` if `uplo == 'L'`).
+`A[k,j] == B[k,j]` for `j ≥ k` if `uplo == 'U'` (`j ≤ k` if `uplo == 'L'`) and
+`A[k,j] == conj(B[j,k])` for `j < k` if `uplo == 'U'` (`j > k` if `uplo == 'L'`).
 """
 struct HermitianLayout{ML<:MemoryLayout} <: MemoryLayout end
 
