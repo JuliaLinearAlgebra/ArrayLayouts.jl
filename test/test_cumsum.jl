@@ -14,4 +14,8 @@ using ArrayLayouts, Test
     a,b = RangeCumsum(Base.OneTo(5)), RangeCumsum(Base.OneTo(6))
     @test union(a,b) ≡ union(b,a) ≡ b
     @test sort!(a) ≡ a
+
+    a = RangeCumsum(Base.OneTo(3))
+    b = RangeCumsum(1:3)
+    @test oftype(a, b) === a
 end
