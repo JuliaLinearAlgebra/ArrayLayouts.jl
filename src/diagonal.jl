@@ -20,6 +20,15 @@ copy(M::Lmul{<:DiagonalLayout}) = diagonaldata(M.A) .* M.B
 copy(M::Rmul{<:Any,<:DiagonalLayout}) = M.A .* permutedims(diagonaldata(M.B))
 
 
+dualadjoint(_) = adjoint
+dualadjoint(::Transpose) = transpose
+dualadjoint(V::SubArray) = dualadjoint(parent(V))
+function copy(M::Rmul{<:DualLayout,<:DiagonalLayout})
+    adj = dualadjoint(M.A)
+    adj(adj(M.B) * adj(M.A))
+end
+
+
 
 # Diagonal multiplication never changes structure
 similar(M::Rmul{<:Any,<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.A, T, axes)

@@ -98,6 +98,9 @@ struct FooNumber <: Number end
             @test layout_getindex(transpose(a .+ im),:,1:3) == transpose((a .+ im)[1:3])
 
             @test ArrayLayouts._copyto!(similar(a'), a') == a'
+
+            @test mul(randn(5)', Diagonal(1:5)) isa Adjoint
+            @test mul(transpose(randn(5)), Diagonal(1:5)) isa Transpose
         end
     end
 
