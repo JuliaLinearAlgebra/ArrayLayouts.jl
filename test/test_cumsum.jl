@@ -6,6 +6,7 @@ using ArrayLayouts, Test
         @test r == r
         @test r .+ 1 == cumsum(r.range) .+ 1
         @test r[Base.OneTo(3)] == r[1:3]
+        @test @view(r[Base.OneTo(3)]) == r[1:3]
         @test last(r) == r[end]
         @test diff(r) == diff(Vector(r))
         @test first(r) == r[1]

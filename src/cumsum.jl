@@ -26,6 +26,8 @@ end
 
 Base.@propagate_inbounds getindex(c::RangeCumsum, kr::OneTo) = RangeCumsum(c.range[kr])
 
+view(c::RangeCumsum, kr::OneTo) = RangeCumsum(c.range[kr])
+
 first(r::RangeCumsum) = first(r.range)
 last(r::RangeCumsum) = sum(r.range)
 diff(r::RangeCumsum) = r.range[2:end]

@@ -9,7 +9,7 @@ using Base: AbstractCartesianIndex, OneTo, RangeIndex, ReinterpretArray, Reshape
 
 import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, union, sort!,
                 ==, *, +, -, /, \, copy, copyto!, similar, getproperty, getindex, strides,
-                reverse, unsafe_convert, convert
+                reverse, unsafe_convert, convert, view
 
 using Base.Broadcast: Broadcasted
 
