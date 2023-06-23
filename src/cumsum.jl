@@ -1,7 +1,7 @@
 """
     RangeCumsum(range)
 
-represents the cumsum of a `AbstractRange`. 
+represents the cumsum of a `AbstractRange`.
 """
 struct RangeCumsum{T, RR<:AbstractRange{T}} <: LayoutVector{T}
     range::RR
@@ -31,7 +31,9 @@ last(r::RangeCumsum) = sum(r.range)
 diff(r::RangeCumsum) = r.range[2:end]
 isempty(r::RangeCumsum) = isempty(r.range)
 
-union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) = 
+union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) =
     RangeCumsum(OneTo(max(last(a.range), last(b.range))))
 
 sort!(a::RangeCumsum{<:Any,<:AbstractUnitRange}) = a
+
+convert(::Type{RangeCumsum{T,R}}, r::RangeCumsum) where {T,R} = RangeCumsum{T,R}(convert(R, r.range))

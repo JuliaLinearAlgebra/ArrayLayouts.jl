@@ -9,7 +9,7 @@ using Base: AbstractCartesianIndex, OneTo, RangeIndex, ReinterpretArray, Reshape
 
 import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, union, sort!,
                 ==, *, +, -, /, \, copy, copyto!, similar, getproperty, getindex, strides,
-                reverse, unsafe_convert
+                reverse, unsafe_convert, convert
 
 using Base.Broadcast: Broadcasted
 
@@ -51,7 +51,7 @@ else
     const CRowMaximum = RowMaximum
     const CNoPivot = NoPivot
 end
-        
+
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle})

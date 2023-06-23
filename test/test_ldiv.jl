@@ -94,7 +94,7 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
         @test LowerTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(LowerTriangular(A'), B)) ≈ (B .= Ldiv(LowerTriangular(A'), B))
         @test UnitUpperTriangular(A) \ B ≈ copyto!(similar(B) , Ldiv(UnitUpperTriangular(A), B)) ≈ (B .= Ldiv(UnitUpperTriangular(A), B))
         @test UnitUpperTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(UnitUpperTriangular(A'), B)) ≈ (B .= Ldiv(UnitUpperTriangular(A'), B))
-        @test UnitLowerTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(UnitLowerTriangular(A'), B)) ≈ (B .= Ldiv(UnitLowerTriangular(A'), B))        
+        @test UnitLowerTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(UnitLowerTriangular(A'), B)) ≈ (B .= Ldiv(UnitLowerTriangular(A'), B))
 
         C = randn(5,5) + im * randn(5,5)
         D = randn(5,5) + im * randn(5,5)

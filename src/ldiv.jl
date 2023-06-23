@@ -174,13 +174,13 @@ macro _layoutldiv(Typ)
 
         (/)(x::$Typ, A::$Typ; kwds...) = ArrayLayouts.rdiv(x,A; kwds...)
     end
-    if Typ ≠ :LayoutVector
+    if Typ ≠ :LayoutVector
         ret = quote
             $ret
             (\)(A::$Typ, x::LayoutVector; kwds...) = ArrayLayouts.ldiv(A,x; kwds...)
         end
     end
-    if Typ ≠ :LayoutMatrix
+    if Typ ≠ :LayoutMatrix
         ret = quote
             $ret
             (\)(A::$Typ, x::LayoutMatrix; kwds...) = ArrayLayouts.ldiv(A,x; kwds...)

@@ -17,9 +17,9 @@ struct FooNumber <: Number end
         @test MemoryLayout(FooBar()) == MemoryLayout(FooBar) == UnknownLayout()
 
         A = randn(6)
-        @test MemoryLayout(A) == MemoryLayout(Base.ReshapedArray(A,(2,3),())) == 
+        @test MemoryLayout(A) == MemoryLayout(Base.ReshapedArray(A,(2,3),())) ==
             MemoryLayout(reinterpret(Float32,A)) == MemoryLayout(A) == DenseColumnMajor()
-        
+
         @test MemoryLayout(view(A,1:3)) == DenseColumnMajor()
         @test MemoryLayout(view(A,Base.OneTo(3))) == DenseColumnMajor()
         @test MemoryLayout(view(A,:)) == DenseColumnMajor()
@@ -124,10 +124,10 @@ struct FooNumber <: Number end
         @test bidiagonaluplo(Bu) == bidiagonaluplo(Adjoint(Bl)) == 'U'
 
         @test diagonaldata(T) == diagonaldata(T') == diagonaldata(S) == diagonaldata(Bl) == diagonaldata(Bu)
-        @test supdiagonaldata(T) == subdiagonaldata(Adjoint(T)) == subdiagonaldata(Transpose(T)) == 
-                    supdiagonaldata(S) == subdiagonaldata(S) == 
+        @test supdiagonaldata(T) == subdiagonaldata(Adjoint(T)) == subdiagonaldata(Transpose(T)) ==
+                    supdiagonaldata(S) == subdiagonaldata(S) ==
                     supdiagonaldata(Bu) == subdiagonaldata(Adjoint(Bu)) == subdiagonaldata(Transpose(Bu))
-        @test subdiagonaldata(T) == supdiagonaldata(Adjoint(T)) == supdiagonaldata(Transpose(T)) == 
+        @test subdiagonaldata(T) == supdiagonaldata(Adjoint(T)) == supdiagonaldata(Transpose(T)) ==
                 subdiagonaldata(Bl) == supdiagonaldata(Adjoint(Bl)) == supdiagonaldata(Transpose(Bl)) ==
                 T.dl
 
@@ -184,9 +184,9 @@ struct FooNumber <: Number end
         @test symmetricdata(Symmetric(transpose(A))) ≡ transpose(A)
         @test symmetricdata(Hermitian(transpose(A))) ≡ transpose(A)
 
-        @test colsupport(Symmetric(A),2) ≡ colsupport(Symmetric(A),1:2) ≡ 
+        @test colsupport(Symmetric(A),2) ≡ colsupport(Symmetric(A),1:2) ≡
                 rowsupport(Symmetric(A),2) ≡ rowsupport(Symmetric(A),1:2) ≡ 1:2
-                @test colsupport(Hermitian(A),2) ≡ colsupport(Hermitian(A),1:2) ≡ 
+                @test colsupport(Hermitian(A),2) ≡ colsupport(Hermitian(A),1:2) ≡
                 rowsupport(Hermitian(A),2) ≡ rowsupport(Hermitian(A),1:2) ≡
                 colsupport(Symmetric(A,:L),2) ≡ colsupport(Hermitian(A,:L),2) ≡
                 rowsupport(Symmetric(A,:L),2) ≡ rowsupport(Hermitian(A,:L),2) ≡ 1:2
@@ -226,7 +226,7 @@ struct FooNumber <: Number end
         Base.size(::BandedMock) = (4, 4)
 
         A = BandedMock{Float64}()
-        
+
         for X in (Symmetric(A), Hermitian(A))
             @test colsupport(X, 1) == rowsupport(X, 1) == 1:1
             @test colsupport(X, 2) == rowsupport(X, 2) == 2:2
@@ -328,7 +328,7 @@ struct FooNumber <: Number end
         S = SymTridiagonal(Fill(1,11), Fill(2,10))
         @test MemoryLayout(S) isa SymTridiagonalLayout{FillLayout,FillLayout}
 
-        
+
         @test ArrayLayouts.mul(Eye{Int}(11), 1:11) ≡ 1:11
         @test ArrayLayouts.mul(Eye(11), 1:11) isa AbstractVector{Float64}
         @test ArrayLayouts.mul((1:11)', Eye{Int}(11)) isa AbstractMatrix{Int}
