@@ -395,6 +395,53 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test x'A ≈ transpose(x)A ≈ x.A'A.A
         @test x'A' ≈ x'transpose(A) ≈ transpose(x)A' ≈ transpose(x)transpose(A) ≈ x.A'A.A'
     end
+
+    @testset "Zeros mul" begin
+        A = MyMatrix(randn(5,5))
+        @test A*Zeros(5) ≡ Zeros(5)
+        @test A*Zeros(5,2) ≡ Zeros(5,2)
+        @test Zeros(1,5) * A ≡ Zeros(1,5)
+        @test Zeros(5)' * A ≡ Zeros(5)'
+        @test transpose(Zeros(5)) * A ≡ transpose(Zeros(5))
+
+        @test Zeros(5)' * A * (1:5) == 
+            transpose(Zeros(5)) * A * (1:5) ==
+            (1:5)' * A * Zeros(5) ==
+            transpose(1:5) * A * Zeros(5) ==
+            Zeros(5)' * A * Zeros(5) ==
+            transpose(Zeros(5)) * A * Zeros(5) == 0.0
+    end
+
+    @testset "triple *" begin
+        D = Diagonal(1:5)
+        y = MyVector(randn(5))
+        @test (1:5)' *  D * y ≈ transpose(1:5) *  D * y ≈ (1:5)' * D * y.A
+        @test y' * D * y ≈ transpose(y) * D * y ≈ y.A' * D * y.A
+        @test y' * D * (1:5) ≈ y.A' * D * (1:5)
+        @test y' * Diagonal(y) isa Adjoint
+        @test transpose(y) * Diagonal(y) isa Transpose
+
+        @test y' * D isa Adjoint
+        @test transpose(y) * D isa Transpose
+
+        @test Zeros(5)' * D * y == transpose(Zeros(5)) * D * y == 0.0
+        @test y' * D * Zeros(5) == transpose(y) * D * Zeros(5) == 0.0
+        @test Zeros(5)' * Diagonal(y) ≡ Zeros(5)'
+        @test transpose(Zeros(5)) * Diagonal(y) ≡ transpose(Zeros(5))
+        @test Zeros(5)' * Diagonal(y) * y == 0.0
+        @test transpose(Zeros(5)) * Diagonal(y) * y == 0.0
+        @test y' * Diagonal(y) * Zeros(5) == 0.0
+        @test transpose(y) * Diagonal(y) * Zeros(5) == 0.0
+        @test Zeros(5)' * Diagonal(y) * Zeros(5) == 0.0
+        @test transpose(Zeros(5)) * Diagonal(y) * Zeros(5) == 0.0
+    end
+
+    @testset "rmul with lazy and Diagonal" begin
+        D = Diagonal(1:5)
+        y = MyVector(randn(5))
+        @test mul(view(y', :, 1:5), D) isa Adjoint
+        @test mul(view(transpose(y), :, 1:5), D) isa Transpose
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}

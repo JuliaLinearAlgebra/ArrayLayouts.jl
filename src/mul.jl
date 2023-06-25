@@ -300,6 +300,16 @@ end
 *(A::Transpose{<:Any,<:LayoutVector}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A,B)
 *(A::Transpose{<:Any,<:LayoutVector}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A,B)
 
+## special routines introduced in v0.9. We need to avoid these to support ∞-arrays
+
+*(x::Adjoint{<:Any,<:LayoutVector},   D::Diagonal{<:Any,<:LayoutVector}) = mul(x, D)
+*(x::Transpose{<:Any,<:LayoutVector},   D::Diagonal{<:Any,<:LayoutVector}) = mul(x, D)
+*(x::AdjointAbsVec,   D::Diagonal, y::LayoutVector) = x * mul(D,y)
+*(x::TransposeAbsVec, D::Diagonal, y::LayoutVector) = x * mul(D,y)
+*(x::AdjointAbsVec{<:Any,<:Zeros{<:Any,1}},   D::Diagonal, y::LayoutVector) = FillArrays._triple_zeromul(x, D, y)
+*(x::TransposeAbsVec{<:Any,<:Zeros{<:Any,1}}, D::Diagonal, y::LayoutVector) = FillArrays._triple_zeromul(x, D, y)
+
+
 
 ###
 # Dot
