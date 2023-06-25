@@ -395,6 +395,22 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test x'A ≈ transpose(x)A ≈ x.A'A.A
         @test x'A' ≈ x'transpose(A) ≈ transpose(x)A' ≈ transpose(x)transpose(A) ≈ x.A'A.A'
     end
+
+    @testset "Zeros mul" begin
+        A = MyMatrix(randn(5,5))
+        @test A*Zeros(5) ≡ Zeros(5)
+        @test A*Zeros(5,2) ≡ Zeros(5,2)
+        @test Zeros(1,5) * A ≡ Zeros(1,5)
+        @test Zeros(5)' * A ≡ Zeros(5)'
+        @test transpose(Zeros(5)) * A ≡ transpose(Zeros(5))
+
+        @test Zeros(5)' * A * (1:5) == 
+            transpose(Zeros(5)) * A * (1:5) ==
+            (1:5)' * A * Zeros(5) ==
+            transpose(1:5) * A * Zeros(5) ==
+            Zeros(5)' * A * Zeros(5) ==
+            transpose(Zeros(5)) * A * Zeros(5) == 0.0
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
