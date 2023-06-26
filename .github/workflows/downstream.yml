@@ -33,6 +33,7 @@ jobs:
           - {repo: BlockArrays.jl, group: JuliaArrays}
           - {repo: BandedMatrices.jl, group: JuliaLinearAlgebra}
           - {repo: BlockBandedMatrices.jl, group: JuliaLinearAlgebra}
+          - {repo: InfiniteArrays.jl, group: JuliaArrays}
 
     steps:
       - uses: actions/checkout@v3
