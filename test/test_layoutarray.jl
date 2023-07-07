@@ -188,6 +188,10 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
             @test mul!(copy(B), A, Diagonal(Bin), 2, 3) ≈ 2A*Diagonal(Bin) + 3B
             @test mul!(copy(B), Diagonal(Bin), A, 2, 3) ≈ 2Diagonal(Bin)*A + 3B
+
+            @test mul!(view(copy(B), 1:3, 1:3), view(A, 1:3, 1:3), view(B, 1:3, 1:3)) ≈ A[1:3,1:3]*B[1:3,1:3]
+            @test mul!(Matrix{Float64}(undef, 3, 3), view(A, 1:3, 1:3), view(B, 1:3, 1:3)) ≈ A[1:3,1:3]*B[1:3,1:3]
+            @test mul!(MyMatrix(Matrix{Float64}(undef, 3, 3)), view(A, 1:3, 1:3), view(B, 1:3, 1:3)) ≈ A[1:3,1:3]*B[1:3,1:3]
         end
 
         @testset "generic_blasmul!" begin

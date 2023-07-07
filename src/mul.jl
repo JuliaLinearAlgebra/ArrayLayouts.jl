@@ -310,6 +310,12 @@ end
 *(x::TransposeAbsVec{<:Any,<:Zeros{<:Any,1}}, D::Diagonal, y::LayoutVector) = FillArrays._triple_zeromul(x, D, y)
 
 
+# mul! for subarray of layout matrix
+LinearAlgebra.mul!(C::SubArray{<:Any,2,<:LayoutMatrix}, A::SubArray{<:Any,2,<:LayoutMatrix}, B::SubArray{<:Any,2,<:LayoutMatrix}, α::Number, β::Number) =
+    ArrayLayouts.mul!(C, A, B, α, β)
+LinearAlgebra.mul!(C::AbstractMatrix, A::SubArray{<:Any,2,<:LayoutMatrix}, B::SubArray{<:Any,2,<:LayoutMatrix}, α::Number, β::Number) =
+    ArrayLayouts.mul!(C, A, B, α, β)    
+
 
 ###
 # Dot
