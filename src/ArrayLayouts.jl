@@ -154,7 +154,7 @@ end
 macro layoutgetindex(Typ)
     esc(quote
         ArrayLayouts.@_layoutgetindex $Typ
-        ArrayLayouts.@_layoutgetindex LinearAlgebra.UpperOrLowerTriangular{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutgetindex UpperOrLowerTriangular{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Symmetric{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Hermitian{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Adjoint{<:Any,<:$Typ}
