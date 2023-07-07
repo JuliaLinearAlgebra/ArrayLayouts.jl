@@ -156,7 +156,7 @@ end
 macro layoutgetindex(Typ)
     esc(quote
         ArrayLayouts.@_layoutgetindex $Typ
-        ArrayLayouts.@_layoutgetindex UpperOrLowerTriangular{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutgetindex ArrayLayouts.UpperOrLowerTriangular{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Symmetric{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Hermitian{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Adjoint{<:Any,<:$Typ}
@@ -219,21 +219,19 @@ for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian)
     end
 end
 
-# if we mean by AbstractTriangular only the four *Tringular types from LinearAlgebra, then
-# the following signatures cannot occur (adjortrans is passed on to the data array)
-# *(A::LayoutMatrix, B::Adjoint{<:Any,<:AbstractTriangular}) = mul(A, B)
-# *(A::LayoutMatrix, B::Transpose{<:Any,<:AbstractTriangular}) = mul(A, B)
-# *(A::Adjoint{<:Any,<:AbstractTriangular}, B::LayoutMatrix) = mul(A, B)
-# *(A::Transpose{<:Any,<:AbstractTriangular}, B::LayoutMatrix) = mul(A, B)
+*(A::LayoutMatrix, B::Adjoint{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::LayoutMatrix, B::Transpose{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::Adjoint{<:Any,<:AbstractTriangular}, B::LayoutMatrix) = mul(A, B)
+*(A::Transpose{<:Any,<:AbstractTriangular}, B::LayoutMatrix) = mul(A, B)
 
-# *(A::Transpose{<:Any,<:AbstractTriangular}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A, B)
-# *(A::Adjoint{<:Any,<:AbstractTriangular}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A, B)
-# *(A::Adjoint{<:Any,<:AbstractTriangular}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A, B)
-# *(A::Transpose{<:Any,<:AbstractTriangular}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A, B)
-# *(A::Adjoint{<:Any,<:LayoutMatrix}, B::Transpose{<:Any,<:AbstractTriangular}) = mul(A, B)
-# *(A::Transpose{<:Any,<:LayoutMatrix}, B::Adjoint{<:Any,<:AbstractTriangular}) = mul(A, B)
-# *(A::Adjoint{<:Any,<:LayoutMatrix}, B::Adjoint{<:Any,<:AbstractTriangular}) = mul(A, B)
-# *(A::Transpose{<:Any,<:LayoutMatrix}, B::Transpose{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::Transpose{<:Any,<:AbstractTriangular}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::Adjoint{<:Any,<:AbstractTriangular}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::Adjoint{<:Any,<:AbstractTriangular}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::Transpose{<:Any,<:AbstractTriangular}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::Adjoint{<:Any,<:LayoutMatrix}, B::Transpose{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::Transpose{<:Any,<:LayoutMatrix}, B::Adjoint{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::Adjoint{<:Any,<:LayoutMatrix}, B::Adjoint{<:Any,<:AbstractTriangular}) = mul(A, B)
+*(A::Transpose{<:Any,<:LayoutMatrix}, B::Transpose{<:Any,<:AbstractTriangular}) = mul(A, B)
 
 \(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
 \(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = ldiv(A, B)
