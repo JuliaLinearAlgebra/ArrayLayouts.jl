@@ -55,8 +55,10 @@ end
 if isdefined(LinearAlgebra, :UpperOrLowerTriangular) # VERSION ≥ v"1.10-"
     using LinearAlgebra: UpperOrLowerTriangular
 else
-    const UpperOrLowerTriangular{T,S} = Union{UpperTriangular{T,S}, UnitUpperTriangular{T,S},
-                                            LowerTriangular{T,S}, UnitLowerTriangular{T,S}}
+    const UpperOrLowerTriangular{T,S} = Union{LinearAlgebra.UpperTriangular{T,S},
+                                            LinearAlgebra.UnitUpperTriangular{T,S},
+                                            LinearAlgebra.LowerTriangular{T,S},
+                                            LinearAlgebra.UnitLowerTriangular{T,S}}
 end
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
