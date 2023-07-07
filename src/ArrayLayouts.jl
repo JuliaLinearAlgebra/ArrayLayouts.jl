@@ -52,7 +52,7 @@ else
     const CNoPivot = NoPivot
 end
 
-if isdefined(LinearAlgebra, :UpperOrLowerTriangular) # VERSION ≥ v"1.10-"
+if VERSION ≥ v"1.10-"
     using LinearAlgebra: UpperOrLowerTriangular
 else
     const UpperOrLowerTriangular{T,S} = Union{LinearAlgebra.UpperTriangular{T,S},
