@@ -52,12 +52,9 @@ else
     const CNoPivot = NoPivot
 end
 
-if isdefined(FillArrays, :_copy_oftype)
-    const _copy_oftype = FillArrays._copy_oftype
-else
-    _copy_oftype(A::AbstractArray, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : AbstractArray{S}(A)
-    _copy_oftype(A::AbstractRange, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : map(S, A)
-end
+# Originally defined in FillArrays
+_copy_oftype(A::AbstractArray, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : AbstractArray{S}(A)
+_copy_oftype(A::AbstractRange, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : map(S, A)
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle})
