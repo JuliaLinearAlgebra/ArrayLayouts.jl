@@ -25,7 +25,7 @@ using LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
 AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
 
-using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype
+using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row
 
 using Base: require_one_based_indexing
 
@@ -52,6 +52,9 @@ else
     const CNoPivot = NoPivot
 end
 
+# Originally defined in FillArrays
+_copy_oftype(A::AbstractArray, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : AbstractArray{S}(A)
+_copy_oftype(A::AbstractRange, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : map(S, A)
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle})
