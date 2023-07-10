@@ -25,7 +25,7 @@ using LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
 AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
 
-using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype
+using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row
 
 using Base: require_one_based_indexing
 
@@ -56,10 +56,14 @@ if VERSION ≥ v"1.11.0-DEV.21"
     using LinearAlgebra: UpperOrLowerTriangular
 else
     const UpperOrLowerTriangular{T,S} = Union{LinearAlgebra.UpperTriangular{T,S},
-                                            LinearAlgebra.UnitUpperTriangular{T,S},
-                                            LinearAlgebra.LowerTriangular{T,S},
-                                            LinearAlgebra.UnitLowerTriangular{T,S}}
+                                              LinearAlgebra.UnitUpperTriangular{T,S},
+                                              LinearAlgebra.LowerTriangular{T,S},
+                                              LinearAlgebra.UnitLowerTriangular{T,S}}
 end
+
+# Originally defined in FillArrays
+_copy_oftype(A::AbstractArray, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : AbstractArray{S}(A)
+_copy_oftype(A::AbstractRange, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : map(S, A)
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle})
