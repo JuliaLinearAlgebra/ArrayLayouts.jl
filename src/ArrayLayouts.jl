@@ -52,6 +52,15 @@ else
     const CNoPivot = NoPivot
 end
 
+if VERSION ≥ v"1.11.0-DEV.21"
+    using LinearAlgebra: UpperOrLowerTriangular
+else
+    const UpperOrLowerTriangular{T,S} = Union{LinearAlgebra.UpperTriangular{T,S},
+                                              LinearAlgebra.UnitUpperTriangular{T,S},
+                                              LinearAlgebra.LowerTriangular{T,S},
+                                              LinearAlgebra.UnitLowerTriangular{T,S}}
+end
+
 # Originally defined in FillArrays
 _copy_oftype(A::AbstractArray, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : AbstractArray{S}(A)
 _copy_oftype(A::AbstractRange, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : map(S, A)
@@ -151,7 +160,7 @@ end
 macro layoutgetindex(Typ)
     esc(quote
         ArrayLayouts.@_layoutgetindex $Typ
-        ArrayLayouts.@_layoutgetindex LinearAlgebra.AbstractTriangular{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutgetindex ArrayLayouts.UpperOrLowerTriangular{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Symmetric{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Hermitian{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Adjoint{<:Any,<:$Typ}
@@ -361,7 +370,7 @@ Base.replace_in_print_matrix(A::Union{LayoutVector,
 Base.print_matrix_row(io::IO,
         X::Union{LayoutMatrix,
         LayoutVector,
-        AbstractTriangular{<:Any,<:LayoutMatrix},
+        UpperOrLowerTriangular{<:Any,<:LayoutMatrix},
         AdjOrTrans{<:Any,<:LayoutMatrix},
         AdjOrTrans{<:Any,<:LayoutVector},
         HermOrSym{<:Any,<:LayoutMatrix},
