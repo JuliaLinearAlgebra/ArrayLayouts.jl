@@ -37,6 +37,7 @@ jobs:
           - {repo: LazyArrays.jl, group: JuliaArrays}
           - {repo: LazyBandedMatrices.jl, group: JuliaLinearAlgebra}
           - {repo: InfiniteLinearAlgebra.jl, group: JuliaLinearAlgebra}
+          - {repo: MatrixFactorizations.jl, group: JuliaLinearAlgebra}
 
     steps:
       - uses: actions/checkout@v3
