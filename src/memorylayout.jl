@@ -716,8 +716,8 @@ end
 
 axes(A::HermOrSym{<:Any,<:LayoutMatrix}) = _sym_axes(A)
 axes(A::HermOrSym{<:Any,<:SubArray{<:Any,2,<:LayoutMatrix}}) = _sym_axes(A)
-axes(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = axes(parent(A))
-axes(A::UpperOrLowerTriangular{<:Any,<:SubArray{<:Any,2,<:LayoutMatrix}}) = axes(parent(A))
+axes(A::AbsTriangular{<:Any,<:LayoutMatrix}) = axes(parent(A))
+axes(A::AbsTriangular{<:Any,<:SubArray{<:Any,2,<:LayoutMatrix}}) = axes(parent(A))
 
 function axes(D::Diagonal{<:Any,<:LayoutVector})
     a = axes(parent(D),1)
