@@ -3,7 +3,7 @@ using Base: _typed_hcat
 using Base, Base.Broadcast, LinearAlgebra, FillArrays, SparseArrays
 using LinearAlgebra.BLAS
 
-using Base: AbstractCartesianIndex, OneTo, RangeIndex, ReinterpretArray, ReshapedArray,
+using Base: AbstractCartesianIndex, OneTo, oneto, RangeIndex, ReinterpretArray, ReshapedArray,
             Slice, tuple_type_tail, unalias,
             @propagate_inbounds, @_propagate_inbounds_meta
 
