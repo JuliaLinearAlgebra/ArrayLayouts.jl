@@ -446,6 +446,15 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test mul(view(y', :, 1:5), D) isa Adjoint
         @test mul(view(transpose(y), :, 1:5), D) isa Transpose
     end
+
+    @testset "Tri * Tri" begin
+        A = MyMatrix(randn(3,3))
+        @test UpperTriangular(A) * LowerTriangular(A) ≈ UpperTriangular(A.A) * LowerTriangular(A.A)
+        @test UpperTriangular(A) * UnitUpperTriangular(A) ≈ UpperTriangular(A.A) * UnitUpperTriangular(A.A)
+        @test UpperTriangular(A') * UnitUpperTriangular(A) ≈ UpperTriangular(A.A') * UnitUpperTriangular(A.A)
+        @test UpperTriangular(A) * UnitUpperTriangular(A') ≈ UpperTriangular(A.A) * UnitUpperTriangular(A.A')
+        @test UpperTriangular(A') * UnitUpperTriangular(A') ≈ UpperTriangular(A.A') * UnitUpperTriangular(A.A')
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
