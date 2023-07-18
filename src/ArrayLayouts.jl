@@ -154,6 +154,7 @@ macro _layoutgetindex(Typ)
         @inline getindex(A::$Typ, kr::AbstractVector, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
         @inline getindex(A::$Typ, kr::Integer, jr::Colon) = ArrayLayouts.layout_getindex(A, kr, jr)
         @inline getindex(A::$Typ, kr::Integer, jr::AbstractVector) = ArrayLayouts.layout_getindex(A, kr, jr)
+        @inline getindex(A::$Typ, kr::AbstractVector, jr::Integer) = ArrayLayouts.layout_getindex(A, kr, jr)
     end)
 end
 

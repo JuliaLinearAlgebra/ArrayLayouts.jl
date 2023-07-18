@@ -46,7 +46,7 @@ end
 function _getindex(::Type{Tuple{AA,BB}}, M::Mul, (k, j)::Tuple{AA,BB}) where {AA,BB}
     A,B = M.A,M.B
     I = rowsupport(A,k) ∩ colsupport(B,j)
-    dot(A[k,I], B[I,j])
+    A[k,I]'*B[I,j]
 end
 
 # linear indexing
