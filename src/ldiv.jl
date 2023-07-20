@@ -200,6 +200,16 @@ macro layoutldiv(Typ)
         ArrayLayouts.@_layoutldiv UnitUpperTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
         ArrayLayouts.@_layoutldiv LowerTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
         ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
+
+        ArrayLayouts.@_layoutldiv UpperTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv UnitUpperTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv LowerTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+
+        ArrayLayouts.@_layoutldiv UpperTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv UnitUpperTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv LowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
     end)
 end
 

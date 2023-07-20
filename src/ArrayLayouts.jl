@@ -364,7 +364,11 @@ Base.replace_in_print_matrix(A::Union{LayoutVector,
                                       UnitLowerTriangular{<:Any,<:LayoutMatrix},
                                       AdjOrTrans{<:Any,<:LayoutVecOrMat},
                                       HermOrSym{<:Any,<:LayoutMatrix},
-                                      SubArray{<:Any,2,<:LayoutMatrix}}, i::Integer, j::Integer, s::AbstractString) =
+                                      SubArray{<:Any,2,<:LayoutMatrix},
+                                      UpperTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}},
+                                      UnitUpperTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}},
+                                      LowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}},
+                                      UnitLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}}, i::Integer, j::Integer, s::AbstractString) =
     layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)
 
 Base.print_matrix_row(io::IO,
