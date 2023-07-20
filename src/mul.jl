@@ -309,11 +309,10 @@ end
 *(x::AdjointAbsVec{<:Any,<:Zeros{<:Any,1}},   D::Diagonal, y::LayoutVector) = FillArrays._triple_zeromul(x, D, y)
 *(x::TransposeAbsVec{<:Any,<:Zeros{<:Any,1}}, D::Diagonal, y::LayoutVector) = FillArrays._triple_zeromul(x, D, y)
 
-
-*(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
-*(A::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}, B::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
-*(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}) = mul(A, B)
-*(A::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}, B::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}) = mul(A, B)
+*(A::AbsTriangular{<:Any,<:LayoutMatrix}, B::AbsTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::AbsTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}, B::AbsTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::AbsTriangular{<:Any,<:LayoutMatrix}, B::AbsTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}) = mul(A, B)
+*(A::AbsTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}, B::AbsTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}) = mul(A, B)
 
 
 # mul! for subarray of layout matrix
