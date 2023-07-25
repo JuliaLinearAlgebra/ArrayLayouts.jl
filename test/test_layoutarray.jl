@@ -233,6 +233,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test A\MyMatrix(X) ≈ A\X
 
             VERSION >= v"1.9-" && @test A/A ≈ A.A / A.A
+
+            @test x' / A ≈ x' / A.A
+            @test transpose(x) / A ≈ transpose(x) / A.A 
         end
 
         @testset "dot" begin
@@ -454,6 +457,11 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test UpperTriangular(A') * UnitUpperTriangular(A) ≈ UpperTriangular(A.A') * UnitUpperTriangular(A.A)
         @test UpperTriangular(A) * UnitUpperTriangular(A') ≈ UpperTriangular(A.A) * UnitUpperTriangular(A.A')
         @test UpperTriangular(A') * UnitUpperTriangular(A') ≈ UpperTriangular(A.A') * UnitUpperTriangular(A.A')
+    end
+
+    @testset "copymutable_oftype" begin
+        A = MyMatrix(randn(3,3))
+        @test LinearAlgebra.copymutable_oftype(A, BigFloat) == A
     end
 end
 
