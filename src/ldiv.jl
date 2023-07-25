@@ -171,6 +171,8 @@ macro _layoutldiv(Typ)
         (/)(A::$Typ, D::Diagonal; kwds...) = ArrayLayouts.rdiv(A,D; kwds...)
 
         (/)(x::$Typ, A::$Typ; kwds...) = ArrayLayouts.rdiv(x,A; kwds...)
+        (/)(D::Adjoint{<:Any,<:AbstractVector}, A::$Typ; kwds...) = ArrayLayouts.rdiv(D,A; kwds...)
+        (/)(D::Transpose{<:Any,<:AbstractVector}, A::$Typ; kwds...) = ArrayLayouts.rdiv(D,A; kwds...)
     end
     if Typ ≠ :LayoutVector
         ret = quote
