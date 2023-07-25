@@ -463,9 +463,11 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test UpperTriangular(A') * UnitUpperTriangular(A') ≈ UpperTriangular(A.A') * UnitUpperTriangular(A.A')
     end
 
-    @testset "copymutable_oftype" begin
-        A = MyMatrix(randn(3,3))
-        @test LinearAlgebra.copymutable_oftype(A, BigFloat) == A
+    if isdefined(LinearAlgebra, :copymutable_oftype)
+        @testset "copymutable_oftype" begin
+            A = MyMatrix(randn(3,3))
+            @test LinearAlgebra.copymutable_oftype(A, BigFloat) == A
+        end
     end
 end
 
