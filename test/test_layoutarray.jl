@@ -64,8 +64,12 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test A[kr,jr] == A.A[kr,jr]
         end
         b = randn(5)
+        B = randn(5,5)
         for Tri in (UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriangular)
             @test ldiv!(Tri(A), copy(b)) ≈ ldiv!(Tri(A.A), copy(b)) ≈ Tri(A.A) \ MyVector(b)
+            @test ldiv!(Tri(A), copy(B)) ≈ ldiv!(Tri(A.A), copy(B)) ≈ Tri(A.A) \ MyMatrix(B)
+            @test rdiv!(copy(b)', Tri(A)) ≈ rdiv!(copy(b)', Tri(A.A)) ≈ MyVector(b)' / Tri(A.A)
+            @test rdiv!(copy(B), Tri(A)) ≈ rdiv!(copy(B), Tri(A.A)) ≈ B / Tri(A.A)
             @test lmul!(Tri(A), copy(b)) ≈ lmul!(Tri(A.A), copy(b)) ≈ Tri(A.A) * MyVector(b)
         end
 
