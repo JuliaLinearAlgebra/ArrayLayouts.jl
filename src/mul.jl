@@ -46,7 +46,7 @@ end
 function _getindex(::Type{Tuple{AA,BB}}, M::Mul{SA,SB}, (k, j)::Tuple{AA,BB}) where {AA,BB,SA,SB}
     A,B = M.A,M.B
     I = rowsupport(A,k) ∩ colsupport(B,j)
-    maybeview(A,k,I)'*maybeview(B,I,j)
+    transpose(maybeview(A,k,I))*maybeview(B,I,j)
 end
 
 maybeview(A::AbstractArray, k...) = maybeview_layout(MemoryLayout(A), k...)
