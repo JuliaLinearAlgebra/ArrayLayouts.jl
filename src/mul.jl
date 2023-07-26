@@ -43,11 +43,14 @@ function _getindex(::Type{Tuple{AA}}, M::Mul, (k,)::Tuple{AA}) where AA
     ret
 end
 
-function _getindex(::Type{Tuple{AA,BB}}, M::Mul, (k, j)::Tuple{AA,BB}) where {AA,BB}
+function _getindex(::Type{Tuple{AA,BB}}, M::Mul{SA,SB}, (k, j)::Tuple{AA,BB}) where {AA,BB,SA,SB}
     A,B = M.A,M.B
     I = rowsupport(A,k) ∩ colsupport(B,j)
-    A[k,I]'*B[I,j]
+    maybeview(A,k,I)'*maybeview(B,I,j)
 end
+
+maybeview(A::AbstractArray, k...) = maybeview_layout(MemoryLayout(A), k...)
+maybeview_layout(::MemoryLayout, A, k...) = view(A, k...)
 
 # linear indexing
 _getindex(::Type{NTuple{2,Int}}, M, k::Tuple{Int}) = M[Base._ind2sub(axes(M), k...)...]
