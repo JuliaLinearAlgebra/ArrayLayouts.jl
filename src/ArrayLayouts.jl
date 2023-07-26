@@ -270,6 +270,12 @@ copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutA
 # ambiguity from sparsematrix.jl
 copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
 copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
+if isdefined(LinearAlgebra, :copymutable_oftype)
+    LinearAlgebra.copymutable_oftype(A::Union{LayoutArray,Symmetric{<:Any,<:LayoutMatrix},Hermitian{<:Any,<:LayoutMatrix},
+                                                                UpperOrLowerTriangular{<:Any,<:LayoutMatrix},
+                                                                AdjOrTrans{<:Any,<:LayoutMatrix}}, ::Type{T}) where T = copymutable_oftype_layout(MemoryLayout(A), A, T)
+end
+copymutable_oftype_layout(_, A, ::Type{S}) where S = copyto!(similar(A, S), A)
 
 # avoid bad copy in Base
 Base.map(::typeof(copy), D::Diagonal{<:LayoutArray}) = Diagonal(map(copy, D.diag))

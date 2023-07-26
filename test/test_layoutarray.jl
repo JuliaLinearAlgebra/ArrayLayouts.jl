@@ -64,8 +64,14 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test A[kr,jr] == A.A[kr,jr]
         end
         b = randn(5)
+        B = randn(5,5)
         for Tri in (UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriangular)
             @test ldiv!(Tri(A), copy(b)) ≈ ldiv!(Tri(A.A), copy(b)) ≈ Tri(A.A) \ MyVector(b)
+            @test ldiv!(Tri(A), copy(B)) ≈ ldiv!(Tri(A.A), copy(B)) ≈ Tri(A.A) \ MyMatrix(B)
+            if VERSION ≥ v"1.9"
+                @test rdiv!(copy(b)', Tri(A)) ≈ rdiv!(copy(b)', Tri(A.A)) ≈ MyVector(b)' / Tri(A.A)
+                @test rdiv!(copy(B), Tri(A)) ≈ rdiv!(copy(B), Tri(A.A)) ≈ B / Tri(A.A)
+            end
             @test lmul!(Tri(A), copy(b)) ≈ lmul!(Tri(A.A), copy(b)) ≈ Tri(A.A) * MyVector(b)
         end
 
@@ -112,7 +118,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(MyVector(b)))
             @test cholesky(S) \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
             @test cholesky(S) \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
-            if VERSION >= v"1.9-"
+            if VERSION >= v"1.9"
                 @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
                 @test S \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
             end
@@ -122,19 +128,19 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test cholesky(S,CRowMaximum()).U ≈ cholesky(Matrix(S),CRowMaximum()).U
             @test cholesky(S) \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
             @test cholesky(S) \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
-            if VERSION >= v"1.9-"
+            if VERSION >= v"1.9"
                 @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
                 @test S \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
             end
 
             @testset "ldiv!" begin
                 c = MyVector(randn(5))
-                if VERSION < v"1.9-"
+                if VERSION < v"1.9"
                     @test_broken ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
                 else
                     @test ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
                 end
-                if VERSION < v"1.9-" || VERSION >= v"1.10-"
+                if VERSION < v"1.9" || VERSION >= v"1.10-"
                     @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c)))
                 else
                     @test_throws MethodError ldiv!(qr(A), MyVector(copy(c)))
@@ -221,18 +227,24 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test_broken ldiv!(A, t) ≈ A\t
             @test ldiv!(A, copy(X)) ≈ A\X
             @test A\T ≈ A\T̃
-            VERSION >= v"1.9-" && @test A/T ≈ A/T̃
+            VERSION >= v"1.9" && @test A/T ≈ A/T̃
             @test_broken ldiv!(A, T) ≈ A\T
             @test B\A ≈ B\Matrix(A)
             @test D \ A ≈ D \ Matrix(A)
             @test transpose(B)\A ≈ transpose(B)\Matrix(A) ≈ Transpose(B)\A ≈ Adjoint(B)\A
             @test B'\A ≈ B'\Matrix(A)
             @test A\A ≈ I
-            VERSION >= v"1.9-" && @test A/A ≈ I
+            VERSION >= v"1.9" && @test A/A ≈ I
             @test A\MyVector(x) ≈ A\x
             @test A\MyMatrix(X) ≈ A\X
 
-            VERSION >= v"1.9-" && @test A/A ≈ A.A / A.A
+            if VERSION >= v"1.9"
+                @test A/A ≈ A.A / A.A
+                @test x' / A ≈ x' / A.A
+                @test transpose(x) / A ≈ transpose(x) / A.A 
+                @test transpose(x) / A isa Transpose
+                @test x' / A isa Adjoint
+            end
         end
 
         @testset "dot" begin
@@ -455,6 +467,13 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test UpperTriangular(A) * UnitUpperTriangular(A') ≈ UpperTriangular(A.A) * UnitUpperTriangular(A.A')
         @test UpperTriangular(A') * UnitUpperTriangular(A') ≈ UpperTriangular(A.A') * UnitUpperTriangular(A.A')
     end
+
+    if isdefined(LinearAlgebra, :copymutable_oftype)
+        @testset "copymutable_oftype" begin
+            A = MyMatrix(randn(3,3))
+            @test LinearAlgebra.copymutable_oftype(A, BigFloat) == A
+        end
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
@@ -498,5 +517,5 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     @test_skip lmul!(U,view(copy(B),collect(1:5),1:5)) ≈ U * B
 
     @test MyMatrix(A) / U ≈ A / U
-    VERSION >= v"1.9-" && @test U / MyMatrix(A) ≈ U / A
+    VERSION >= v"1.9" && @test U / MyMatrix(A) ≈ U / A
 end
