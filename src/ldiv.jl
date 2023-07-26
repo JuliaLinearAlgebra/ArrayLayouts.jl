@@ -23,6 +23,8 @@ for Typ in (:Ldiv, :Rdiv)
     end
 end
 
+similar(A::Rdiv{<:DualLayout}, ::Type{T}, (ax1,ax2)) where T = dualadjoint(A.A)(similar(Array{T}, (ax2,)))
+
 @inline _ldivaxes(::Tuple{}, ::Tuple{}) = ()
 @inline _ldivaxes(::Tuple{}, Bax::Tuple) = Bax
 @inline _ldivaxes(::Tuple{<:Any}, ::Tuple{<:Any}) = ()
@@ -80,8 +82,18 @@ __ldiv!(_, F, B) = LinearAlgebra.ldiv!(F, B)
 
 @inline _ldiv!(dest, A, B; kwds...) = ldiv!(dest, factorize(A), B; kwds...)
 @inline _ldiv!(dest, A::Factorization, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
-@inline _ldiv!(dest, A::Transpose{<:Any,<:Factorization}, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
-@inline _ldiv!(dest, A::Adjoint{<:Any,<:Factorization}, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
+
+if VERSION ≥ v"1.10-"
+    using LinearAlgebra: TransposeFactorization, AdjointFactorization
+else
+    const TransposeFactorization = Transpose
+    const AdjointFactorization = Adjoint
+
+end
+@inline _ldiv!(dest, A::TransposeFactorization{<:Any,<:Factorization}, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
+@inline _ldiv!(dest, A::AdjointFactorization{<:Any,<:Factorization}, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
+
+
 
 @inline ldiv(A, B; kwds...) = materialize(Ldiv(A,B); kwds...)
 @inline rdiv(A, B; kwds...) = materialize(Rdiv(A,B); kwds...)
@@ -94,7 +106,10 @@ __ldiv!(_, F, B) = LinearAlgebra.ldiv!(F, B)
 
 @inline materialize!(M::Ldiv) = _ldiv!(M.A, M.B)
 @inline materialize!(M::Rdiv) = ldiv!(M.B', M.A')'
-@inline copyto!(dest::AbstractArray, M::Rdiv; kwds...) = copyto!(dest', Ldiv(M.B', M.A'); kwds...)'
+@inline function copyto!(dest::AbstractArray, M::Rdiv; kwds...)
+    adj = dualadjoint(dest)
+    adj(copyto!(adj(dest), Ldiv(adj(M.B), adj(M.A)); kwds...))
+end
 @inline copyto!(dest::AbstractArray, M::Ldiv; kwds...) = _ldiv!(dest, M.A, copy(M.B); kwds...)
 
 const MatLdivVec{styleA, styleB, T, V} = Ldiv{styleA, styleB, <:AbstractMatrix{T}, <:AbstractVector{V}}
