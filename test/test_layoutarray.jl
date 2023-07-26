@@ -236,10 +236,11 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test A\MyVector(x) ≈ A\x
             @test A\MyMatrix(X) ≈ A\X
 
-            VERSION >= v"1.9-" && @test A/A ≈ A.A / A.A
-
-            @test x' / A ≈ x' / A.A
-            @test transpose(x) / A ≈ transpose(x) / A.A 
+            if VERSION >= v"1.9-"
+                @test A/A ≈ A.A / A.A
+                @test x' / A ≈ x' / A.A
+                @test transpose(x) / A ≈ transpose(x) / A.A 
+            end
         end
 
         @testset "dot" begin
