@@ -196,7 +196,7 @@ BLAS.trmm!('R', 'L', 'C', UNIT, one(T), triangulardata(A)', x)
 end
 
 
-materialize!(M::MatRmulMat{<:AbstractStridedLayout,<:TriangularLayout}) = LinearAlgebra.rmul!(M.A, M.B)
+materialize!(M::MatRmulMat{<:AbstractStridedLayout,<:TriangularLayout}) = LinearAlgebra.lmul!(M.B', M.A')'
 
 
 ########
