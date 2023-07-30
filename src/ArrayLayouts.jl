@@ -175,6 +175,7 @@ macro layoutmatrix(Typ)
         ArrayLayouts.@layoutldiv $Typ
         ArrayLayouts.@layoutmul $Typ
         ArrayLayouts.@layoutlmul $Typ
+        ArrayLayouts.@layoutrmul $Typ
         ArrayLayouts.@layoutfactorizations $Typ
         ArrayLayouts.@layoutgetindex $Typ
     end)
