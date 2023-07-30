@@ -115,6 +115,16 @@ macro layoutlmul(Typ)
         ArrayLayouts.@_layoutlmul UnitUpperTriangular{T, <:$Typ{T}} where T
         ArrayLayouts.@_layoutlmul LowerTriangular{T, <:$Typ{T}} where T
         ArrayLayouts.@_layoutlmul UnitLowerTriangular{T, <:$Typ{T}} where T
+
+        ArrayLayouts.@_layoutlmul UpperTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutlmul UnitUpperTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutlmul LowerTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutlmul UnitLowerTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+
+        ArrayLayouts.@_layoutlmul UpperTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutlmul UnitUpperTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutlmul LowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutlmul UnitLowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T         
     end)
 end
 
@@ -131,5 +141,15 @@ macro layoutrmul(Typ)
         ArrayLayouts.@_layoutrmul UnitUpperTriangular{T, <:$Typ{T}} where T
         ArrayLayouts.@_layoutrmul LowerTriangular{T, <:$Typ{T}} where T
         ArrayLayouts.@_layoutrmul UnitLowerTriangular{T, <:$Typ{T}} where T
+
+        ArrayLayouts.@_layoutrmul UpperTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutrmul UnitUpperTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutrmul LowerTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutrmul UnitLowerTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+
+        ArrayLayouts.@_layoutrmul UpperTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutrmul UnitUpperTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutrmul LowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutrmul UnitLowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T        
     end)
 end
