@@ -156,6 +156,8 @@ macro _layoutldiv(Typ)
 
         LinearAlgebra.rdiv!(A::AbstractMatrix, B::$Typ; kwds...) = ArrayLayouts.rdiv!(A,B; kwds...)
 
+        # Fix ambiguity issue
+        LinearAlgebra.rdiv!(A::StridedMatrix, B::$Typ; kwds...) = ArrayLayouts.rdiv!(A,B; kwds...)
 
         (\)(A::$Typ, x::AbstractVector; kwds...) = ArrayLayouts.ldiv(A,x; kwds...)
         (\)(A::$Typ, x::AbstractMatrix; kwds...) = ArrayLayouts.ldiv(A,x; kwds...)
