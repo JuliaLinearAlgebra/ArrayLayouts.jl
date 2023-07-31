@@ -1,6 +1,6 @@
 module ArrayLayouts
 using Base: _typed_hcat
-using Base, Base.Broadcast, LinearAlgebra, FillArrays, SparseArrays
+using Base, Base.Broadcast, LinearAlgebra, FillArrays
 using LinearAlgebra.BLAS
 
 using Base: AbstractCartesianIndex, OneTo, oneto, RangeIndex, ReinterpretArray, ReshapedArray,
@@ -120,6 +120,10 @@ include("ldiv.jl")
 include("diagonal.jl")
 include("triangular.jl")
 include("factorizations.jl")
+
+@static if !isdefined(Base, :get_extension)
+    include("../ext/ArrayLayoutsSparseArraysExt.jl")
+end
 
 # Extend this function if you're only looking to dispatch on the axes
 @inline sub_materialize_axes(V, _) = Array(V)
@@ -268,9 +272,6 @@ copyto!(dest::AbstractMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(d
 copyto!(dest::SubArray{<:Any,2,<:LayoutArray}, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
 copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
 copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
-# ambiguity from sparsematrix.jl
-copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
-copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
 if isdefined(LinearAlgebra, :copymutable_oftype)
     LinearAlgebra.copymutable_oftype(A::Union{LayoutArray,Symmetric{<:Any,<:LayoutMatrix},Hermitian{<:Any,<:LayoutMatrix},
                                                                 UpperOrLowerTriangular{<:Any,<:LayoutMatrix},
