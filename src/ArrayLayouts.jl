@@ -1,6 +1,6 @@
 module ArrayLayouts
 using Base: _typed_hcat
-using Base, Base.Broadcast, LinearAlgebra, FillArrays
+using Base.Broadcast, LinearAlgebra, FillArrays
 using LinearAlgebra.BLAS
 
 using Base: AbstractCartesianIndex, OneTo, oneto, RangeIndex, ReinterpretArray, ReshapedArray,
