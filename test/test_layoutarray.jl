@@ -474,6 +474,29 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test LinearAlgebra.copymutable_oftype(A, BigFloat) == A
         end
     end
+
+    @testset "sparse" begin
+        @testset "MyVector" begin
+            V = MyVector([1:4;])
+            V2 = MyVector(2*[1:4;])
+            S = 2*sparse(V)
+            copyto!(V, S)
+            @test S == V2
+            V = MyVector([1:4;])
+            copyto!(view(V, :), S)
+            @test S == V2
+        end
+        @testset "MyMatrix" begin
+            M = MyMatrix(reshape([1:4;], 2, 2))
+            M2 = MyMatrix(reshape(2*[1:4;], 2, 2))
+            S = 2*sparse(M)
+            copyto!(M, S)
+            @test S == M2
+            M = MyMatrix(reshape([1:4;], 2, 2))
+            copyto!(view(M, :, :), S)
+            @test S == M2
+        end
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
