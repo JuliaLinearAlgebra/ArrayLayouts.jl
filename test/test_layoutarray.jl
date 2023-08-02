@@ -64,8 +64,14 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test A[kr,jr] == A.A[kr,jr]
         end
         b = randn(5)
+        B = randn(5,5)
         for Tri in (UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriangular)
             @test ldiv!(Tri(A), copy(b)) ≈ ldiv!(Tri(A.A), copy(b)) ≈ Tri(A.A) \ MyVector(b)
+            @test ldiv!(Tri(A), copy(B)) ≈ ldiv!(Tri(A.A), copy(B)) ≈ Tri(A.A) \ MyMatrix(B)
+            if VERSION ≥ v"1.9"
+                @test rdiv!(copy(b)', Tri(A)) ≈ rdiv!(copy(b)', Tri(A.A)) ≈ MyVector(b)' / Tri(A.A)
+                @test rdiv!(copy(B), Tri(A)) ≈ rdiv!(copy(B), Tri(A.A)) ≈ B / Tri(A.A)
+            end
             @test lmul!(Tri(A), copy(b)) ≈ lmul!(Tri(A.A), copy(b)) ≈ Tri(A.A) * MyVector(b)
         end
 
@@ -112,7 +118,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(MyVector(b)))
             @test cholesky(S) \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
             @test cholesky(S) \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
-            if VERSION >= v"1.9-"
+            if VERSION >= v"1.9"
                 @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
                 @test S \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
             end
@@ -122,19 +128,19 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test cholesky(S,CRowMaximum()).U ≈ cholesky(Matrix(S),CRowMaximum()).U
             @test cholesky(S) \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
             @test cholesky(S) \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
-            if VERSION >= v"1.9-"
+            if VERSION >= v"1.9"
                 @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
                 @test S \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
             end
 
             @testset "ldiv!" begin
                 c = MyVector(randn(5))
-                if VERSION < v"1.9-"
+                if VERSION < v"1.9"
                     @test_broken ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
                 else
                     @test ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
                 end
-                if VERSION < v"1.9-" || VERSION >= v"1.10-"
+                if VERSION < v"1.9" || VERSION >= v"1.10-"
                     @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c)))
                 else
                     @test_throws MethodError ldiv!(qr(A), MyVector(copy(c)))
@@ -188,6 +194,10 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
             @test mul!(copy(B), A, Diagonal(Bin), 2, 3) ≈ 2A*Diagonal(Bin) + 3B
             @test mul!(copy(B), Diagonal(Bin), A, 2, 3) ≈ 2Diagonal(Bin)*A + 3B
+
+            @test mul!(view(copy(B), 1:3, 1:3), view(A, 1:3, 1:3), view(B, 1:3, 1:3)) ≈ A[1:3,1:3]*B[1:3,1:3]
+            @test mul!(Matrix{Float64}(undef, 3, 3), view(A, 1:3, 1:3), view(B, 1:3, 1:3)) ≈ A[1:3,1:3]*B[1:3,1:3]
+            @test mul!(MyMatrix(Matrix{Float64}(undef, 3, 3)), view(A, 1:3, 1:3), view(B, 1:3, 1:3)) ≈ A[1:3,1:3]*B[1:3,1:3]
         end
 
         @testset "generic_blasmul!" begin
@@ -217,18 +227,24 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test_broken ldiv!(A, t) ≈ A\t
             @test ldiv!(A, copy(X)) ≈ A\X
             @test A\T ≈ A\T̃
-            VERSION >= v"1.9-" && @test A/T ≈ A/T̃
+            VERSION >= v"1.9" && @test A/T ≈ A/T̃
             @test_broken ldiv!(A, T) ≈ A\T
             @test B\A ≈ B\Matrix(A)
             @test D \ A ≈ D \ Matrix(A)
             @test transpose(B)\A ≈ transpose(B)\Matrix(A) ≈ Transpose(B)\A ≈ Adjoint(B)\A
             @test B'\A ≈ B'\Matrix(A)
             @test A\A ≈ I
-            VERSION >= v"1.9-" && @test A/A ≈ I
+            VERSION >= v"1.9" && @test A/A ≈ I
             @test A\MyVector(x) ≈ A\x
             @test A\MyMatrix(X) ≈ A\X
 
-            VERSION >= v"1.9-" && @test A/A ≈ A.A / A.A
+            if VERSION >= v"1.9"
+                @test A/A ≈ A.A / A.A
+                @test x' / A ≈ x' / A.A
+                @test transpose(x) / A ≈ transpose(x) / A.A 
+                @test transpose(x) / A isa Transpose
+                @test x' / A isa Adjoint
+            end
         end
 
         @testset "dot" begin
@@ -395,6 +411,69 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test x'A ≈ transpose(x)A ≈ x.A'A.A
         @test x'A' ≈ x'transpose(A) ≈ transpose(x)A' ≈ transpose(x)transpose(A) ≈ x.A'A.A'
     end
+
+    @testset "Zeros mul" begin
+        A = MyMatrix(randn(5,5))
+        @test A*Zeros(5) ≡ Zeros(5)
+        @test A*Zeros(5,2) ≡ Zeros(5,2)
+        @test Zeros(1,5) * A ≡ Zeros(1,5)
+        @test Zeros(5)' * A ≡ Zeros(5)'
+        @test transpose(Zeros(5)) * A ≡ transpose(Zeros(5))
+
+        @test Zeros(5)' * A * (1:5) == 
+            transpose(Zeros(5)) * A * (1:5) ==
+            (1:5)' * A * Zeros(5) ==
+            transpose(1:5) * A * Zeros(5) ==
+            Zeros(5)' * A * Zeros(5) ==
+            transpose(Zeros(5)) * A * Zeros(5) == 0.0
+    end
+
+    @testset "triple *" begin
+        D = Diagonal(1:5)
+        y = MyVector(randn(5))
+        @test (1:5)' *  D * y ≈ transpose(1:5) *  D * y ≈ (1:5)' * D * y.A
+        @test y' * D * y ≈ transpose(y) * D * y ≈ y.A' * D * y.A
+        @test y' * D * (1:5) ≈ y.A' * D * (1:5)
+        @test y' * Diagonal(y) isa Adjoint
+        @test transpose(y) * Diagonal(y) isa Transpose
+
+        @test y' * D isa Adjoint
+        @test transpose(y) * D isa Transpose
+
+        @test Zeros(5)' * D * y == transpose(Zeros(5)) * D * y == 0.0
+        @test y' * D * Zeros(5) == transpose(y) * D * Zeros(5) == 0.0
+        @test Zeros(5)' * Diagonal(y) ≡ Zeros(5)'
+        @test transpose(Zeros(5)) * Diagonal(y) ≡ transpose(Zeros(5))
+        @test Zeros(5)' * Diagonal(y) * y == 0.0
+        @test transpose(Zeros(5)) * Diagonal(y) * y == 0.0
+        @test y' * Diagonal(y) * Zeros(5) == 0.0
+        @test transpose(y) * Diagonal(y) * Zeros(5) == 0.0
+        @test Zeros(5)' * Diagonal(y) * Zeros(5) == 0.0
+        @test transpose(Zeros(5)) * Diagonal(y) * Zeros(5) == 0.0
+    end
+
+    @testset "rmul with lazy and Diagonal" begin
+        D = Diagonal(1:5)
+        y = MyVector(randn(5))
+        @test mul(view(y', :, 1:5), D) isa Adjoint
+        @test mul(view(transpose(y), :, 1:5), D) isa Transpose
+    end
+
+    @testset "Tri * Tri" begin
+        A = MyMatrix(randn(3,3))
+        @test UpperTriangular(A) * LowerTriangular(A) ≈ UpperTriangular(A.A) * LowerTriangular(A.A)
+        @test UpperTriangular(A) * UnitUpperTriangular(A) ≈ UpperTriangular(A.A) * UnitUpperTriangular(A.A)
+        @test UpperTriangular(A') * UnitUpperTriangular(A) ≈ UpperTriangular(A.A') * UnitUpperTriangular(A.A)
+        @test UpperTriangular(A) * UnitUpperTriangular(A') ≈ UpperTriangular(A.A) * UnitUpperTriangular(A.A')
+        @test UpperTriangular(A') * UnitUpperTriangular(A') ≈ UpperTriangular(A.A') * UnitUpperTriangular(A.A')
+    end
+
+    if isdefined(LinearAlgebra, :copymutable_oftype)
+        @testset "copymutable_oftype" begin
+            A = MyMatrix(randn(3,3))
+            @test LinearAlgebra.copymutable_oftype(A, BigFloat) == A
+        end
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
@@ -438,5 +517,5 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     @test_skip lmul!(U,view(copy(B),collect(1:5),1:5)) ≈ U * B
 
     @test MyMatrix(A) / U ≈ A / U
-    VERSION >= v"1.9-" && @test U / MyMatrix(A) ≈ U / A
+    VERSION >= v"1.9" && @test U / MyMatrix(A) ≈ U / A
 end

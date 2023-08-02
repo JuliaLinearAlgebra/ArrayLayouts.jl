@@ -1,7 +1,7 @@
 colsupport(::TriangularLayout{'L'}, A, j) = isempty(j) ? (1:0) : colsupport(triangulardata(A), j) ∩ (minimum(j):size(A,1))
-colsupport(::TriangularLayout{'U'}, A, j) = isempty(j) ? (1:0) : colsupport(triangulardata(A), j) ∩ OneTo(maximum(j))
+colsupport(::TriangularLayout{'U'}, A, j) = isempty(j) ? (1:0) : colsupport(triangulardata(A), j) ∩ oneto(maximum(j))
 rowsupport(::TriangularLayout{'U'}, A, j) = isempty(j) ? (1:0) : rowsupport(triangulardata(A), j) ∩ (minimum(j):size(A,2))
-rowsupport(::TriangularLayout{'L'}, A, j) = isempty(j) ? (1:0) : rowsupport(triangulardata(A), j) ∩ OneTo(maximum(j))
+rowsupport(::TriangularLayout{'L'}, A, j) = isempty(j) ? (1:0) : rowsupport(triangulardata(A), j) ∩ oneto(maximum(j))
 
 
 
@@ -196,7 +196,7 @@ BLAS.trmm!('R', 'L', 'C', UNIT, one(T), triangulardata(A)', x)
 end
 
 
-materialize!(M::MatRmulMat{<:AbstractStridedLayout,<:TriangularLayout}) = LinearAlgebra.rmul!(M.A, M.B)
+materialize!(M::MatRmulMat{<:AbstractStridedLayout,<:TriangularLayout}) = lmul!(M.B', M.A')'
 
 
 ########

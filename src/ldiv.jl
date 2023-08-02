@@ -25,6 +25,8 @@ for Typ in (:Ldiv, :Rdiv)
     end
 end
 
+similar(A::Rdiv{<:DualLayout}, ::Type{T}, (ax1,ax2)) where T = dualadjoint(A.A)(similar(Array{T}, (ax2,)))
+
 @inline _ldivaxes(::Tuple{}, ::Tuple{}) = ()
 @inline _ldivaxes(::Tuple{}, Bax::Tuple) = Bax
 @inline _ldivaxes(::Tuple{<:Any}, ::Tuple{<:Any}) = ()
@@ -82,8 +84,18 @@ __ldiv!(_, F, B) = LinearAlgebra.ldiv!(F, B)
 
 @inline _ldiv!(dest, A, B; kwds...) = ldiv!(dest, factorize(A), B; kwds...)
 @inline _ldiv!(dest, A::Factorization, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
-@inline _ldiv!(dest, A::Transpose{<:Any,<:Factorization}, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
-@inline _ldiv!(dest, A::Adjoint{<:Any,<:Factorization}, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
+
+if VERSION ≥ v"1.10-"
+    using LinearAlgebra: TransposeFactorization, AdjointFactorization
+else
+    const TransposeFactorization = Transpose
+    const AdjointFactorization = Adjoint
+
+end
+@inline _ldiv!(dest, A::TransposeFactorization{<:Any,<:Factorization}, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
+@inline _ldiv!(dest, A::AdjointFactorization{<:Any,<:Factorization}, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
+
+
 
 @inline ldiv(A, B; kwds...) = materialize(Ldiv(A,B); kwds...)
 @inline rdiv(A, B; kwds...) = materialize(Rdiv(A,B); kwds...)
@@ -96,7 +108,10 @@ __ldiv!(_, F, B) = LinearAlgebra.ldiv!(F, B)
 
 @inline materialize!(M::Ldiv) = _ldiv!(M.A, M.B)
 @inline materialize!(M::Rdiv) = ldiv!(M.B', M.A')'
-@inline copyto!(dest::AbstractArray, M::Rdiv; kwds...) = copyto!(dest', Ldiv(M.B', M.A'); kwds...)'
+@inline function copyto!(dest::AbstractArray, M::Rdiv; kwds...)
+    adj = dualadjoint(dest)
+    adj(copyto!(adj(dest), Ldiv(adj(M.B), adj(M.A)); kwds...))
+end
 @inline copyto!(dest::AbstractArray, M::Ldiv; kwds...) = _ldiv!(dest, M.A, copy(M.B); kwds...)
 
 const MatLdivVec{styleA, styleB, T, V} = Ldiv{styleA, styleB, <:AbstractMatrix{T}, <:AbstractVector{V}}
@@ -141,6 +156,10 @@ macro _layoutldiv(Typ)
 
         LinearAlgebra.ldiv!(A::Bidiagonal, B::$Typ; kwds...) = ArrayLayouts.ldiv!(A,B; kwds...)
 
+        LinearAlgebra.rdiv!(A::AbstractMatrix, B::$Typ; kwds...) = ArrayLayouts.rdiv!(A,B; kwds...)
+
+        # Fix ambiguity issue
+        LinearAlgebra.rdiv!(A::StridedMatrix, B::$Typ; kwds...) = ArrayLayouts.rdiv!(A,B; kwds...)
 
         (\)(A::$Typ, x::AbstractVector; kwds...) = ArrayLayouts.ldiv(A,x; kwds...)
         (\)(A::$Typ, x::AbstractMatrix; kwds...) = ArrayLayouts.ldiv(A,x; kwds...)
@@ -173,6 +192,8 @@ macro _layoutldiv(Typ)
         (/)(A::$Typ, D::Diagonal; kwds...) = ArrayLayouts.rdiv(A,D; kwds...)
 
         (/)(x::$Typ, A::$Typ; kwds...) = ArrayLayouts.rdiv(x,A; kwds...)
+        (/)(D::Adjoint{<:Any,<:AbstractVector}, A::$Typ; kwds...) = ArrayLayouts.rdiv(D,A; kwds...)
+        (/)(D::Transpose{<:Any,<:AbstractVector}, A::$Typ; kwds...) = ArrayLayouts.rdiv(D,A; kwds...)
     end
     if Typ ≠ :LayoutVector
         ret = quote
@@ -202,6 +223,16 @@ macro layoutldiv(Typ)
         ArrayLayouts.@_layoutldiv UnitUpperTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
         ArrayLayouts.@_layoutldiv LowerTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
         ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:SubArray{T,2,<:$Typ{T}}} where T
+
+        ArrayLayouts.@_layoutldiv UpperTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv UnitUpperTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv LowerTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:Adjoint{T,<:$Typ{T}}} where T
+
+        ArrayLayouts.@_layoutldiv UpperTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv UnitUpperTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv LowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
+        ArrayLayouts.@_layoutldiv UnitLowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
     end)
 end
 

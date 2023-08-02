@@ -3,13 +3,13 @@ using Base: _typed_hcat
 using Base, Base.Broadcast, LinearAlgebra, FillArrays, SparseArrays
 using LinearAlgebra.BLAS
 
-using Base: AbstractCartesianIndex, OneTo, RangeIndex, ReinterpretArray, ReshapedArray,
+using Base: AbstractCartesianIndex, OneTo, oneto, RangeIndex, ReinterpretArray, ReshapedArray,
             Slice, tuple_type_tail, unalias,
             @propagate_inbounds, @_propagate_inbounds_meta
 
 import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, union, sort!,
                 ==, *, +, -, /, \, copy, copyto!, similar, getproperty, getindex, strides,
-                reverse, unsafe_convert, convert
+                reverse, unsafe_convert, convert, view
 
 using Base.Broadcast: Broadcasted
 
@@ -25,7 +25,7 @@ using LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
 AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
 
-using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row, _copy_oftype
+using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row
 
 using Base: require_one_based_indexing
 
@@ -52,6 +52,18 @@ else
     const CNoPivot = NoPivot
 end
 
+if VERSION ≥ v"1.11.0-DEV.21"
+    using LinearAlgebra: UpperOrLowerTriangular
+else
+    const UpperOrLowerTriangular{T,S} = Union{LinearAlgebra.UpperTriangular{T,S},
+                                              LinearAlgebra.UnitUpperTriangular{T,S},
+                                              LinearAlgebra.LowerTriangular{T,S},
+                                              LinearAlgebra.UnitLowerTriangular{T,S}}
+end
+
+# Originally defined in FillArrays
+_copy_oftype(A::AbstractArray, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : AbstractArray{S}(A)
+_copy_oftype(A::AbstractRange, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : map(S, A)
 
 struct ApplyBroadcastStyle <: BroadcastStyle end
 @inline function copyto!(dest::AbstractArray, bc::Broadcasted{ApplyBroadcastStyle})
@@ -109,7 +121,9 @@ include("diagonal.jl")
 include("triangular.jl")
 include("factorizations.jl")
 
-@inline sub_materialize(_, V, _) = Array(V)
+# Extend this function if you're only looking to dispatch on the axes
+@inline sub_materialize_axes(V, _) = Array(V)
+@inline sub_materialize(_, V, ax) = sub_materialize_axes(V, ax)
 @inline sub_materialize(L, V) = sub_materialize(L, V, axes(V))
 @inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(V), V)
 @inline sub_materialize(V) = V # Anything not a SubArray is already materialized
@@ -146,7 +160,7 @@ end
 macro layoutgetindex(Typ)
     esc(quote
         ArrayLayouts.@_layoutgetindex $Typ
-        ArrayLayouts.@_layoutgetindex LinearAlgebra.AbstractTriangular{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutgetindex ArrayLayouts.UpperOrLowerTriangular{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Symmetric{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Hermitian{<:Any,<:$Typ}
         ArrayLayouts.@_layoutgetindex LinearAlgebra.Adjoint{<:Any,<:$Typ}
@@ -161,6 +175,7 @@ macro layoutmatrix(Typ)
         ArrayLayouts.@layoutldiv $Typ
         ArrayLayouts.@layoutmul $Typ
         ArrayLayouts.@layoutlmul $Typ
+        ArrayLayouts.@layoutrmul $Typ
         ArrayLayouts.@layoutfactorizations $Typ
         ArrayLayouts.@layoutgetindex $Typ
     end)
@@ -184,8 +199,11 @@ getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) =
 
 *(a::Zeros{<:Any,2}, b::LayoutMatrix) = FillArrays.mult_zeros(a, b)
 *(a::LayoutMatrix, b::Zeros{<:Any,2}) = FillArrays.mult_zeros(a, b)
+*(a::LayoutMatrix, b::Zeros{<:Any,1}) = FillArrays.mult_zeros(a, b)
 *(a::Transpose{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 2}) = FillArrays.mult_zeros(a, b)
 *(a::Adjoint{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 2}) = FillArrays.mult_zeros(a, b)
+*(A::Adjoint{<:Any, <:Zeros{<:Any,1}}, B::Diagonal{<:Any,<:LayoutVector}) = (B' * A')'
+*(A::Transpose{<:Any, <:Zeros{<:Any,1}}, B::Diagonal{<:Any,<:LayoutVector}) = transpose(transpose(B) * transpose(A))
 
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 *(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = mul(A, B)
@@ -253,6 +271,12 @@ copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutA
 # ambiguity from sparsematrix.jl
 copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
 copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparseMatrixCSC) = _copyto!(dest, src)
+if isdefined(LinearAlgebra, :copymutable_oftype)
+    LinearAlgebra.copymutable_oftype(A::Union{LayoutArray,Symmetric{<:Any,<:LayoutMatrix},Hermitian{<:Any,<:LayoutMatrix},
+                                                                UpperOrLowerTriangular{<:Any,<:LayoutMatrix},
+                                                                AdjOrTrans{<:Any,<:LayoutMatrix}}, ::Type{T}) where T = copymutable_oftype_layout(MemoryLayout(A), A, T)
+end
+copymutable_oftype_layout(_, A, ::Type{S}) where S = copyto!(similar(A, S), A)
 
 # avoid bad copy in Base
 Base.map(::typeof(copy), D::Diagonal{<:LayoutArray}) = Diagonal(map(copy, D.diag))
@@ -347,13 +371,17 @@ Base.replace_in_print_matrix(A::Union{LayoutVector,
                                       UnitLowerTriangular{<:Any,<:LayoutMatrix},
                                       AdjOrTrans{<:Any,<:LayoutVecOrMat},
                                       HermOrSym{<:Any,<:LayoutMatrix},
-                                      SubArray{<:Any,2,<:LayoutMatrix}}, i::Integer, j::Integer, s::AbstractString) =
+                                      SubArray{<:Any,2,<:LayoutMatrix},
+                                      UpperTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}},
+                                      UnitUpperTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}},
+                                      LowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}},
+                                      UnitLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}}, i::Integer, j::Integer, s::AbstractString) =
     layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)
 
 Base.print_matrix_row(io::IO,
         X::Union{LayoutMatrix,
         LayoutVector,
-        AbstractTriangular{<:Any,<:LayoutMatrix},
+        UpperOrLowerTriangular{<:Any,<:LayoutMatrix},
         AdjOrTrans{<:Any,<:LayoutMatrix},
         AdjOrTrans{<:Any,<:LayoutVector},
         HermOrSym{<:Any,<:LayoutMatrix},
