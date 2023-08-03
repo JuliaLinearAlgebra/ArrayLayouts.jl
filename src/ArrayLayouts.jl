@@ -5,7 +5,7 @@ using LinearAlgebra.BLAS
 
 using Base: AbstractCartesianIndex, OneTo, oneto, RangeIndex, ReinterpretArray, ReshapedArray,
             Slice, tuple_type_tail, unalias,
-            @propagate_inbounds, @_propagate_inbounds_meta
+            @propagate_inbounds
 
 import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, union, sort!,
                 ==, *, +, -, /, \, copy, copyto!, similar, getproperty, getindex, strides,
@@ -132,8 +132,7 @@ copy(A::SubArray{<:Any,N,<:LayoutArray}) where N = sub_materialize(A)
 copy(A::SubArray{<:Any,N,<:AdjOrTrans{<:Any,<:LayoutArray}}) where N = sub_materialize(A)
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
-function layout_getindex(A::AbstractArray, k::Int...)
-    @_propagate_inbounds_meta
+@propagate_inbounds function layout_getindex(A::AbstractArray, k::Int...)
     Base.error_if_canonical_getindex(IndexStyle(A), A, k...)
     Base._getindex(IndexStyle(A), A, k...)
 end
