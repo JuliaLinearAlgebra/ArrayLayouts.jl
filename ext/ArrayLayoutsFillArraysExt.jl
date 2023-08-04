@@ -5,8 +5,8 @@ using FillArrays: AbstractFill, getindex_value
 
 using ArrayLayouts
 using ArrayLayouts: OnesLayout, Mul, MulAdd
-import ArrayLayouts: MemoryLayout, _copyto!, sub_materialize, diagonaldata
-export layoutfillmul, mulzeros
+import ArrayLayouts: MemoryLayout, _copyto!, sub_materialize, diagonaldata, mulzeros
+export layoutfillmul
 
 import Base: copy, *
 import Base.Broadcast: materialize!
