@@ -1,6 +1,6 @@
 module ArrayLayouts
 using Base: _typed_hcat
-using Base, Base.Broadcast, LinearAlgebra, FillArrays, SparseArrays
+using Base, Base.Broadcast, LinearAlgebra, SparseArrays
 using LinearAlgebra.BLAS
 
 using Base: AbstractCartesianIndex, OneTo, oneto, RangeIndex, ReinterpretArray, ReshapedArray,
@@ -24,8 +24,6 @@ using LinearAlgebra: AbstractQ, QRCompactWYQ, QRPackedQ, HessenbergQ,
 using LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
 
 AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
-
-using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row
 
 using Base: require_one_based_indexing
 
@@ -121,6 +119,11 @@ include("diagonal.jl")
 include("triangular.jl")
 include("factorizations.jl")
 
+@static if !isdefined(Base, :get_extension)
+    include("../ext/ArrayLayoutsFillArraysExt.jl")
+end
+
+
 # Extend this function if you're only looking to dispatch on the axes
 @inline sub_materialize_axes(V, _) = Array(V)
 @inline sub_materialize(_, V, ax) = sub_materialize_axes(V, ax)
@@ -196,14 +199,6 @@ getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
 getindex(A::LayoutVector, kr::Colon) = layout_getindex(A, kr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::Colon) = layout_getindex(A, kr, jr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) = layout_getindex(A, kr, jr)
-
-*(a::Zeros{<:Any,2}, b::LayoutMatrix) = FillArrays.mult_zeros(a, b)
-*(a::LayoutMatrix, b::Zeros{<:Any,2}) = FillArrays.mult_zeros(a, b)
-*(a::LayoutMatrix, b::Zeros{<:Any,1}) = FillArrays.mult_zeros(a, b)
-*(a::Transpose{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 2}) = FillArrays.mult_zeros(a, b)
-*(a::Adjoint{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 2}) = FillArrays.mult_zeros(a, b)
-*(A::Adjoint{<:Any, <:Zeros{<:Any,1}}, B::Diagonal{<:Any,<:LayoutVector}) = (B' * A')'
-*(A::Transpose{<:Any, <:Zeros{<:Any,1}}, B::Diagonal{<:Any,<:LayoutVector}) = transpose(transpose(B) * transpose(A))
 
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 *(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = mul(A, B)
@@ -377,6 +372,16 @@ Base.replace_in_print_matrix(A::Union{LayoutVector,
                                       LowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}},
                                       UnitLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}}, i::Integer, j::Integer, s::AbstractString) =
     layout_replace_in_print_matrix(MemoryLayout(A), A, i, j, s)
+
+if VERSION < v"1.8-"
+    axes_print_matrix_row(lay, io, X, A, i, cols, sep) =
+        Base.invoke(Base.print_matrix_row, Tuple{IO,AbstractVecOrMat,Vector,Integer,AbstractVector,AbstractString},
+                    io, X, A, i, cols, sep)
+else
+    axes_print_matrix_row(lay, io, X, A, i, cols, sep, idxlast::Integer=last(axes(X, 2))) =
+        Base.invoke(Base.print_matrix_row, Tuple{IO,AbstractVecOrMat,Vector,Integer,AbstractVector,AbstractString,Integer},
+                    io, X, A, i, cols, sep, idxlast)
+end
 
 Base.print_matrix_row(io::IO,
         X::Union{LayoutMatrix,

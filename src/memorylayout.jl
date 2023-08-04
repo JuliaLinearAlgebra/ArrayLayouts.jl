@@ -531,22 +531,11 @@ struct ZerosLayout <: AbstractFillLayout end
 struct OnesLayout <: AbstractFillLayout end
 struct EyeLayout <: MemoryLayout end
 
-MemoryLayout(::Type{<:AbstractFill}) = FillLayout()
-MemoryLayout(::Type{<:Zeros}) = ZerosLayout()
-MemoryLayout(::Type{<:Ones}) = OnesLayout()
-
 # all sub arrays are same
 sublayout(L::AbstractFillLayout, inds::Type) = L
 reshapedlayout(L::AbstractFillLayout, _) = L
 adjointlayout(::Type, L::AbstractFillLayout) = L
 transposelayout(L::AbstractFillLayout) = L
-
-_copyto!(_, ::AbstractFillLayout, dest::AbstractArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N =
-    fill!(dest, getindex_value(src))
-
-sub_materialize(::AbstractFillLayout, V, ax) = Fill(getindex_value(V), ax)
-sub_materialize(::ZerosLayout, V, ax) = Zeros{eltype(V)}(ax)
-sub_materialize(::OnesLayout, V, ax) = Ones{eltype(V)}(ax)
 
 abstract type AbstractBandedLayout <: MemoryLayout end
 abstract type AbstractTridiagonalLayout <: AbstractBandedLayout end
