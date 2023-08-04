@@ -8,7 +8,7 @@ using ArrayLayouts: OnesLayout, Mul, MulAdd, diagonal
 import ArrayLayouts: MemoryLayout, _copyto!, sub_materialize, diagonaldata, mulzeros
 export layoutfillmul
 
-import Base: copy, *
+import Base: copy, *, +, -
 import Base.Broadcast: materialize!
 import LinearAlgebra
 using LinearAlgebra: Adjoint, Transpose, Symmetric, Hermitian, Diagonal,
@@ -91,6 +91,16 @@ sub_materialize(::OnesLayout, V, ax) = Ones{eltype(V)}(ax)
 # TODO: Remove unnecessary _apply
 _apply(_, _, op, Λ::UniformScaling, A::AbstractMatrix) = op(Diagonal(Fill(Λ.λ,(axes(A,1),))), A)
 _apply(_, _, op, A::AbstractMatrix, Λ::UniformScaling) = op(A, Diagonal(Fill(Λ.λ,(axes(A,1),))))
+
+for Typ in (:LayoutMatrix, :(Symmetric{<:Any,<:LayoutMatrix}), :(Hermitian{<:Any,<:LayoutMatrix}),
+            :(Adjoint{<:Any,<:LayoutMatrix}), :(Transpose{<:Any,<:LayoutMatrix}))
+    @eval begin
+        @inline +(A::$Typ, Λ::UniformScaling) = _apply(MemoryLayout(A), size(A), +, A, Λ)
+        @inline +(Λ::UniformScaling, A::$Typ) = _apply(MemoryLayout(A), size(A), +, Λ, A)
+        @inline -(A::$Typ, Λ::UniformScaling) = _apply(MemoryLayout(A), size(A), -, A, Λ)
+        @inline -(Λ::UniformScaling, A::$Typ) = _apply(MemoryLayout(A), size(A), -, Λ, A)
+    end
+end
 
 # equivalent to rescaling
 function materialize!(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout}})
