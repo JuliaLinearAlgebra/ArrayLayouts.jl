@@ -4,7 +4,7 @@ using FillArrays
 using FillArrays: AbstractFill, getindex_value
 
 using ArrayLayouts
-using ArrayLayouts: OnesLayout, Mul, MulAdd
+using ArrayLayouts: OnesLayout, Mul, MulAdd, diagonal
 import ArrayLayouts: MemoryLayout, _copyto!, sub_materialize, diagonaldata, mulzeros
 export layoutfillmul
 
