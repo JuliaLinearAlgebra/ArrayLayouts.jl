@@ -313,6 +313,13 @@ struct FooNumber <: Number end
         @test isempty(colsupport(Zeros(5,10), 2))
         @test isempty(rowsupport(Zeros(5,10), 2))
 
+        @testset "OneElement" begin
+            for ind in (4, 20)
+                o = OneElement(2, ind, 10)
+                @test sum(o) == sum(o[colsupport(o)])
+            end
+        end
+
         # views of Fill no longer create Sub Arrays, but are supported
         # as there was no strong need to delete their support
         v = SubArray(Fill(1,10),(1:3,))
