@@ -666,6 +666,9 @@ end
 rowsupport(::ZerosLayout, A, _) = 1:0
 colsupport(::ZerosLayout, A, _) = 1:0
 
+colsupport(::UnknownLayout, A::OneElement{<:Any,1}, _) =
+    intersect(axes(A,1), A.ind[1]:A.ind[1])
+
 rowsupport(::DiagonalLayout, _, k) = k
 colsupport(::DiagonalLayout, _, j) = j
 
