@@ -474,6 +474,20 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test LinearAlgebra.copymutable_oftype(A, BigFloat) == A
         end
     end
+
+    @testset "mul! with subarrays" begin
+            A = MyMatrix(randn(3,3))
+            V = view(A, 1:3, 1:3)
+            B = randn(3,3)
+            x = randn(3)
+            @test mul!(similar(B), V, B) ≈ A * B
+            @test mul!(similar(B), B, V) ≈ B * A
+            @test mul!(similar(B), V, V) ≈ A^2
+            @test mul!(similar(B), V, A) ≈ A * A
+            @test mul!(similar(B), A, V) ≈ A * A
+            @test mul!(MyMatrix(randn(3,3)), A, V) ≈ A * A
+            @test mul!(similar(x), V, x) ≈ V * x
+    end
 end
 
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
