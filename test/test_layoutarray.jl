@@ -361,6 +361,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
         b = MyVector(randn(5))
         @test A' * b ≈ A' * b.A
+
+        @test b'*Zeros(5) == 0
+        @test transpose(b)*Zeros(5) == 0
     end
 
     @testset "AbstractQ" begin
