@@ -364,6 +364,8 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
         @test b'*Zeros(5) == 0
         @test transpose(b)*Zeros(5) == 0
+        @test_throws DimensionMismatch b'*Zeros(6)
+        @test_throws DimensionMismatch transpose(b)*Zeros(6)
     end
 
     @testset "AbstractQ" begin
