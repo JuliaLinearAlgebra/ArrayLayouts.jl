@@ -492,6 +492,14 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test mul!(similar(B), A, V) ≈ A * A
             @test mul!(MyMatrix(randn(3,3)), A, V) ≈ A * A
             @test mul!(similar(x), V, x) ≈ V * x
+
+            @test mul!(copy(B), V, B, 2.0, 3.0) ≈ 2A * B + 3B
+            @test mul!(copy(B), B, V, 2.0, 3.0) ≈ 2B * A + 3B
+            @test mul!(copy(B), V, V, 2.0, 3.0) ≈ 2A^2 + 3B
+            @test mul!(copy(B), V, A, 2.0, 3.0) ≈ 2A * A + 3B
+            @test mul!(copy(B), A, V, 2.0, 3.0) ≈ 2A * A + 3B
+            @test mul!(MyMatrix(copy(B)), A, V, 2.0, 3.0) ≈ 2A * A + 3B
+            @test mul!(copy(x), V, x, 2.0, 3.0) ≈ 2A * x + 3x
     end
 end
 
