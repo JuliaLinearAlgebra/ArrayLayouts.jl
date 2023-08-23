@@ -223,9 +223,9 @@ function _default_blasmul!(::IndexCartesian, α, A::AbstractMatrix, B::AbstractV
     z = zero(A[1,1]*B[1] + A[1,1]*B[1])
 
     @inbounds for k in colsupport(B,1)
-        b = B[k]
+        b = α * B[k]
         for i = colsupport(A,k)
-            C[i] += α * A[i,k] * b
+            C[i] += A[i,k] * b
         end
     end
 
