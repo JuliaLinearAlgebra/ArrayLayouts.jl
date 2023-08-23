@@ -72,7 +72,6 @@ materialize(M::MulAdd) = copy(instantiate(M))
 copy(M::MulAdd) = copyto!(similar(M), M)
 
 _fill_copyto!(dest, C) = copyto!(dest, C)
-_fill_copyto!(dest, C::Zeros) = zero!(dest) # exploit special fill! overload
 
 @inline copyto!(dest::AbstractArray{T}, M::MulAdd) where T =
     muladd!(M.α, unalias(dest,M.A), unalias(dest,M.B), M.β, _fill_copyto!(dest, M.C))
@@ -362,18 +361,6 @@ materialize!(M::BlasMatMulVecAdd{<:HermitianLayout{<:AbstractRowMajor},<:Abstrac
 similar(M::MulAdd{<:DiagonalLayout,<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.B, T, axes)
 similar(M::MulAdd{<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.B, T, axes)
 similar(M::MulAdd{<:Any,<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.A, T, axes)
-# equivalent to rescaling
-function materialize!(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout}})
-    checkdimensions(M)
-    M.C .= (M.α * getindex_value(M.A.diag)) .* M.B .+ M.β .* M.C
-    M.C
-end
-
-function materialize!(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout}})
-    checkdimensions(M)
-    M.C .= M.α .* M.A .* getindex_value(M.B.diag) .+ M.β .* M.C
-    M.C
-end
 
 
 BroadcastStyle(::Type{<:MulAdd}) = ApplyBroadcastStyle()
@@ -382,11 +369,6 @@ scalarone(::Type{T}) where T = one(T)
 scalarone(::Type{A}) where {A<:AbstractArray} = scalarone(eltype(A))
 scalarzero(::Type{T}) where T = zero(T)
 scalarzero(::Type{A}) where {A<:AbstractArray} = scalarzero(eltype(A))
-
-fillzeros(::Type{T}, ax) where T<:Number = Zeros{T}(ax)
-mulzeros(::Type{T}, M) where T<:Number = fillzeros(T, axes(M))
-mulzeros(::Type{T}, M::Mul{<:DualLayout,<:Any,<:Adjoint}) where T<:Number = fillzeros(T, axes(M,2))'
-mulzeros(::Type{T}, M::Mul{<:DualLayout,<:Any,<:Transpose}) where T<:Number = transpose(fillzeros(T, axes(M,2)))
 
 # initiate array-valued MulAdd
 function _mulzeros!(dest::AbstractVector{T}, A, B) where T
