@@ -39,6 +39,14 @@ end
 *(a::Adjoint{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 2}) = FillArrays.mult_zeros(a, b)
 *(A::Adjoint{<:Any, <:Zeros{<:Any,1}}, B::Diagonal{<:Any,<:LayoutVector}) = (B' * A')'
 *(A::Transpose{<:Any, <:Zeros{<:Any,1}}, B::Diagonal{<:Any,<:LayoutVector}) = transpose(transpose(B) * transpose(A))
+*(a::Adjoint{<:Number,<:LayoutVector}, b::Zeros{<:Number,1})= FillArrays._adjvec_mul_zeros(a, b)
+function *(a::Transpose{T, <:LayoutVector{T}}, b::Zeros{T, 1}) where T<:Real
+    la, lb = length(a), length(b)
+    if la ≠ lb
+        throw(DimensionMismatch("dot product arguments have lengths $la and $lb"))
+    end
+    return zero(T)
+end
 
 # equivalent to rescaling
 function materialize!(M::Lmul{<:DiagonalLayout{<:AbstractFillLayout}})
