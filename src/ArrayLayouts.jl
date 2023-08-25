@@ -5,7 +5,7 @@ using LinearAlgebra.BLAS
 
 using Base: AbstractCartesianIndex, OneTo, oneto, RangeIndex, ReinterpretArray, ReshapedArray,
             Slice, tuple_type_tail, unalias,
-            @propagate_inbounds, @_propagate_inbounds_meta
+            @propagate_inbounds
 
 import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, union, sort!,
                 ==, *, +, -, /, \, copy, copyto!, similar, getproperty, getindex, strides,
@@ -132,8 +132,7 @@ copy(A::SubArray{<:Any,N,<:LayoutArray}) where N = sub_materialize(A)
 copy(A::SubArray{<:Any,N,<:AdjOrTrans{<:Any,<:LayoutArray}}) where N = sub_materialize(A)
 
 @inline layout_getindex(A, I...) = sub_materialize(view(A, I...))
-function layout_getindex(A::AbstractArray, k::Int...)
-    @_propagate_inbounds_meta
+@propagate_inbounds function layout_getindex(A::AbstractArray, k::Int...)
     Base.error_if_canonical_getindex(IndexStyle(A), A, k...)
     Base._getindex(IndexStyle(A), A, k...)
 end
@@ -204,6 +203,14 @@ getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) =
 *(a::Adjoint{T, <:LayoutMatrix{T}} where T, b::Zeros{<:Any, 2}) = FillArrays.mult_zeros(a, b)
 *(A::Adjoint{<:Any, <:Zeros{<:Any,1}}, B::Diagonal{<:Any,<:LayoutVector}) = (B' * A')'
 *(A::Transpose{<:Any, <:Zeros{<:Any,1}}, B::Diagonal{<:Any,<:LayoutVector}) = transpose(transpose(B) * transpose(A))
+*(a::Adjoint{<:Number,<:LayoutVector}, b::Zeros{<:Number,1})= FillArrays._adjvec_mul_zeros(a, b)
+function *(a::Transpose{T, <:LayoutVector{T}}, b::Zeros{T, 1}) where T<:Real
+    la, lb = length(a), length(b)
+    if la ≠ lb
+        throw(DimensionMismatch("dot product arguments have lengths $la and $lb"))
+    end
+    return zero(T)
+end
 
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 *(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = mul(A, B)

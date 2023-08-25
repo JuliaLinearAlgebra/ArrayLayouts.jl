@@ -361,6 +361,11 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
         b = MyVector(randn(5))
         @test A' * b ≈ A' * b.A
+
+        @test b'*Zeros(5) == 0
+        @test transpose(b)*Zeros(5) == 0
+        @test_throws DimensionMismatch b'*Zeros(6)
+        @test_throws DimensionMismatch transpose(b)*Zeros(6)
     end
 
     @testset "AbstractQ" begin
@@ -496,6 +501,29 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             copyto!(view(M, :, :), S)
             @test S == M2
         end
+    end
+
+    @testset "mul! with subarrays" begin
+            A = MyMatrix(randn(3,3))
+            V = view(A, 1:3, 1:3)
+            B = randn(3,3)
+            x = randn(3)
+            @test mul!(similar(B), V, B) ≈ A * B
+            @test mul!(similar(B), B, V) ≈ B * A
+            @test mul!(similar(B), V, V) ≈ A^2
+            @test mul!(similar(B), V, A) ≈ A * A
+            @test mul!(similar(B), A, V) ≈ A * A
+            @test mul!(MyMatrix(randn(3,3)), A, V) ≈ A * A
+            @test mul!(similar(x), V, x) ≈ V * x
+
+            @test mul!(copy(B), V, B, 2.0, 3.0) ≈ 2A * B + 3B
+            @test mul!(copy(B), B, V, 2.0, 3.0) ≈ 2B * A + 3B
+            @test mul!(copy(B), V, V, 2.0, 3.0) ≈ 2A^2 + 3B
+            @test mul!(copy(B), V, A, 2.0, 3.0) ≈ 2A * A + 3B
+            @test mul!(copy(B), A, V, 2.0, 3.0) ≈ 2A * A + 3B
+            @test mul!(MyMatrix(copy(B)), A, V, 2.0, 3.0) ≈ 2A * A + 3B
+            @test mul!(copy(x), V, x, 2.0, 3.0) ≈ 2A * x + 3x
+
     end
 end
 

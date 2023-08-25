@@ -317,10 +317,20 @@ end
 
 
 # mul! for subarray of layout matrix
-LinearAlgebra.mul!(C::SubArray{<:Any,2,<:LayoutMatrix}, A::SubArray{<:Any,2,<:LayoutMatrix}, B::SubArray{<:Any,2,<:LayoutMatrix}, α::Number, β::Number) =
+const SubLayoutMatrix = Union{SubArray{<:Any,2,<:LayoutMatrix}, SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutMatrix}}}
+
+LinearAlgebra.mul!(C::AbstractMatrix, A::SubLayoutMatrix, B::AbstractMatrix, α::Number, β::Number) =
     ArrayLayouts.mul!(C, A, B, α, β)
-LinearAlgebra.mul!(C::AbstractMatrix, A::SubArray{<:Any,2,<:LayoutMatrix}, B::SubArray{<:Any,2,<:LayoutMatrix}, α::Number, β::Number) =
+LinearAlgebra.mul!(C::AbstractMatrix, A::AbstractMatrix, B::SubLayoutMatrix, α::Number, β::Number) =
+    ArrayLayouts.mul!(C, A, B, α, β)
+LinearAlgebra.mul!(C::AbstractMatrix, A::SubLayoutMatrix, B::LayoutMatrix, α::Number, β::Number) =
+    ArrayLayouts.mul!(C, A, B, α, β)
+LinearAlgebra.mul!(C::AbstractMatrix, A::LayoutMatrix, B::SubLayoutMatrix, α::Number, β::Number) =
     ArrayLayouts.mul!(C, A, B, α, β)    
+LinearAlgebra.mul!(C::AbstractMatrix, A::SubLayoutMatrix, B::SubLayoutMatrix, α::Number, β::Number) =
+    ArrayLayouts.mul!(C, A, B, α, β)
+LinearAlgebra.mul!(C::AbstractVector, A::SubLayoutMatrix, B::AbstractVector, α::Number, β::Number) =
+    ArrayLayouts.mul!(C, A, B, α, β)
 
 
 ###
