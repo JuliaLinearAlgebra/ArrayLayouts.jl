@@ -4,6 +4,9 @@ A Julia package for describing array layouts and more general fast linear algebr
 
 [![Build Status](https://github.com/JuliaLinearAlgebra/ArrayLayouts.jl/workflows/CI/badge.svg)](https://github.com/JuliaMatrices/ArrayLayouts.jl/actions)
 [![codecov](https://codecov.io/gh/JuliaLinearAlgebra/ArrayLayouts.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/JuliaMatrices/ArrayLayouts.jl)
+[![deps](https://juliahub.com/docs/General/ArrayLayouts/stable/deps.svg)](https://juliahub.com/ui/Packages/General/ArrayLayouts?t=2)
+[![version](https://juliahub.com/docs/General/ArrayLayouts/stable/version.svg)](https://juliahub.com/ui/Packages/General/ArrayLayouts)
+[![pkgeval](https://juliahub.com/docs/General/ArrayLayouts/stable/pkgeval.svg)](https://juliahub.com/ui/Packages/General/ArrayLayouts)
 
 This package implements a trait-based framework for describing array layouts such as column
 major, row major, etc. that can be dispatched to appropriate BLAS or optimised Julia linear
