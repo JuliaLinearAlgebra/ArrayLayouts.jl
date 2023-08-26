@@ -8,6 +8,9 @@ A Julia package for describing array layouts and more general fast linear algebr
 [![version](https://juliahub.com/docs/General/ArrayLayouts/stable/version.svg)](https://juliahub.com/ui/Packages/General/ArrayLayouts)
 [![pkgeval](https://juliahub.com/docs/General/ArrayLayouts/stable/pkgeval.svg)](https://juliahub.com/ui/Packages/General/ArrayLayouts)
 
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaLinearAlgebra.github.io/ArrayLayouts.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaLinearAlgebra.github.io/ArrayLayouts.jl/dev)
+
 This package implements a trait-based framework for describing array layouts such as column
 major, row major, etc. that can be dispatched to appropriate BLAS or optimised Julia linear
 algebra routines. This supports a much wider class of matrix types than Julia's in-built
