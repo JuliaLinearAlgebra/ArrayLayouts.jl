@@ -17,7 +17,7 @@ algebra routines. This supports a much wider class of matrix types than Julia's 
 `StridedArray`. Here is an example:
 
 ```julia
-julia> using ArrayLayouts
+julia> using ArrayLayouts, LinearAlgebra
 
 julia> A = randn(10_000,10_000); x = randn(10_000); y = similar(x);
 
