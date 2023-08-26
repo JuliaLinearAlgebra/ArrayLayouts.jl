@@ -480,6 +480,29 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         end
     end
 
+    @testset "sparse" begin
+        @testset "MyVector" begin
+            V = MyVector([1:4;])
+            V2 = MyVector(2*[1:4;])
+            S = 2*sparse(V)
+            copyto!(V, S)
+            @test S == V2
+            V = MyVector([1:4;])
+            copyto!(view(V, :), S)
+            @test S == V2
+        end
+        @testset "MyMatrix" begin
+            M = MyMatrix(reshape([1:4;], 2, 2))
+            M2 = MyMatrix(reshape(2*[1:4;], 2, 2))
+            S = 2*sparse(M)
+            copyto!(M, S)
+            @test S == M2
+            M = MyMatrix(reshape([1:4;], 2, 2))
+            copyto!(view(M, :, :), S)
+            @test S == M2
+        end
+    end
+
     @testset "mul! with subarrays" begin
             A = MyMatrix(randn(3,3))
             V = view(A, 1:3, 1:3)
@@ -500,6 +523,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test mul!(copy(B), A, V, 2.0, 3.0) ≈ 2A * A + 3B
             @test mul!(MyMatrix(copy(B)), A, V, 2.0, 3.0) ≈ 2A * A + 3B
             @test mul!(copy(x), V, x, 2.0, 3.0) ≈ 2A * x + 3x
+
     end
 end
 
