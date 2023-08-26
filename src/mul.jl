@@ -256,6 +256,8 @@ macro layoutmul(Typ)
                 ArrayLayouts.mul!(dest,A,b)
             LinearAlgebra.mul!(dest::AbstractVector, A::$Mod{<:Any,<:$Typ}, b::AbstractVector) =
                 ArrayLayouts.mul!(dest,A,b)
+            LinearAlgebra.mul!(dest::AbstractVector, A::$Mod{<:Any,<:$Typ}, b::AbstractVector, α::Number, β::Number) =
+                ArrayLayouts.mul!(dest,A,b,α,β)
             LinearAlgebra.mul!(dest::AbstractMatrix, A::$Mod{<:Any,<:$Typ}, B::AbstractMatrix, α::Number, β::Number) =
                 ArrayLayouts.mul!(dest,A,B,α,β)
             LinearAlgebra.mul!(dest::AbstractMatrix, A::AbstractMatrix, B::$Mod{<:Any,<:$Typ}, α::Number, β::Number) =
