@@ -321,9 +321,16 @@ end
 # mul! for subarray of layout matrix
 const SubLayoutMatrix = Union{SubArray{<:Any,2,<:LayoutMatrix}, SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutMatrix}}}
 
+*(A::Diagonal, B::SubLayoutMatrix) = mul(A, B)
+*(A::SubLayoutMatrix, B::Diagonal) = mul(A, B)
+
 LinearAlgebra.mul!(C::AbstractMatrix, A::SubLayoutMatrix, B::AbstractMatrix, α::Number, β::Number) =
     ArrayLayouts.mul!(C, A, B, α, β)
 LinearAlgebra.mul!(C::AbstractMatrix, A::AbstractMatrix, B::SubLayoutMatrix, α::Number, β::Number) =
+    ArrayLayouts.mul!(C, A, B, α, β)
+LinearAlgebra.mul!(C::AbstractMatrix, A::Diagonal, B::SubLayoutMatrix, α::Number, β::Number) =
+    ArrayLayouts.mul!(C, A, B, α, β)
+LinearAlgebra.mul!(C::AbstractMatrix, A::SubLayoutMatrix, B::Diagonal, α::Number, β::Number) =
     ArrayLayouts.mul!(C, A, B, α, β)
 LinearAlgebra.mul!(C::AbstractMatrix, A::SubLayoutMatrix, B::LayoutMatrix, α::Number, β::Number) =
     ArrayLayouts.mul!(C, A, B, α, β)
