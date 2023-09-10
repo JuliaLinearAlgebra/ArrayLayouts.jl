@@ -330,6 +330,8 @@ LinearAlgebra.mul!(C::AbstractMatrix, A::AbstractMatrix, B::SubLayoutMatrix, α:
     ArrayLayouts.mul!(C, A, B, α, β)
 LinearAlgebra.mul!(C::AbstractMatrix, A::Diagonal, B::SubLayoutMatrix, α::Number, β::Number) =
     ArrayLayouts.mul!(C, A, B, α, β)
+LinearAlgebra.mul!(C::AbstractMatrix, A::SubLayoutMatrix, B::Diagonal, α::Number, β::Number) =
+    ArrayLayouts.mul!(C, A, B, α, β)
 LinearAlgebra.mul!(C::AbstractMatrix, A::SubLayoutMatrix, B::LayoutMatrix, α::Number, β::Number) =
     ArrayLayouts.mul!(C, A, B, α, β)
 LinearAlgebra.mul!(C::AbstractMatrix, A::LayoutMatrix, B::SubLayoutMatrix, α::Number, β::Number) =

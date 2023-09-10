@@ -528,8 +528,8 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
             @test D * V == D * A == D * A.A
             @test V * D == A * D == A.A  * D
-            @test mul!(copy(B), D, A, 2.0, 3.0) ≈ 2D * A + 3B
-            @test mul!(copy(B), A, D, 2.0, 3.0) ≈ 2A * D + 3B
+            @test mul!(copy(B), D, A, 2.0, 3.0) ≈ mul!(copy(B), D, V, 2.0, 3.0) ≈ 2D * A + 3B
+            @test mul!(copy(B), A, D, 2.0, 3.0) ≈ mul!(copy(B), V, D, 2.0, 3.0) ≈ 2A * D + 3B
     end
 end
 
