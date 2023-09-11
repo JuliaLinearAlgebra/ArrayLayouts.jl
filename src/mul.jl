@@ -356,14 +356,42 @@ struct Dot{StyleA,StyleB,ATyp,BTyp}
     B::BTyp
 end
 
-@inline Dot(A::ATyp,B::BTyp) where {ATyp,BTyp} = Dot{typeof(MemoryLayout(ATyp)), typeof(MemoryLayout(BTyp)), ATyp, BTyp}(A, B)
+"""
+    Dotu(A, B)
+
+is a lazy version of `BLAS.dotu(A, B)`, designed to support
+materializing based on `MemoryLayout`.
+"""
+struct Dotu{StyleA,StyleB,ATyp,BTyp}
+    A::ATyp
+    B::BTyp
+end
+
+
+
+for Dt in (:Dot, :Dotu)
+    @eval begin
+        @inline $Dt(A::ATyp,B::BTyp) where {ATyp,BTyp} = $Dt{typeof(MemoryLayout(ATyp)), typeof(MemoryLayout(BTyp)), ATyp, BTyp}(A, B)
+        @inline materialize(d::$Dt) = copy(instantiate(d))
+        @inline eltype(D::$Dt) = promote_type(eltype(D.A), eltype(D.B))
+    end
+end
 @inline copy(d::Dot) = invoke(LinearAlgebra.dot, Tuple{AbstractArray,AbstractArray}, d.A, d.B)
-@inline materialize(d::Dot) = copy(instantiate(d))
+@inline copy(d::Dotu{<:AbstractStridedLayout,<:AbstractStridedLayout}) = BLAS.dotu(d.A, d.B)
+@inline copy(d::Dotu) = Base._dot_nonrecursive(d.A, d.B)
+
 @inline Dot(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dot(M.A', M.B)
-@inline mulreduce(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dot(M)
-@inline eltype(D::Dot) = promote_type(eltype(D.A), eltype(D.B))
+@inline Dotu(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dotu(transpose(M.A), M.B)
+
+@inline _dot_or_dotu(::typeof(transpose), ::Type{<:Complex}, M) = Dotu(M)
+@inline _dot_or_dotu(_, _, M) = Dot(M)
+@inline mulreduce(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = _dot_or_dotu(dualadjoint(M.A), eltype(M.A), M)
+
+
 
 dot(a, b) = materialize(Dot(a, b))
+dotu(a, b) = materialize(Dotu(a, b))
+
 @inline LinearAlgebra.dot(a::LayoutArray, b::LayoutArray) = dot(a,b)
 @inline LinearAlgebra.dot(a::LayoutArray, b::AbstractArray) = dot(a,b)
 @inline LinearAlgebra.dot(a::AbstractArray, b::LayoutArray) = dot(a,b)
