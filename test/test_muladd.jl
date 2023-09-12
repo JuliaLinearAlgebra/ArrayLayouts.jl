@@ -675,12 +675,28 @@ Random.seed!(0)
         @test M[1,1] ≈ M[CartesianIndex(1,1)] ≈ M[1] ≈ (b*b')[1,1]
     end
 
-    @testset "Dot" begin
+    @testset "Dot/Dotu" begin
         a = randn(5)
         b = randn(5)
-        @test ArrayLayouts.dot(a,b) == mul(a',b)
+        c = randn(5) + im*randn(5)
+        d = randn(5) + im*randn(5)
+        
+        @test ArrayLayouts.dot(a,b) == ArrayLayouts.dotu(a,b) == mul(a',b)
         @test ArrayLayouts.dot(a,b) ≈ dot(a,b)
         @test eltype(Dot(a,1:5)) == Float64
+
+        @test ArrayLayouts.dot(c,d) == mul(c',d)
+        @test ArrayLayouts.dotu(c,d) == mul(transpose(c),d)
+        @test ArrayLayouts.dot(c,d) ≈ dot(c,d)
+        @test ArrayLayouts.dotu(c,d) ≈ BLAS.dotu(c,d)
+
+        @test ArrayLayouts.dot(c,b) == mul(c',b)
+        @test ArrayLayouts.dotu(c,b) == mul(transpose(c),b)
+        @test ArrayLayouts.dot(c,b) ≈ dot(c,b)
+        
+        @test ArrayLayouts.dot(a,d) == mul(a',d)
+        @test ArrayLayouts.dotu(a,d) == mul(transpose(a),d)
+        @test ArrayLayouts.dot(a,d) ≈ dot(a,d)
     end
 
     @testset "adjtrans muladd" begin
