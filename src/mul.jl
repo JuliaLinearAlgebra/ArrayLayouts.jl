@@ -377,8 +377,9 @@ for Dt in (:Dot, :Dotu)
     end
 end
 @inline copy(d::Dot) = invoke(LinearAlgebra.dot, Tuple{AbstractArray,AbstractArray}, d.A, d.B)
-@inline copy(d::Dotu{<:AbstractStridedLayout,<:AbstractStridedLayout}) = BLAS.dotu(d.A, d.B)
-@inline copy(d::Dotu) = Base._dot_nonrecursive(d.A, d.B)
+@inline copy(d::Dotu{<:AbstractStridedLayout,<:AbstractStridedLayout,<:AbstractVector{T},<:AbstractVector{T}}) where T <: BlasComplex = BLAS.dotu(d.A, d.B)
+@inline copy(d::Dotu{<:AbstractStridedLayout,<:AbstractStridedLayout,<:AbstractVector{T},<:AbstractVector{T}}) where T <: BlasReal = BLAS.dot(d.A, d.B)
+@inline copy(d::Dotu) = LinearAlgebra._dot_nonrecursive(d.A, d.B)
 
 @inline Dot(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dot(M.A', M.B)
 @inline Dotu(M::Mul{<:DualLayout,<:Any,<:AbstractMatrix,<:AbstractVector}) = Dotu(transpose(M.A), M.B)
