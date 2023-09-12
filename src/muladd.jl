@@ -189,6 +189,23 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
     C
 end
 
+function default_blasmul!(α, A::AbstractVector, B::AbstractMatrix, β, C::AbstractMatrix)
+    mA, = size(A)
+    mB, nB = size(B)
+    1 == mB || throw(DimensionMismatch("Dimensions must match"))
+    size(C) == (mA, nB) || throw(DimensionMismatch("Dimensions must match"))
+
+    lmul!(β, C)
+
+    (iszero(mA) || iszero(nB)) && return C
+
+    for k in colsupport(A), j in rowsupport(B)
+        _default_blasmul_loop!(α, A, B, β, C, k, j)
+    end
+    C
+end
+
+
 function _default_blasmul!(::IndexLinear, α, A::AbstractMatrix, B::AbstractVector, β, C::AbstractVector)
     mA, nA = size(A)
     mB = length(B)
@@ -262,6 +279,11 @@ function materialize!(M::MatMulMatAdd{<:AbstractStridedLayout,<:AbstractStridedL
 end
 
 function materialize!(M::MatMulVecAdd)
+    α, A, B, β, C = M.α, M.A, M.B, M.β, M.C
+    default_blasmul!(α, unalias(C,A), unalias(C,B), iszero(β) ? false : β, C)
+end
+
+function materialize!(M::VecMulMatAdd)
     α, A, B, β, C = M.α, M.A, M.B, M.β, M.C
     default_blasmul!(α, unalias(C,A), unalias(C,B), iszero(β) ? false : β, C)
 end
@@ -422,12 +444,6 @@ function similar(M::MulAdd{<:DualLayout,<:Any,ZerosLayout}, ::Type{T}, (x,y)) wh
     @assert length(x) == 1
     trans = transtype(M.A)
     trans(similar(trans(M.A), T, y))
-end
-
-function similar(M::MulAdd{<:Any,<:DualLayout,ZerosLayout}, ::Type{T}, (x,y)) where T
-    @assert length(x) == 1
-    trans = transtype(M.B)
-    trans(similar(trans(M.B), T, y))
 end
 
 const ZerosLayouts = Union{ZerosLayout,DualLayout{ZerosLayout}}

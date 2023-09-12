@@ -731,4 +731,8 @@ Random.seed!(0)
         Y = randn(rng, 8, 2)
         @test mul(Y',X) ≈ Y'X
     end
+
+    @testset "Vec * Adj" begin
+        @test ArrayLayouts.mul(1:5, (1:4)') == (1:5) * (1:4)'
+    end
 end
