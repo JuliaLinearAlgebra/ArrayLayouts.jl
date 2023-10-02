@@ -197,6 +197,8 @@ macro _layoutldiv(Typ)
         ret = quote
             $ret
             (\)(A::$Typ, x::LayoutVector; kwds...) = ArrayLayouts.ldiv(A,x; kwds...)
+            (\)(x::Diagonal{<:Any,<:LayoutVector}, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)
+            \(A::$Typ, B::Diagonal{<:Any,<:LayoutVector}; kwds...) = ArrayLayouts.ldiv(A, B; kwds...)
         end
     end
     if Typ ≠ :LayoutMatrix
