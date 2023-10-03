@@ -248,8 +248,6 @@ end
 \(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
 \(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = ldiv(A, B)
 \(A::AbstractMatrix, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
-\(A::Diagonal{<:Any,<:LayoutVector}, B::LayoutMatrix) = ldiv(A, B)
-\(A::LayoutMatrix, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
 \(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal) = ldiv(A, B)
 \(A::Diagonal, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
 

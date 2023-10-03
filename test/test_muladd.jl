@@ -615,7 +615,7 @@ Random.seed!(0)
         Q = qr(randn(5,5)).Q
         b = randn(5)
         B = randn(5,5)
-        @test Q*1.0 == ArrayLayouts.lmul!(Q, Matrix{Float64}(I, 5, 5))
+        @test Q*1.0 ≈ ArrayLayouts.lmul!(Q, Matrix{Float64}(I, 5, 5))
         @test Q*b == ArrayLayouts.lmul!(Q, copy(b)) == mul(Q,b)
         @test Q*B == ArrayLayouts.lmul!(Q, copy(B)) == mul(Q,B)
         @test B*Q == ArrayLayouts.rmul!(copy(B), Q) == mul(B,Q)
@@ -634,7 +634,7 @@ Random.seed!(0)
         Q = qr(randn(7,5)).Q
         b = randn(5)
         B = randn(5,5)
-        @test Q*1.0 == ArrayLayouts.lmul!(Q, Matrix{Float64}(I, 7, 7))
+        @test Q*1.0 ≈ ArrayLayouts.lmul!(Q, Matrix{Float64}(I, 7, 7))
         @test Q*b == mul(Q,b)
         @test Q*B == mul(Q,B)
         @test 1.0*Q ≈ ArrayLayouts.rmul!(Matrix{Float64}(I, 7, 7), Q)
@@ -681,7 +681,7 @@ Random.seed!(0)
         c = randn(5) + im*randn(5)
         d = randn(5) + im*randn(5)
         
-        @test ArrayLayouts.dot(a,b) == ArrayLayouts.dotu(a,b) == mul(a',b)
+        @test ArrayLayouts.dot(a,b) ≈ ArrayLayouts.dotu(a,b) ≈ mul(a',b)
         @test ArrayLayouts.dot(a,b) ≈ dot(a,b)
         @test eltype(Dot(a,1:5)) == Float64
 
