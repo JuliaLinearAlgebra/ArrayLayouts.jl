@@ -245,6 +245,9 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
                 @test transpose(x) / A isa Transpose
                 @test x' / A isa Adjoint
             end
+
+            @test D \ UpperTriangular(A) ≈ D \ UpperTriangular(A.A)
+            @test UpperTriangular(A) \ D ≈ UpperTriangular(A.A) \ D
         end
 
         @testset "dot" begin
