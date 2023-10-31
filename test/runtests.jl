@@ -12,7 +12,7 @@ import ArrayLayouts: MemoryLayout, @_layoutlmul, triangulardata
     Aqua.test_all(ArrayLayouts,
     	ambiguities = false,
     	piracy = (; broken=true),
-    	project_toml_formatting = VERSION >= v1.7,
+    	project_toml_formatting = VERSION >= v"1.7",
     )
 end
 
