@@ -9,7 +9,11 @@ using Test
 import ArrayLayouts: MemoryLayout, @_layoutlmul, triangulardata
 
 @testset "Project quality" begin
-    Aqua.test_all(ArrayLayouts, ambiguities=false, piracy=(; broken=true))
+    Aqua.test_all(ArrayLayouts,
+    	ambiguities = false,
+    	piracy = (; broken=true),
+    	project_toml_formatting = VERSION >= v1.7,
+    )
 end
 
 Random.seed!(0)
