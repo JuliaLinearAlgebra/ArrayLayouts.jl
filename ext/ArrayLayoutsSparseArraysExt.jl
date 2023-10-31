@@ -3,7 +3,9 @@ module ArrayLayoutsSparseArraysExt
 using ArrayLayouts
 using ArrayLayouts: _copyto!
 using SparseArrays
-import LinearAlgebra
+# Specifying the full namespace is necessary because of https://github.com/JuliaLang/julia/issues/48533
+# See https://github.com/JuliaStats/LogExpFunctions.jl/pull/63
+import ArrayLayouts.LinearAlgebra
 
 import Base: copyto!
 
