@@ -7,6 +7,7 @@ A Julia package for describing array layouts and more general fast linear algebr
 [![deps](https://juliahub.com/docs/General/ArrayLayouts/stable/deps.svg)](https://juliahub.com/ui/Packages/General/ArrayLayouts?t=2)
 [![version](https://juliahub.com/docs/General/ArrayLayouts/stable/version.svg)](https://juliahub.com/ui/Packages/General/ArrayLayouts)
 [![pkgeval](https://juliahub.com/docs/General/ArrayLayouts/stable/pkgeval.svg)](https://juliahub.com/ui/Packages/General/ArrayLayouts)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://JuliaLinearAlgebra.github.io/ArrayLayouts.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://JuliaLinearAlgebra.github.io/ArrayLayouts.jl/dev)
