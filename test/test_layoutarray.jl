@@ -238,14 +238,21 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test A\MyVector(x) ≈ A\x
             @test A\MyMatrix(X) ≈ A\X
 
+            # Regression for https://github.com/JuliaArrays/BlockArrays.jl/issues/319
             @test qr(A)\MyVector(x) ≈ A\x
+            @test ldiv!(qr(A), MyVector(copy(x))) ≈ A\x
             @test qr(A)\MyMatrix(X) ≈ A\X
+            @test ldiv!(qr(A), MyMatrix(copy(X))) ≈ A\X
 
             @test lu(A)\MyVector(x) ≈ A\x
+            @test ldiv!(lu(A), MyVector(copy(x))) ≈ A\x
             @test lu(A)\MyMatrix(X) ≈ A\X
+            @test ldiv!(lu(A), MyMatrix(copy(X))) ≈ A\X
 
             @test cholesky(Asym)\MyVector(x) ≈ Asym\x
+            @test ldiv!(cholesky(Asym), MyVector(copy(x))) ≈ Asym\x
             @test cholesky(Asym)\MyMatrix(X) ≈ Asym\X
+            @test ldiv!(cholesky(Asym), MyMatrix(copy(X))) ≈ Asym\X
 
             @test S\MyVector(x) ≈ S\x
             @test S\MyMatrix(X) ≈ S\X
