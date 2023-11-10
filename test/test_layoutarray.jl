@@ -140,11 +140,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
                 else
                     @test ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
                 end
-                if VERSION < v"1.9" || VERSION >= v"1.10-"
-                    @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c)))
-                else
-                    @test_throws MethodError ldiv!(qr(A), MyVector(copy(c)))
-                end
+                @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c))) # Missing materialize! overload
                 @test_throws ErrorException ldiv!(eigen(randn(5,5)), c)
                 @test ArrayLayouts.ldiv!(svd(A.A), copy(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c
                 if VERSION ≥ v"1.8"
@@ -213,6 +209,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
         @testset "layoutldiv" begin
             A = MyMatrix(randn(5,5))
+            Asym = A'*A
             x = randn(5)
             X = randn(5,5)
             t = view(randn(10),[1,3,4,6,7])
@@ -221,8 +218,11 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             T̃ = copy(T)
             B = Bidiagonal(randn(5),randn(4),:U)
             D = Diagonal(randn(5))
+            S = sprand(5, 5, 0.8)
+
             @test ldiv!(A, copy(x)) ≈ A\x
             @test A\t ≈ A\t̃
+            @test A\t ≈ A\SparseVector(t̃)
             # QR is not general enough
             @test_broken ldiv!(A, t) ≈ A\t
             @test ldiv!(A, copy(X)) ≈ A\X
@@ -237,6 +237,18 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             VERSION >= v"1.9" && @test A/A ≈ I
             @test A\MyVector(x) ≈ A\x
             @test A\MyMatrix(X) ≈ A\X
+
+            @test qr(A)\MyVector(x) ≈ A\x
+            @test qr(A)\MyMatrix(X) ≈ A\X
+
+            @test lu(A)\MyVector(x) ≈ A\x
+            @test lu(A)\MyMatrix(X) ≈ A\X
+
+            @test cholesky(Asym)\MyVector(x) ≈ Asym\x
+            @test cholesky(Asym)\MyMatrix(X) ≈ Asym\X
+
+            @test S\MyVector(x) ≈ S\x
+            @test S\MyMatrix(X) ≈ S\X
 
             if VERSION >= v"1.9"
                 @test A/A ≈ A.A / A.A
