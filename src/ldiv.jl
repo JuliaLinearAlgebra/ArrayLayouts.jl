@@ -150,7 +150,8 @@ macro _layoutldiv(Typ)
         LinearAlgebra.ldiv!(A::Factorization, x::$Typ; kwds...) = ArrayLayouts.ldiv!(A,x; kwds...)
         LinearAlgebra.ldiv!(A::LU, x::$Typ; kwds...) = ArrayLayouts.ldiv!(A,x; kwds...)
         LinearAlgebra.ldiv!(A::Cholesky, x::$Typ; kwds...) = ArrayLayouts.ldiv!(A,x; kwds...)
-        LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY, x::$Typ; kwds...) = ArrayLayouts.ldiv!(A,x; kwds...)
+        # Type restriction to disambiguiate calls, see https://github.com/JuliaArrays/BlockArrays.jl/issues/319
+        LinearAlgebra.ldiv!(A::LinearAlgebra.QRCompactWY{T2}, x::$Typ{T2}; kwds...) where T2<:BlasFloat = ArrayLayouts.ldiv!(A,x; kwds...)
 
         LinearAlgebra.ldiv!(A::Bidiagonal, B::$Typ; kwds...) = ArrayLayouts.ldiv!(A,B; kwds...)
 
