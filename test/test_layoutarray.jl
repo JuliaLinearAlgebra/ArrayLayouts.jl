@@ -249,6 +249,13 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
             @test S\MyVector(x) ≈ S\x
             @test S\MyMatrix(X) ≈ S\X
+            @test MyMatrix(S)\MyVector(x) ≈ S\x
+            @test MyMatrix(S)\MyMatrix(X) ≈ S\X
+
+            @test MyVector(x)'/MyMatrix(S) ≈ x'/S
+            @test X/MyMatrix(S) ≈ X/S
+            @test MyVector(x)'/MyMatrix(S) ≈ x'/S
+            @test X/MyMatrix(S) ≈ X/S
 
             if VERSION >= v"1.9"
                 @test A/A ≈ A.A / A.A
