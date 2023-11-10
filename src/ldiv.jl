@@ -165,6 +165,7 @@ macro _layoutldiv(Typ)
         (\)(A::$Typ, x::AbstractMatrix; kwds...) = ArrayLayouts.ldiv(A,x; kwds...)
 
         (\)(x::AbstractMatrix, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)
+        (\)(x::AbstractSparseMatrix, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)
         (\)(x::LinearAlgebra.HermOrSym, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)
         if VERSION < v"1.9-" # disambiguation
             \(x::LinearAlgebra.HermOrSym{<:Any,<:StridedMatrix}, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)
