@@ -1,6 +1,5 @@
 using ArrayLayouts
 import Aqua
-using Base64
 using FillArrays
 using Random
 using SparseArrays
