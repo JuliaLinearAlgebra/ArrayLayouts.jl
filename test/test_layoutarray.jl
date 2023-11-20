@@ -1,4 +1,4 @@
-using ArrayLayouts, LinearAlgebra, FillArrays, Base64, Test
+using ArrayLayouts, LinearAlgebra, FillArrays, Test
 using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum
 
 struct MyMatrix <: LayoutMatrix{Float64}
@@ -37,7 +37,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test a[1:3] == a.A[1:3]
         @test a[:] == a
         @test (a')[1,:] == (a')[1,1:3] == a
-        @test stringmime("text/plain", a) == "3-element MyVector{Float64}:\n 1.0\n 2.0\n 3.0"
+        @test sprint(show, "text/plain", a) == "3-element MyVector{Float64}:\n 1.0\n 2.0\n 3.0"
         @test B*a ≈ B*a.A
         @test B'*a ≈ B'*a.A
         @test transpose(B)*a ≈ transpose(B)*a.A
@@ -209,7 +209,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         end
 
         C = MyMatrix([1 2; 3 4])
-        @test stringmime("text/plain", C) == "2×2 MyMatrix:\n 1.0  2.0\n 3.0  4.0"
+        @test sprint(show, "text/plain", C) == "2×2 MyMatrix:\n 1.0  2.0\n 3.0  4.0"
 
         @testset "layoutldiv" begin
             A = MyMatrix(randn(5,5))
