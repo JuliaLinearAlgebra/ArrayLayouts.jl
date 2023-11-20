@@ -11,8 +11,7 @@ import ArrayLayouts: MemoryLayout, @_layoutlmul, triangulardata
 @testset "Project quality" begin
     Aqua.test_all(ArrayLayouts,
     	ambiguities = false,
-    	piracy = (; broken=true),
-    	project_toml_formatting = VERSION >= v"1.7",
+    	piracies = (; broken=true),
     )
 end
 
