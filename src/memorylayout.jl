@@ -645,6 +645,7 @@ gives an iterator containing the possible non-zero entries in the k-th row of A.
 """
 rowsupport(A, k) = rowsupport(MemoryLayout(A), A, k)
 rowsupport(A) = rowsupport(A, axes(A,1))
+rowsupport(A, k::CartesianIndex{2}) = rowsupport(A, k[1])
 
 colsupport(_, A, j) = axes(A,1)
 
@@ -656,6 +657,7 @@ gives an iterator containing the possible non-zero entries in the j-th column of
 """
 colsupport(A, j) = colsupport(MemoryLayout(A), A, j)
 colsupport(A) = colsupport(A, axes(A,2))
+colsupport(A, k::CartesianIndex{2}) = rowsupport(A, k[2])
 
 # TODO: generalise to other subarrays
 function colsupport(A::SubArray{<:Any,N,<:Any,<:Tuple{Slice,AbstractVector}}, j) where N
