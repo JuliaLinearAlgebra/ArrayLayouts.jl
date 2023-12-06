@@ -78,6 +78,7 @@ _fill_copyto!(dest, C::Zeros) = zero!(dest) # exploit special fill! overload
     muladd!(M.α, unalias(dest,M.A), unalias(dest,M.B), M.β, _fill_copyto!(dest, M.C))
 
 # Modified from LinearAlgebra._generic_matmatmul!
+const tilebufsize = 10800  # Approximately 32k/3
 function tile_size(T, S, R)
     tile_size = 0
     if isbitstype(R) && isbitstype(T) && isbitstype(S)
