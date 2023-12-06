@@ -1,9 +1,11 @@
 using Documenter
 using ArrayLayouts
 
+DocMeta.setdocmeta!(ArrayLayouts, :DocTestSetup, :(using ArrayLayouts); recursive=true)
+
 makedocs(
     sitename = "ArrayLayouts",
-    modules = [ArrayLayouts]
+    modules = [ArrayLayouts],
 )
 
 # Documenter can also automatically deploy documentation to gh-pages.
