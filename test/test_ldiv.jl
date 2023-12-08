@@ -15,49 +15,49 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
         @test size(M) == (5,)
         @test similar(M) isa Vector{Float64}
         @test materialize(M) isa Vector{Float64}
-        @test all(materialize(M) .=== (A\b) .=== ldiv(A,b))
+        @test materialize(M) == (A\b) == ldiv(A,b)
 
         @test Base.BroadcastStyle(typeof(Ldiv(A,b))) isa ApplyBroadcastStyle
 
-        @test all(copyto!(similar(b), Ldiv(A,b)) .===
-                    (similar(b) .= Ldiv(A,b)) .=== materialize(Ldiv(A,b)) .===
-                  (A\b) .=== (b̃ =  copy(b); LAPACK.gesv!(copy(A), b̃); b̃))
+        @test copyto!(similar(b), Ldiv(A,b)) ==
+                    (similar(b) .= Ldiv(A,b)) == materialize(Ldiv(A,b)) ==
+                  (A\b) == (b̃ =  copy(b); LAPACK.gesv!(copy(A), b̃); b̃)
 
         @test copyto!(similar(b), Ldiv(UpperTriangular(A) , b)) ≈ UpperTriangular(A) \ b
-        @test all(copyto!(similar(b), Ldiv(UpperTriangular(A) , b)) .===
-                    (similar(b) .= Ldiv(UpperTriangular(A),b)) .===
-                    BLAS.trsv('U', 'N', 'N', A, b) )
+        @test copyto!(similar(b), Ldiv(UpperTriangular(A) , b)) ==
+                    (similar(b) .= Ldiv(UpperTriangular(A),b)) ==
+                    BLAS.trsv('U', 'N', 'N', A, b)
 
         @test copyto!(similar(b), Ldiv(UpperTriangular(A)' , b)) ≈ UpperTriangular(A)' \ b
-        @test all(copyto!(similar(b), Ldiv(UpperTriangular(A)' , b)) .===
-                    (similar(b) .= Ldiv(UpperTriangular(A)',b)) .===
-                    copyto!(similar(b), Ldiv(transpose(UpperTriangular(A)) , b)) .===
-                            (similar(b) .= Ldiv(transpose(UpperTriangular(A)),b)) .===
-                    BLAS.trsv('U', 'T', 'N', A, b))
+        @test copyto!(similar(b), Ldiv(UpperTriangular(A)' , b)) ==
+                    (similar(b) .= Ldiv(UpperTriangular(A)',b)) ==
+                    copyto!(similar(b), Ldiv(transpose(UpperTriangular(A)) , b)) ==
+                            (similar(b) .= Ldiv(transpose(UpperTriangular(A)),b)) ==
+                    BLAS.trsv('U', 'T', 'N', A, b)
     end
 
     @testset "ComplexF64 \\ *" begin
         T = ComplexF64
         A = randn(T,5,5)
         b = randn(T,5)
-        @test all(copyto!(similar(b), Ldiv(A,b)) .===
-                    (similar(b) .= Ldiv(A,b)) .===
-                  (A\b) .=== (b̃ =  copy(b); LAPACK.gesv!(copy(A), b̃); b̃))
+        @test copyto!(similar(b), Ldiv(A,b)) ==
+                    (similar(b) .= Ldiv(A,b)) ==
+                  (A\b) == (b̃ =  copy(b); LAPACK.gesv!(copy(A), b̃); b̃)
 
         @test copyto!(similar(b), Ldiv(UpperTriangular(A) , b)) ≈ UpperTriangular(A) \ b
-        @test all(copyto!(similar(b), Ldiv(UpperTriangular(A) , b)) .===
-                    (similar(b) .= Ldiv(UpperTriangular(A),b)) .===
-                    BLAS.trsv('U', 'N', 'N', A, b) )
+        @test copyto!(similar(b), Ldiv(UpperTriangular(A) , b)) ==
+                    (similar(b) .= Ldiv(UpperTriangular(A),b)) ==
+                    BLAS.trsv('U', 'N', 'N', A, b)
 
         @test copyto!(similar(b), Ldiv(UpperTriangular(A)' , b)) ≈ UpperTriangular(A)' \ b
-        @test all(copyto!(similar(b), Ldiv(UpperTriangular(A)' , b)) .===
-                    (similar(b) .= Ldiv(UpperTriangular(A)',b)) .===
-                    BLAS.trsv('U', 'C', 'N', A, b))
+        @test copyto!(similar(b), Ldiv(UpperTriangular(A)' , b)) ==
+                    (similar(b) .= Ldiv(UpperTriangular(A)',b)) ==
+                    BLAS.trsv('U', 'C', 'N', A, b)
 
         @test copyto!(similar(b), Ldiv(transpose(UpperTriangular(A)) , b)) ≈ transpose(UpperTriangular(A)) \ b
-        @test all(copyto!(similar(b), Ldiv(transpose(UpperTriangular(A)) , b)) .===
-                            (similar(b) .= Ldiv(transpose(UpperTriangular(A)),b)) .===
-                    BLAS.trsv('U', 'T', 'N', A, b))
+        @test copyto!(similar(b), Ldiv(transpose(UpperTriangular(A)) , b)) ==
+                            (similar(b) .= Ldiv(transpose(UpperTriangular(A)),b)) ==
+                    BLAS.trsv('U', 'T', 'N', A, b)
     end
 
     @testset "BigFloat Triangular \\" begin
@@ -152,12 +152,12 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
                 Q = F.Q
                 @test MemoryLayout(F) isa QRCompactWYLayout
                 @test MemoryLayout(Q) isa QRCompactWYQLayout
-                @test all(ArrayLayouts.lmul!(Q,copy(b)) .=== lmul!(Q,copy(b)))
-                @test all(ArrayLayouts.lmul!(Q',copy(b)) .=== ArrayLayouts.ldiv!(Q,copy(b)) .=== lmul!(Q',copy(b)))
-                @test all(ArrayLayouts.lmul!(Q,copy(B)) .=== lmul!(Q,copy(B)))
-                @test all(ArrayLayouts.lmul!(Q',copy(B)) .=== ArrayLayouts.ldiv!(Q,copy(B)) .=== lmul!(Q',copy(B)))
-                @test all(ArrayLayouts.rmul!(copy(B),Q) .=== rmul!(copy(B),Q))
-                @test all(ArrayLayouts.rmul!(copy(B),Q') .=== ArrayLayouts.rdiv!(copy(B),Q) .=== rmul!(copy(B),Q'))
+                @test ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b))
+                @test ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b))
+                @test ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B))
+                @test ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B))
+                @test ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q)
+                @test ArrayLayouts.rmul!(copy(B),Q') == ArrayLayouts.rdiv!(copy(B),Q) == rmul!(copy(B),Q')
                 @test ArrayLayouts.ldiv!(F,copy(b)) ≈ ldiv!(F,copy(b)) # only approx since we use BLAS.trsv!
                 @test ArrayLayouts.ldiv!(F,copy(B)) ≈ ldiv!(F,copy(B)) # only approx since we use BLAS.trsv!
 
@@ -176,11 +176,11 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
                     Q = F.Q
                     @test MemoryLayout(F) isa QRPackedLayout
                     @test MemoryLayout(Q) isa QRPackedQLayout
-                    @test all(ArrayLayouts.lmul!(Q,copy(b)) .=== lmul!(Q,copy(b)))
-                    @test all(ArrayLayouts.lmul!(Q',copy(b)) .=== ArrayLayouts.ldiv!(Q,copy(b)) .=== lmul!(Q',copy(b)))
-                    @test all(ArrayLayouts.lmul!(Q,copy(B)) .=== lmul!(Q,copy(B)))
-                    @test all(ArrayLayouts.lmul!(Q',copy(B)) .=== ArrayLayouts.ldiv!(Q,copy(B)) .=== lmul!(Q',copy(B)))
-                    @test all(ArrayLayouts.rmul!(copy(B),Q) .=== rmul!(copy(B),Q))
+                    @test ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b))
+                    @test ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b))
+                    @test ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B))
+                    @test ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B))
+                    @test ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q)
                     @test ArrayLayouts.rmul!(copy(B),Q') ≈ ArrayLayouts.rdiv!(copy(B),Q) ≈ rmul!(copy(B),Q')
                     @test ArrayLayouts.ldiv!(F,copy(b)) ≈ ldiv!(F,copy(b)) # only approx since we use BLAS.trsv!
                     @test ArrayLayouts.ldiv!(F,copy(B)) ≈ ldiv!(F,copy(B)) # only approx since we use BLAS.trsv!
@@ -216,11 +216,11 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
                     B = T.(randn(12,12))
                     F = LinearAlgebra.qrfactUnblocked!(copy(A))
                     Q = F.Q
-                    @test all(ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b)))
-                    @test all(ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b)))
-                    @test all(ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B)))
-                    @test all(ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B)))
-                    @test all(ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q))
+                    @test ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b))
+                    @test ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b))
+                    @test ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B))
+                    @test ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B))
+                    @test ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q)
                     @test ArrayLayouts.rmul!(copy(B),Q') ≈ ArrayLayouts.rdiv!(copy(B),Q) ≈ rmul!(copy(B),Q')
                     @test ArrayLayouts.ldiv!(F,copy(b)) ≈ ldiv!(F,copy(b)) # only approx since we use BLAS.trsv!
                     @test ArrayLayouts.ldiv!(F,copy(B)) ≈ ldiv!(F,copy(B)) # only approx since we use BLAS.trsv!
@@ -232,11 +232,11 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
                     B = T.(randn(10,10))
                     F = LinearAlgebra.qrfactUnblocked!(copy(A))
                     Q = F.Q
-                    @test all(ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b)))
-                    @test all(ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b)))
-                    @test all(ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B)))
-                    @test all(ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B)))
-                    @test all(ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q))
+                    @test ArrayLayouts.lmul!(Q,copy(b)) == lmul!(Q,copy(b))
+                    @test ArrayLayouts.lmul!(Q',copy(b)) == ArrayLayouts.ldiv!(Q,copy(b)) == lmul!(Q',copy(b))
+                    @test ArrayLayouts.lmul!(Q,copy(B)) == lmul!(Q,copy(B))
+                    @test ArrayLayouts.lmul!(Q',copy(B)) == ArrayLayouts.ldiv!(Q,copy(B)) == lmul!(Q',copy(B))
+                    @test ArrayLayouts.rmul!(copy(B),Q) == rmul!(copy(B),Q)
                     @test ArrayLayouts.rmul!(copy(B),Q') ≈ ArrayLayouts.rdiv!(copy(B),Q) ≈ rmul!(copy(B),Q')
 
                     @test_throws DimensionMismatch ArrayLayouts.ldiv!(F,copy(b))

@@ -39,24 +39,24 @@ Random.seed!(0)
                 c = similar(b);
 
                 muladd!(1.0,A,b,0.0,c)
-                @test all(c .=== A*b .=== BLAS.gemv!('N', 1.0, A, b, 0.0, similar(c)))
+                @test c == A*b == BLAS.gemv!('N', 1.0, A, b, 0.0, similar(c))
                 copyto!(c, MulAdd(1.0,A,b,0.0,c))
-                @test all(c .=== A*b .=== BLAS.gemv!('N', 1.0, A, b, 0.0, similar(c)))
+                @test c == A*b == BLAS.gemv!('N', 1.0, A, b, 0.0, similar(c))
                 c .= MulAdd(1.0,A,b,0.0,c)
-                @test all(c .=== A*b .=== BLAS.gemv!('N', 1.0, A, b, 0.0, similar(c)))
+                @test c == A*b == BLAS.gemv!('N', 1.0, A, b, 0.0, similar(c))
 
                 M = MulAdd(2.0, A,b, 0.0, c)
                 @test M isa MulAdd{<:AbstractColumnMajor,<:AbstractStridedLayout,<:AbstractColumnMajor}
                 c .= M
-                @test all(c .=== BLAS.gemv!('N', 2.0, A, b, 0.0, similar(c)))
+                @test c == BLAS.gemv!('N', 2.0, A, b, 0.0, similar(c))
                 copyto!(c, M)
-                @test all(c .=== BLAS.gemv!('N', 2.0, A, b, 0.0, similar(c)))
+                @test c == BLAS.gemv!('N', 2.0, A, b, 0.0, similar(c))
 
                 c = copy(b)
                 M = MulAdd(1.0, A,b, 1.0, c)
                 @test M isa MulAdd{<:AbstractColumnMajor,<:AbstractStridedLayout,<:AbstractColumnMajor}
                 copyto!(c, M)
-                @test all(c .=== BLAS.gemv!('N', 1.0, A, b, 1.0, copy(b)))
+                @test c == BLAS.gemv!('N', 1.0, A, b, 1.0, copy(b))
             end
         end
 
@@ -64,7 +64,7 @@ Random.seed!(0)
             (A, b, c) = (randn(5,5), randn(5), 1.0:5.0)
             d = similar(b)
             d .= MulAdd(1.0,A,b,1.0,c)
-            @test all(d .=== BLAS.gemv!('N', 1.0, A, b, 1.0, Vector{Float64}(c)))
+            @test d == BLAS.gemv!('N', 1.0, A, b, 1.0, Vector{Float64}(c))
         end
 
         @testset "gemv Complex" begin
@@ -74,11 +74,11 @@ Random.seed!(0)
                 c = similar(b);
 
                 c .= MulAdd(one(T), A, b, zero(T), c)
-                @test all(c .=== BLAS.gemv!('N', one(T), A, b, zero(T), similar(c)))
+                @test c == BLAS.gemv!('N', one(T), A, b, zero(T), similar(c))
 
                 c = copy(b)
                 muladd!(2one(T),A,b,one(T),c)
-                @test all(c .=== BLAS.gemv!('N', 2one(T), A, b, one(T), copy(b)))
+                @test c == BLAS.gemv!('N', 2one(T), A, b, one(T), copy(b))
             end
         end
 
@@ -100,14 +100,14 @@ Random.seed!(0)
                 C = similar(B);
 
                 C .= MulAdd(1.0,A,B,0.0,C)
-                @test all(C .=== BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, similar(C)))
+                @test C == BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, similar(C))
 
                 C .= MulAdd(2.0,A,B,0.0,C)
-                @test all(C .=== BLAS.gemm!('N', 'N', 2.0, A, B, 0.0, similar(C)))
+                @test C == BLAS.gemm!('N', 'N', 2.0, A, B, 0.0, similar(C))
 
                 C = copy(B)
                 C .= MulAdd(2.0,A,B,1.0,C)
-                @test all(C .=== BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B)))
+                @test C == BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
             end
         end
 
@@ -118,14 +118,14 @@ Random.seed!(0)
                 C = similar(B);
 
                 C .= MulAdd(one(T),A,B,zero(T),C)
-                @test all(C .=== BLAS.gemm!('N', 'N', one(T), A, B, zero(T), similar(C)))
+                @test C == BLAS.gemm!('N', 'N', one(T), A, B, zero(T), similar(C))
 
                 C .= MulAdd(2one(T),A,B,zero(T),C)
-                @test all(C .=== BLAS.gemm!('N', 'N', 2one(T), A, B, zero(T), similar(C)))
+                @test C == BLAS.gemm!('N', 'N', 2one(T), A, B, zero(T), similar(C))
 
                 C = copy(B)
                 C .= MulAdd(one(T),A,B,one(T),C)
-                @test all(C .=== BLAS.gemm!('N', 'N', one(T), A, B, one(T), copy(B)))
+                @test C == BLAS.gemm!('N', 'N', one(T), A, B, one(T), copy(B))
             end
         end
 
@@ -133,7 +133,7 @@ Random.seed!(0)
             (A, B, C) = (randn(5,5), randn(5,5), reshape(1.0:25.0,5,5))
             D = similar(B)
             D .= MulAdd(1.0,A,B,1.0, C)
-            @test all(D .=== BLAS.gemm!('N', 'N', 1.0, A, B, 1.0, Matrix{Float64}(C)))
+            @test D == BLAS.gemm!('N', 'N', 1.0, A, B, 1.0, Matrix{Float64}(C))
         end
     end
 
@@ -146,14 +146,14 @@ Random.seed!(0)
                 c = similar(b);
 
                 c .= MulAdd(1.0,Ac,b,0.0,c)
-                @test all(c .=== BLAS.gemv!('T', 1.0, A, b, 0.0, similar(c)))
+                @test c == BLAS.gemv!('T', 1.0, A, b, 0.0, similar(c))
 
                 c .= MulAdd(2.0,Ac,b,0.0,c)
-                @test all(c .=== BLAS.gemv!('T', 2.0, A, b, 0.0, similar(c)))
+                @test c == BLAS.gemv!('T', 2.0, A, b, 0.0, similar(c))
 
                 c = copy(b)
                 c .= MulAdd(1.0,Ac,b,1.0,c)
-                @test all(c .=== BLAS.gemv!('T', 1.0, A, b, 1.0, copy(b)))
+                @test c == BLAS.gemv!('T', 1.0, A, b, 1.0, copy(b))
             end
         end
 
@@ -162,10 +162,10 @@ Random.seed!(0)
             for Ac in (transpose(A), A')
                 d = similar(b)
                 d .= MulAdd(1.0,Ac,b,1.0, c)
-                @test all(d .=== BLAS.gemv!('T', 1.0, A, b, 1.0, Vector{Float64}(c)))
+                @test d == BLAS.gemv!('T', 1.0, A, b, 1.0, Vector{Float64}(c))
 
                 d .= MulAdd(3.0,Ac,b,2.0, c)
-                @test all(d .=== BLAS.gemv!('T', 3.0, A, b, 2.0, Vector{Float64}(c)))
+                @test d == BLAS.gemv!('T', 3.0, A, b, 2.0, Vector{Float64}(c))
             end
         end
 
@@ -177,18 +177,18 @@ Random.seed!(0)
                 c = similar(b);
 
                 c .= MulAdd(one(T),Ac,b,zero(T),c)
-                @test all(c .=== BLAS.gemv!(trans, one(T), A, b, zero(T), similar(c)))
+                @test c == BLAS.gemv!(trans, one(T), A, b, zero(T), similar(c))
 
                 c = copy(b)
                 c .= MulAdd(3one(T),Ac,b,2one(T),c)
-                @test all(c .=== BLAS.gemv!(trans, 3one(T), A, b, 2one(T), copy(b)))
+                @test c == BLAS.gemv!(trans, 3one(T), A, b, 2one(T), copy(b))
             end
 
             C = randn(6,6) + im*randn(6,6)
             V = view(C', 2:3, 3:4)
             c = randn(2) + im*randn(2)
-            @test all(muladd!(1.0+0im,V,c,0.0+0im,similar(c,2)) .=== BLAS.gemv!('C', 1.0+0im, Matrix(V'), c, 0.0+0im, similar(c,2)))
-            @test all(muladd!(1.0+0im,V',c,0.0+0im,similar(c,2)) .=== BLAS.gemv!('N', 1.0+0im, Matrix(V'), c, 0.0+0im, similar(c,2)))
+            @test muladd!(1.0+0im,V,c,0.0+0im,similar(c,2)) == BLAS.gemv!('C', 1.0+0im, Matrix(V'), c, 0.0+0im, similar(c,2))
+            @test muladd!(1.0+0im,V',c,0.0+0im,similar(c,2)) == BLAS.gemv!('N', 1.0+0im, Matrix(V'), c, 0.0+0im, similar(c,2))
         end
 
         @testset "gemm adjtrans" begin
@@ -197,18 +197,18 @@ Random.seed!(0)
                 for Ac in (transpose(A), A')
                     C = copy(B)
                     C .= MulAdd(3.0, Ac, B, 2.0, C)
-                    @test all(C .=== BLAS.gemm!('T', 'N', 3.0, A, B, 2.0, copy(B)))
+                    @test C == BLAS.gemm!('T', 'N', 3.0, A, B, 2.0, copy(B))
                 end
                 for Bc in (transpose(B), B')
                     C = copy(B)
                     C .= MulAdd(3.0, A, Bc, 2.0, C)
-                    @test all(C .=== BLAS.gemm!('N', 'T', 3.0, A, B, 2.0, copy(B)))
+                    @test C == BLAS.gemm!('N', 'T', 3.0, A, B, 2.0, copy(B))
                 end
                 for Ac in (transpose(A), A'), Bc in (transpose(B), B')
                     C = copy(B)
                     d = similar(C)
                     d .= MulAdd(3.0, Ac, Bc, 2.0, C)
-                    @test all(d .=== BLAS.gemm!('T', 'T', 3.0, A, B, 2.0, copy(B)))
+                    @test d == BLAS.gemm!('T', 'T', 3.0, A, B, 2.0, copy(B))
                 end
             end
         end
@@ -217,30 +217,30 @@ Random.seed!(0)
             A = randn(100,100)
             x = randn(100)
             for As in (Symmetric(A), Hermitian(A), Symmetric(A)', Symmetric(view(A,:,:)',:L), view(Symmetric(A),:,:))
-                @test all( muladd!(1.0,As,x,0.0,similar(x)) .=== BLAS.symv!('U', 1.0, A, x, 0.0, similar(x)) )
+                @test muladd!(1.0,As,x,0.0,similar(x)) == BLAS.symv!('U', 1.0, A, x, 0.0, similar(x))
             end
 
             for As in (Symmetric(A,:L), Hermitian(A,:L), Symmetric(A,:L)', Symmetric(view(A,:,:)',:U), view(Hermitian(A,:L),:,:))
-                @test all( muladd!(1.0,As,x,0.0,similar(x)) .=== BLAS.symv!('L', 1.0, A, x, 0.0, similar(x)) )
+                @test muladd!(1.0,As,x,0.0,similar(x)) == BLAS.symv!('L', 1.0, A, x, 0.0, similar(x))
             end
 
             T = ComplexF64
             A = randn(T,100,100)
             x = randn(T,100)
             for As in (Symmetric(A), transpose(Symmetric(A)), Symmetric(transpose(view(A,:,:)),:L), view(Symmetric(A),:,:))
-                @test all( muladd!(one(T),As,x,zero(T),similar(x)) .=== BLAS.symv!('U', one(T), A, x, zero(T), similar(x)) )
+                @test muladd!(one(T),As,x,zero(T),similar(x)) == BLAS.symv!('U', one(T), A, x, zero(T), similar(x))
             end
 
             for As in (Symmetric(A,:L), transpose(Symmetric(A,:L)), Symmetric(transpose(view(A,:,:)),:U), view(Symmetric(A,:L),:,:))
-                @test all( muladd!(one(T),As,x,zero(T),similar(x)) .=== BLAS.symv!('L', one(T), A, x, zero(T), similar(x)) )
+                @test muladd!(one(T),As,x,zero(T),similar(x)) == BLAS.symv!('L', one(T), A, x, zero(T), similar(x))
             end
 
             for As in(Hermitian(A), Hermitian(A)', view(Hermitian(A),:,:))
-                @test all( muladd!(one(T),As,x,zero(T),similar(x)) .=== BLAS.hemv!('U', one(T), A, x, zero(T), similar(x)) )
+                @test muladd!(one(T),As,x,zero(T),similar(x)) == BLAS.hemv!('U', one(T), A, x, zero(T), similar(x))
             end
 
             for As in(Hermitian(A,:L), Hermitian(A,:L)', view(Hermitian(A,:L),:,:))
-                @test all( muladd!(one(T),As,x,zero(T),similar(x)) .=== BLAS.hemv!('L', one(T), A, x, zero(T), similar(x)) )
+                @test muladd!(one(T),As,x,zero(T),similar(x)) == BLAS.hemv!('L', one(T), A, x, zero(T), similar(x))
             end
         end
     end
@@ -255,7 +255,7 @@ Random.seed!(0)
             @test d == copyto!(similar(d), MulAdd(1, A, b, 0.0, d)) ≈ A*b
             @test copyto!(similar(d), MulAdd(1, A, b, 1.0, d)) ≈ A*b + d
 
-            @test all((similar(d) .= MulAdd(1, A, b, 1.0, d)) .=== copyto!(similar(d), MulAdd(1, A, b, 1.0, d)))
+            @test (similar(d) .= MulAdd(1, A, b, 1.0, d)) == copyto!(similar(d), MulAdd(1, A, b, 1.0, d))
 
             B = rand(Int,6,4)
             C = Array{Float64}(undef, 5, 4)
@@ -319,39 +319,39 @@ Random.seed!(0)
                 @test similar(L) isa Vector{Float64}
                 @test similar(L,Int) isa Vector{Int}
 
-                @test all(mul(UpperTriangular(A),x) .===
-                            copy(Lmul(UpperTriangular(A),x)) .===
-                            ArrayLayouts.lmul(UpperTriangular(A),x) .===
-                            ArrayLayouts.lmul!(UpperTriangular(A),copy(x)) .===
-                            copyto!(similar(x),Lmul(UpperTriangular(A),x)) .===
-                            UpperTriangular(A)*x .===
-                            BLAS.trmv!('U', 'N', 'N', A, copy(x)))
-                @test all(copyto!(similar(x),Lmul(UnitUpperTriangular(A),x)) .===
-                            UnitUpperTriangular(A)*x .===
-                            BLAS.trmv!('U', 'N', 'U', A, copy(x)))
-                @test all(copyto!(similar(x),Lmul(LowerTriangular(A),x)) .===
-                            LowerTriangular(A)*x .===
-                            BLAS.trmv!('L', 'N', 'N', A, copy(x)))
-                @test all(ArrayLayouts.lmul!(UnitLowerTriangular(A),copy(x)) .===
-                            UnitLowerTriangular(A)x .===
-                            BLAS.trmv!('L', 'N', 'U', A, copy(x)))
+                @test mul(UpperTriangular(A),x) ==
+                            copy(Lmul(UpperTriangular(A),x)) ==
+                            ArrayLayouts.lmul(UpperTriangular(A),x) ==
+                            ArrayLayouts.lmul!(UpperTriangular(A),copy(x)) ==
+                            copyto!(similar(x),Lmul(UpperTriangular(A),x)) ==
+                            UpperTriangular(A)*x ==
+                            BLAS.trmv!('U', 'N', 'N', A, copy(x))
+                @test copyto!(similar(x),Lmul(UnitUpperTriangular(A),x)) ==
+                            UnitUpperTriangular(A)*x ==
+                            BLAS.trmv!('U', 'N', 'U', A, copy(x))
+                @test copyto!(similar(x),Lmul(LowerTriangular(A),x)) ==
+                            LowerTriangular(A)*x ==
+                            BLAS.trmv!('L', 'N', 'N', A, copy(x))
+                @test ArrayLayouts.lmul!(UnitLowerTriangular(A),copy(x)) ==
+                            UnitLowerTriangular(A)x ==
+                            BLAS.trmv!('L', 'N', 'U', A, copy(x))
 
-                @test all(ArrayLayouts.lmul!(UpperTriangular(A)',copy(x)) .===
-                            ArrayLayouts.lmul!(LowerTriangular(A'),copy(x)) .===
-                            UpperTriangular(A)'x .===
-                            BLAS.trmv!('U', 'T', 'N', A, copy(x)))
-                @test all(ArrayLayouts.lmul!(UnitUpperTriangular(A)',copy(x)) .===
-                            ArrayLayouts.lmul!(UnitLowerTriangular(A'),copy(x)) .===
-                            UnitUpperTriangular(A)'*x .===
-                            BLAS.trmv!('U', 'T', 'U', A, copy(x)))
-                @test all(ArrayLayouts.lmul!(LowerTriangular(A)',copy(x)) .===
-                            ArrayLayouts.lmul!(UpperTriangular(A'),copy(x)) .===
-                            LowerTriangular(A)'*x .===
-                            BLAS.trmv!('L', 'T', 'N', A, copy(x)))
-                @test all(ArrayLayouts.lmul!(UnitLowerTriangular(A)',copy(x)) .===
-                            ArrayLayouts.lmul!(UnitUpperTriangular(A'),copy(x)) .===
-                            UnitLowerTriangular(A)'*x .===
-                            BLAS.trmv!('L', 'T', 'U', A, copy(x)))
+                @test ArrayLayouts.lmul!(UpperTriangular(A)',copy(x)) ==
+                            ArrayLayouts.lmul!(LowerTriangular(A'),copy(x)) ==
+                            UpperTriangular(A)'x ==
+                            BLAS.trmv!('U', 'T', 'N', A, copy(x))
+                @test ArrayLayouts.lmul!(UnitUpperTriangular(A)',copy(x)) ==
+                            ArrayLayouts.lmul!(UnitLowerTriangular(A'),copy(x)) ==
+                            UnitUpperTriangular(A)'*x ==
+                            BLAS.trmv!('U', 'T', 'U', A, copy(x))
+                @test ArrayLayouts.lmul!(LowerTriangular(A)',copy(x)) ==
+                            ArrayLayouts.lmul!(UpperTriangular(A'),copy(x)) ==
+                            LowerTriangular(A)'*x ==
+                            BLAS.trmv!('L', 'T', 'N', A, copy(x))
+                @test ArrayLayouts.lmul!(UnitLowerTriangular(A)',copy(x)) ==
+                            ArrayLayouts.lmul!(UnitUpperTriangular(A'),copy(x)) ==
+                            UnitLowerTriangular(A)'*x ==
+                            BLAS.trmv!('L', 'T', 'U', A, copy(x))
 
                 @test_throws DimensionMismatch mul(UpperTriangular(A), randn(5))
                 @test_throws DimensionMismatch ArrayLayouts.lmul!(UpperTriangular(A), randn(5))
@@ -362,53 +362,53 @@ Random.seed!(0)
                 A = randn(T, 100, 100)
                 x = randn(T, 100)
 
-                @test all((y = copy(x); y .= Lmul(UpperTriangular(A),y) ) .===
-                            UpperTriangular(A)x .===
-                            BLAS.trmv!('U', 'N', 'N', A, copy(x)))
-                @test all((y = copy(x); y .= Lmul(UnitUpperTriangular(A),y) ) .===
-                            UnitUpperTriangular(A)x .===
-                            BLAS.trmv!('U', 'N', 'U', A, copy(x)))
-                @test all((y = copy(x); y .= Lmul(LowerTriangular(A),y) ) .===
-                            LowerTriangular(A)x .===
-                            BLAS.trmv!('L', 'N', 'N', A, copy(x)))
-                @test all((y = copy(x); y .= Lmul(UnitLowerTriangular(A),y) ) .===
-                            UnitLowerTriangular(A)x .===
-                            BLAS.trmv!('L', 'N', 'U', A, copy(x)))
+                @test (y = copy(x); y .= Lmul(UpperTriangular(A),y) ) ==
+                            UpperTriangular(A)x ==
+                            BLAS.trmv!('U', 'N', 'N', A, copy(x))
+                @test (y = copy(x); y .= Lmul(UnitUpperTriangular(A),y) ) ==
+                            UnitUpperTriangular(A)x ==
+                            BLAS.trmv!('U', 'N', 'U', A, copy(x))
+                @test (y = copy(x); y .= Lmul(LowerTriangular(A),y) ) ==
+                            LowerTriangular(A)x ==
+                            BLAS.trmv!('L', 'N', 'N', A, copy(x))
+                @test (y = copy(x); y .= Lmul(UnitLowerTriangular(A),y) ) ==
+                            UnitLowerTriangular(A)x ==
+                            BLAS.trmv!('L', 'N', 'U', A, copy(x))
                 @test LowerTriangular(A')  == UpperTriangular(A)'
 
-                @test all((y = copy(x); y .= Lmul(transpose(UpperTriangular(A)),y) ) .===
-                            (similar(x) .= Lmul(LowerTriangular(transpose(A)),x)) .===
-                            transpose(UpperTriangular(A))x .===
-                            BLAS.trmv!('U', 'T', 'N', A, copy(x)))
-                @test all((y = copy(x); y .= Lmul(transpose(UnitUpperTriangular(A)),y) ) .===
-                            (similar(x) .= Lmul(UnitLowerTriangular(transpose(A)),x)) .===
-                            transpose(UnitUpperTriangular(A))x .===
-                            BLAS.trmv!('U', 'T', 'U', A, copy(x)))
-                @test all((y = copy(x); y .= Lmul(transpose(LowerTriangular(A)),y) ) .===
-                            (similar(x) .= Lmul(UpperTriangular(transpose(A)),x)) .===
-                            transpose(LowerTriangular(A))x .===
-                            BLAS.trmv!('L', 'T', 'N', A, copy(x)))
-                @test all((y = copy(x); y .= Lmul(transpose(UnitLowerTriangular(A)),y) ) .===
-                            (similar(x) .= Lmul(UnitUpperTriangular(transpose(A)),x)) .===
-                            transpose(UnitLowerTriangular(A))x .===
-                            BLAS.trmv!('L', 'T', 'U', A, copy(x)))
+                @test (y = copy(x); y .= Lmul(transpose(UpperTriangular(A)),y) ) ==
+                            (similar(x) .= Lmul(LowerTriangular(transpose(A)),x)) ==
+                            transpose(UpperTriangular(A))x ==
+                            BLAS.trmv!('U', 'T', 'N', A, copy(x))
+                @test (y = copy(x); y .= Lmul(transpose(UnitUpperTriangular(A)),y) ) ==
+                            (similar(x) .= Lmul(UnitLowerTriangular(transpose(A)),x)) ==
+                            transpose(UnitUpperTriangular(A))x ==
+                            BLAS.trmv!('U', 'T', 'U', A, copy(x))
+                @test (y = copy(x); y .= Lmul(transpose(LowerTriangular(A)),y) ) ==
+                            (similar(x) .= Lmul(UpperTriangular(transpose(A)),x)) ==
+                            transpose(LowerTriangular(A))x ==
+                            BLAS.trmv!('L', 'T', 'N', A, copy(x))
+                @test (y = copy(x); y .= Lmul(transpose(UnitLowerTriangular(A)),y) ) ==
+                            (similar(x) .= Lmul(UnitUpperTriangular(transpose(A)),x)) ==
+                            transpose(UnitLowerTriangular(A))x ==
+                            BLAS.trmv!('L', 'T', 'U', A, copy(x))
 
-                @test all((y = copy(x); y .= Lmul(UpperTriangular(A)',y) ) .===
-                            (similar(x) .= Lmul(LowerTriangular(A'),x)) .===
-                            UpperTriangular(A)'x .===
-                            BLAS.trmv!('U', 'C', 'N', A, copy(x)))
-                @test all((y = copy(x); y .= Lmul(UnitUpperTriangular(A)',y) ) .===
-                            (similar(x) .= Lmul(UnitLowerTriangular(A'),x)) .===
-                            UnitUpperTriangular(A)'x .===
-                            BLAS.trmv!('U', 'C', 'U', A, copy(x)))
-                @test all((y = copy(x); y .= Lmul(LowerTriangular(A)',y) ) .===
-                            (similar(x) .= Lmul(UpperTriangular(A'),x)) .===
-                            LowerTriangular(A)'x .===
-                            BLAS.trmv!('L', 'C', 'N', A, copy(x)))
-                @test all((y = copy(x); y .= Lmul(UnitLowerTriangular(A)',y) ) .===
-                            (similar(x) .= Lmul(UnitUpperTriangular(A'),x)) .===
-                            UnitLowerTriangular(A)'x .===
-                            BLAS.trmv!('L', 'C', 'U', A, copy(x)))
+                @test (y = copy(x); y .= Lmul(UpperTriangular(A)',y) ) ==
+                            (similar(x) .= Lmul(LowerTriangular(A'),x)) ==
+                            UpperTriangular(A)'x ==
+                            BLAS.trmv!('U', 'C', 'N', A, copy(x))
+                @test (y = copy(x); y .= Lmul(UnitUpperTriangular(A)',y) ) ==
+                            (similar(x) .= Lmul(UnitLowerTriangular(A'),x)) ==
+                            UnitUpperTriangular(A)'x ==
+                            BLAS.trmv!('U', 'C', 'U', A, copy(x))
+                @test (y = copy(x); y .= Lmul(LowerTriangular(A)',y) ) ==
+                            (similar(x) .= Lmul(UpperTriangular(A'),x)) ==
+                            LowerTriangular(A)'x ==
+                            BLAS.trmv!('L', 'C', 'N', A, copy(x))
+                @test (y = copy(x); y .= Lmul(UnitLowerTriangular(A)',y) ) ==
+                            (similar(x) .= Lmul(UnitUpperTriangular(A'),x)) ==
+                            UnitLowerTriangular(A)'x ==
+                            BLAS.trmv!('L', 'C', 'U', A, copy(x))
             end
 
             @testset "Float * Float Matrix" begin
@@ -423,54 +423,54 @@ Random.seed!(0)
                     A = randn(T,100,100)
                     b = randn(T,100)
 
-                    @test all(copy(Lmul(UpperTriangular(A)', b)) .=== UpperTriangular(A)'b)
-                    @test all(copy(Lmul(UnitUpperTriangular(A)', b)) .=== UnitUpperTriangular(A)'b)
-                    @test all(copy(Lmul(LowerTriangular(A)', b)) .=== LowerTriangular(A)'b)
-                    @test all(copy(Lmul(UnitLowerTriangular(A)', b)) .=== UnitLowerTriangular(A)'b)
+                    @test copy(Lmul(UpperTriangular(A)', b)) == UpperTriangular(A)'b
+                    @test copy(Lmul(UnitUpperTriangular(A)', b)) == UnitUpperTriangular(A)'b
+                    @test copy(Lmul(LowerTriangular(A)', b)) == LowerTriangular(A)'b
+                    @test copy(Lmul(UnitLowerTriangular(A)', b)) == UnitLowerTriangular(A)'b
 
-                    @test all(copy(Lmul(transpose(UpperTriangular(A)), b)) .=== transpose(UpperTriangular(A))b)
-                    @test all(copy(Lmul(transpose(UnitUpperTriangular(A)), b)) .=== transpose(UnitUpperTriangular(A))b)
-                    @test all(copy(Lmul(transpose(LowerTriangular(A)), b)) .=== transpose(LowerTriangular(A))b)
-                    @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), b)) .=== transpose(UnitLowerTriangular(A))b)
+                    @test copy(Lmul(transpose(UpperTriangular(A)), b)) == transpose(UpperTriangular(A))b
+                    @test copy(Lmul(transpose(UnitUpperTriangular(A)), b)) == transpose(UnitUpperTriangular(A))b
+                    @test copy(Lmul(transpose(LowerTriangular(A)), b)) == transpose(LowerTriangular(A))b
+                    @test copy(Lmul(transpose(UnitLowerTriangular(A)), b)) == transpose(UnitLowerTriangular(A))b
 
                     B = randn(T,100,100)
 
-                    @test all(copy(Lmul(UpperTriangular(A)', B)) .=== UpperTriangular(A)'B)
-                    @test all(copy(Lmul(UnitUpperTriangular(A)', B)) .=== UnitUpperTriangular(A)'B)
-                    @test all(copy(Lmul(LowerTriangular(A)', B)) .=== LowerTriangular(A)'B)
-                    @test all(copy(Lmul(UnitLowerTriangular(A)', B)) .=== UnitLowerTriangular(A)'B)
+                    @test copy(Lmul(UpperTriangular(A)', B)) == UpperTriangular(A)'B
+                    @test copy(Lmul(UnitUpperTriangular(A)', B)) == UnitUpperTriangular(A)'B
+                    @test copy(Lmul(LowerTriangular(A)', B)) == LowerTriangular(A)'B
+                    @test copy(Lmul(UnitLowerTriangular(A)', B)) == UnitLowerTriangular(A)'B
 
-                    @test all(copy(Lmul(transpose(UpperTriangular(A)), B)) .=== transpose(UpperTriangular(A))B)
-                    @test all(copy(Lmul(transpose(UnitUpperTriangular(A)), B)) .=== transpose(UnitUpperTriangular(A))B)
-                    @test all(copy(Lmul(transpose(LowerTriangular(A)), B)) .=== transpose(LowerTriangular(A))B)
-                    @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), B)) .=== transpose(UnitLowerTriangular(A))B)
+                    @test copy(Lmul(transpose(UpperTriangular(A)), B)) == transpose(UpperTriangular(A))B
+                    @test copy(Lmul(transpose(UnitUpperTriangular(A)), B)) == transpose(UnitUpperTriangular(A))B
+                    @test copy(Lmul(transpose(LowerTriangular(A)), B)) == transpose(LowerTriangular(A))B
+                    @test copy(Lmul(transpose(UnitLowerTriangular(A)), B)) == transpose(UnitLowerTriangular(A))B
                 end
 
                 for T in (Float64, ComplexF64)
                     A = big.(randn(T,100,100))
                     b = big.(randn(T,100))
 
-                    @test all(copy(Lmul(UpperTriangular(A)', b)) ≈ UpperTriangular(A)'b)
-                    @test all(copy(Lmul(UnitUpperTriangular(A)', b)) ≈ UnitUpperTriangular(A)'b)
-                    @test all(copy(Lmul(LowerTriangular(A)', b)) ≈ LowerTriangular(A)'b)
-                    @test all(copy(Lmul(UnitLowerTriangular(A)', b)) ≈ UnitLowerTriangular(A)'b)
+                    @test copy(Lmul(UpperTriangular(A)', b)) ≈ UpperTriangular(A)'b
+                    @test copy(Lmul(UnitUpperTriangular(A)', b)) ≈ UnitUpperTriangular(A)'b
+                    @test copy(Lmul(LowerTriangular(A)', b)) ≈ LowerTriangular(A)'b
+                    @test copy(Lmul(UnitLowerTriangular(A)', b)) ≈ UnitLowerTriangular(A)'b
 
-                    @test all(copy(Lmul(transpose(UpperTriangular(A)), b)) ≈ transpose(UpperTriangular(A))b)
-                    @test all(copy(Lmul(transpose(UnitUpperTriangular(A)), b)) ≈ transpose(UnitUpperTriangular(A))b)
-                    @test all(copy(Lmul(transpose(LowerTriangular(A)), b)) ≈ transpose(LowerTriangular(A))b)
-                    @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), b)) ≈ transpose(UnitLowerTriangular(A))b)
+                    @test copy(Lmul(transpose(UpperTriangular(A)), b)) ≈ transpose(UpperTriangular(A))b
+                    @test copy(Lmul(transpose(UnitUpperTriangular(A)), b)) ≈ transpose(UnitUpperTriangular(A))b
+                    @test copy(Lmul(transpose(LowerTriangular(A)), b)) ≈ transpose(LowerTriangular(A))b
+                    @test copy(Lmul(transpose(UnitLowerTriangular(A)), b)) ≈ transpose(UnitLowerTriangular(A))b
 
                     B = big.(randn(T,100,100))
 
-                    @test all(copy(Lmul(UpperTriangular(A)', B)) ≈ UpperTriangular(A)'B)
-                    @test all(copy(Lmul(UnitUpperTriangular(A)', B)) ≈ UnitUpperTriangular(A)'B)
-                    @test all(copy(Lmul(LowerTriangular(A)', B)) ≈ LowerTriangular(A)'B)
-                    @test all(copy(Lmul(UnitLowerTriangular(A)', B)) ≈ UnitLowerTriangular(A)'B)
+                    @test copy(Lmul(UpperTriangular(A)', B)) ≈ UpperTriangular(A)'B
+                    @test copy(Lmul(UnitUpperTriangular(A)', B)) ≈ UnitUpperTriangular(A)'B
+                    @test copy(Lmul(LowerTriangular(A)', B)) ≈ LowerTriangular(A)'B
+                    @test copy(Lmul(UnitLowerTriangular(A)', B)) ≈ UnitLowerTriangular(A)'B
 
-                    @test all(copy(Lmul(transpose(UpperTriangular(A)), B)) ≈ transpose(UpperTriangular(A))B)
-                    @test all(copy(Lmul(transpose(UnitUpperTriangular(A)), B)) ≈ transpose(UnitUpperTriangular(A))B)
-                    @test all(copy(Lmul(transpose(LowerTriangular(A)), B)) ≈ transpose(LowerTriangular(A))B)
-                    @test all(copy(Lmul(transpose(UnitLowerTriangular(A)), B)) ≈ transpose(UnitLowerTriangular(A))B)
+                    @test copy(Lmul(transpose(UpperTriangular(A)), B)) ≈ transpose(UpperTriangular(A))B
+                    @test copy(Lmul(transpose(UnitUpperTriangular(A)), B)) ≈ transpose(UnitUpperTriangular(A))B
+                    @test copy(Lmul(transpose(LowerTriangular(A)), B)) ≈ transpose(LowerTriangular(A))B
+                    @test copy(Lmul(transpose(UnitLowerTriangular(A)), B)) ≈ transpose(UnitLowerTriangular(A))B
                 end
             end
 
@@ -503,21 +503,21 @@ Random.seed!(0)
                 @test similar(R,Int) isa Matrix{Int}
 
                 R2 = deepcopy(R)
-                @test all(mul(A, UpperTriangular(B)) .=== BLAS.trmm('R', 'U', 'N', 'N', one(T), B, A) .=== copyto!(similar(R2), R2) .=== materialize!(R))
+                @test mul(A, UpperTriangular(B)) == BLAS.trmm('R', 'U', 'N', 'N', one(T), B, A) == copyto!(similar(R2), R2) == materialize!(R)
                 @test R.A ≠ A
-                @test all(BLAS.trmm('R', 'U', 'T', 'N', one(T), B, A) .=== copy(Rmul(A, transpose(UpperTriangular(B)))) .=== A*transpose(UpperTriangular(B)))
-                @test all(BLAS.trmm('R', 'U', 'N', 'U', one(T), B, A) .=== copy(Rmul(A, UnitUpperTriangular(B))).=== A*UnitUpperTriangular(B))
-                @test all(BLAS.trmm('R', 'U', 'T', 'U', one(T), B, A) .=== copy(Rmul(A, transpose(UnitUpperTriangular(B)))) .=== A*transpose(UnitUpperTriangular(B)))
-                @test all(BLAS.trmm('R', 'L', 'N', 'N', one(T), B, A) .=== copy(Rmul(A, LowerTriangular(B))).=== A*LowerTriangular(B))
-                @test all(BLAS.trmm('R', 'L', 'T', 'N', one(T), B, A) .=== copy(Rmul(A, transpose(LowerTriangular(B)))) .=== A*transpose(LowerTriangular(B)))
-                @test all(BLAS.trmm('R', 'L', 'N', 'U', one(T), B, A) .=== copy(Rmul(A, UnitLowerTriangular(B))).=== A*UnitLowerTriangular(B))
-                @test all(BLAS.trmm('R', 'L', 'T', 'U', one(T), B, A) .=== copy(Rmul(A, transpose(UnitLowerTriangular(B)))) .=== A*transpose(UnitLowerTriangular(B)))
+                @test BLAS.trmm('R', 'U', 'T', 'N', one(T), B, A) == copy(Rmul(A, transpose(UpperTriangular(B)))) == A*transpose(UpperTriangular(B))
+                @test BLAS.trmm('R', 'U', 'N', 'U', one(T), B, A) == copy(Rmul(A, UnitUpperTriangular(B)))== A*UnitUpperTriangular(B)
+                @test BLAS.trmm('R', 'U', 'T', 'U', one(T), B, A) == copy(Rmul(A, transpose(UnitUpperTriangular(B)))) == A*transpose(UnitUpperTriangular(B))
+                @test BLAS.trmm('R', 'L', 'N', 'N', one(T), B, A) == copy(Rmul(A, LowerTriangular(B)))== A*LowerTriangular(B)
+                @test BLAS.trmm('R', 'L', 'T', 'N', one(T), B, A) == copy(Rmul(A, transpose(LowerTriangular(B)))) == A*transpose(LowerTriangular(B))
+                @test BLAS.trmm('R', 'L', 'N', 'U', one(T), B, A) == copy(Rmul(A, UnitLowerTriangular(B)))== A*UnitLowerTriangular(B)
+                @test BLAS.trmm('R', 'L', 'T', 'U', one(T), B, A) == copy(Rmul(A, transpose(UnitLowerTriangular(B)))) == A*transpose(UnitLowerTriangular(B))
 
                 if T <: Complex
-                    @test all(BLAS.trmm('R', 'U', 'C', 'N', one(T), B, A) .=== copy(Rmul(A, UpperTriangular(B)')) .=== A*UpperTriangular(B)')
-                    @test all(BLAS.trmm('R', 'U', 'C', 'U', one(T), B, A) .=== copy(Rmul(A, UnitUpperTriangular(B)')) .=== A*UnitUpperTriangular(B)')
-                    @test all(BLAS.trmm('R', 'L', 'C', 'N', one(T), B, A) .=== copy(Rmul(A, LowerTriangular(B)')) .=== A*LowerTriangular(B)')
-                    @test all(BLAS.trmm('R', 'L', 'C', 'U', one(T), B, A) .=== copy(Rmul(A, UnitLowerTriangular(B)')) .=== A*UnitLowerTriangular(B)')
+                    @test BLAS.trmm('R', 'U', 'C', 'N', one(T), B, A) == copy(Rmul(A, UpperTriangular(B)')) == A*UpperTriangular(B)'
+                    @test BLAS.trmm('R', 'U', 'C', 'U', one(T), B, A) == copy(Rmul(A, UnitUpperTriangular(B)')) == A*UnitUpperTriangular(B)'
+                    @test BLAS.trmm('R', 'L', 'C', 'N', one(T), B, A) == copy(Rmul(A, LowerTriangular(B)')) == A*LowerTriangular(B)'
+                    @test BLAS.trmm('R', 'L', 'C', 'U', one(T), B, A) == copy(Rmul(A, UnitLowerTriangular(B)')) == A*UnitLowerTriangular(B)'
                 end
             end
 
