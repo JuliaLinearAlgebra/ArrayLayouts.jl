@@ -99,12 +99,12 @@ Random.seed!(0)
                 @test copy(M) == mul!(B, D, A)
             end
 
-            A, B = [1:4;], [[3:6;];;]
+            A, B = [1:4;], reshape([3:6;], 4, 1)
             D = Diagonal(Fill(3, 1))
             M = MulAdd(2, A, D, 3, B)
-            @test copy(M) == mul!(B, A, D, 2, 3)
+            @test copy(M) == (VERSION >= v"1.9" ? mul!(B, A, D, 2, 3) : 2 * A * D + 3 * B)
             M = MulAdd(1, A, D, 0, B)
-            @test copy(M) == mul!(B, A, D)
+            @test copy(M) == (VERSION >= v"1.9" ? mul!(B, A, D) : A * D)
         end
     end
 
