@@ -386,16 +386,29 @@ similar(M::MulAdd{<:DiagonalLayout,<:DiagonalLayout}, ::Type{T}, axes) where T =
 similar(M::MulAdd{<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.B, T, axes)
 similar(M::MulAdd{<:Any,<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.A, T, axes)
 # equivalent to rescaling
-function materialize!(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout}})
-    checkdimensions(M)
-    M.C .= getindex_value(M.A.diag) .* M.B .* M.α .+ M.C .* M.β
-    M.C
+for MatMulT in (:MatMulMatAdd, :MatMulVecAdd, :MulAdd)
+    @eval function materialize!(M::$MatMulT{<:DiagonalLayout{<:AbstractFillLayout}})
+        checkdimensions(M)
+        if iszero(M.β)
+            M.C .= Ref(getindex_value(M.A.diag)) .* M.B .* M.α
+        else
+            M.C .= Ref(getindex_value(M.A.diag)) .* M.B .* M.α .+ M.C .* M.β
+        end
+        M.C
+    end
 end
 
-function materialize!(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout}})
-    checkdimensions(M)
-    M.C .= M.A .* getindex_value(M.B.diag) .* M.α .+ M.C .* M.β
-    M.C
+for MatMulT in (:MulAdd, :VecMulMatAdd)
+    @eval function materialize!(M::$MatMulT{<:Any,<:DiagonalLayout{<:AbstractFillLayout}})
+        checkdimensions(M)
+        Bα = Ref(getindex_value(M.B.diag) * M.α)
+        if iszero(M.β)
+            M.C .= M.A .* Bα
+        else
+            M.C .= M.A .* Bα .+ M.C .* M.β
+        end
+        M.C
+    end
 end
 
 

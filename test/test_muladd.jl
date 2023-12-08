@@ -89,6 +89,23 @@ Random.seed!(0)
             @test mul(A,X) == A*X
             @test mul(X,A) == X*A
         end
+
+        @testset "Diagonal Fill" begin
+            for (A, B) in (([1:4;], [3:6;]), (reshape([1:16;],4,4), reshape(2 .* [1:16;],4,4)))
+                D = Diagonal(Fill(3, 4))
+                M = MulAdd(2, D, A, 3, B)
+                @test copy(M) == mul!(B, D, A, 2, 3)
+                M = MulAdd(1, D, A, 0, B)
+                @test copy(M) == mul!(B, D, A)
+            end
+
+            A, B = [1:4;], [[3:6;];;]
+            D = Diagonal(Fill(3, 1))
+            M = MulAdd(2, A, D, 3, B)
+            @test copy(M) == mul!(B, A, D, 2, 3)
+            M = MulAdd(1, A, D, 0, B)
+            @test copy(M) == mul!(B, A, D)
+        end
     end
 
     @testset "Matrix * Matrix" begin
@@ -103,19 +120,12 @@ Random.seed!(0)
                 C .= MulAdd(1.0,A,B,0.0,C)
                 @test C == BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, D)
 
-                C .= MulAdd(1,A,B,0,C)
-                @test C ≈ BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, D)
-
                 C .= MulAdd(2.0,A,B,0.0,C)
                 @test C == BLAS.gemm!('N', 'N', 2.0, A, B, 0.0, D)
 
                 C = copy(B)
                 C .= MulAdd(2.0,A,B,1.0,C)
                 @test C == BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
-
-                C = copy(B)
-                C .= MulAdd(2,A,B,1,C)
-                @test C ≈ BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
             end
 
             A, B = ones(100, 100), ones(100, 100)
@@ -748,6 +758,21 @@ Random.seed!(0)
         X = randn(rng, ComplexF64, 8, 4)
         Y = randn(rng, 8, 2)
         @test mul(Y',X) ≈ Y'X
+
+        for A in (randn(5,5), view(randn(5,5),:,:), view(randn(5,5),1:5,:),
+                    view(randn(5,5),1:5,1:5), view(randn(5,5),:,1:5)),
+            B in (randn(5,5), view(randn(5,5),:,:), view(randn(5,5),1:5,:),
+                    view(randn(5,5),1:5,1:5), view(randn(5,5),:,1:5))
+            C = similar(B);
+            D = similar(C);
+
+            C .= MulAdd(1,A,B,0,C)
+            @test C ≈ BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, D)
+
+            C = copy(B)
+            C .= MulAdd(2,A,B,1,C)
+            @test C ≈ BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
+        end
     end
 
     @testset "Vec * Adj" begin
