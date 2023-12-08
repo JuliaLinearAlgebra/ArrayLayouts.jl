@@ -99,10 +99,10 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test_throws ErrorException qr!(A)
             @test lu!(copy(A)).factors ≈ lu(A.A).factors
             b = randn(5)
-            @test all(A \ b .≡ A.A \ b .≡ A.A \ MyVector(b) .≡ ldiv!(lu(A.A), copy(MyVector(b))))
-            @test all(A \ b .≡ ldiv!(lu(A), copy(MyVector(b))) .≡ ldiv!(lu(A), copy(b)))
-            @test all(lu(A).L .≡ lu(A.A).L)
-            @test all(lu(A).U .≡ lu(A.A).U)
+            @test A \ b == A.A \ b == A.A \ MyVector(b) == ldiv!(lu(A.A), copy(MyVector(b)))
+            @test A \ b == ldiv!(lu(A), copy(MyVector(b))) == ldiv!(lu(A), copy(b))
+            @test lu(A).L == lu(A.A).L
+            @test lu(A).U == lu(A.A).U
             @test lu(A).p == lu(A.A).p
             @test lu(A).P == lu(A.A).P
 
@@ -166,7 +166,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         Bin = randn(5,5)
         B = MyMatrix(copy(Bin))
         muladd!(1.0, A, A, 2.0, B)
-        @test all(B .=== A.A^2 + 2Bin)
+        @test B == A.A^2 + 2Bin
 
         @testset "tiled_blasmul!" begin
             B = MyMatrix(copy(Bin))
