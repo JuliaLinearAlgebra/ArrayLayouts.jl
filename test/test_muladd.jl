@@ -117,6 +117,16 @@ Random.seed!(0)
                 C .= MulAdd(2,A,B,1,C)
                 @test C ≈ BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
             end
+
+            A, B = ones(100, 100), ones(100, 100)
+            C = ones(100, 100)
+            C .= MulAdd(2,A,B,1,C)
+            @test C ≈ BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
+
+            A, B = Float64[i+j for i in 1:100, j in 1:100], Float64[i+j for i in 1:100, j in 1:100]
+            C = ones(100, 100)
+            C .= MulAdd(2,A,B,1,C)
+            @test_broken C ≈ BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
         end
 
         @testset "gemm Complex" begin
