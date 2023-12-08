@@ -98,16 +98,24 @@ Random.seed!(0)
                 B in (randn(5,5), view(randn(5,5),:,:), view(randn(5,5),1:5,:),
                         view(randn(5,5),1:5,1:5), view(randn(5,5),:,1:5))
                 C = similar(B);
+                D = similar(C);
 
                 C .= MulAdd(1.0,A,B,0.0,C)
-                @test C == BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, similar(C))
+                @test C == BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, D)
+
+                C .= MulAdd(1,A,B,0,C)
+                @test C ≈ BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, D)
 
                 C .= MulAdd(2.0,A,B,0.0,C)
-                @test C == BLAS.gemm!('N', 'N', 2.0, A, B, 0.0, similar(C))
+                @test C == BLAS.gemm!('N', 'N', 2.0, A, B, 0.0, D)
 
                 C = copy(B)
                 C .= MulAdd(2.0,A,B,1.0,C)
                 @test C == BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
+
+                C = copy(B)
+                C .= MulAdd(2,A,B,1,C)
+                @test C ≈ BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
             end
         end
 
