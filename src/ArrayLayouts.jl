@@ -300,7 +300,6 @@ LinearAlgebra.norm(A::SubArray{<:Any,N,<:LayoutArray}, p::Real=2) where N = _nor
 
 
 _fill_lmul!(β, A::AbstractArray) = iszero(β) ? zero!(A) : lmul!(β, A)
-_fill_rmul!(A::AbstractArray, β) = iszero(β) ? zero!(A) : rmul!(A, β)
 
 
 # Elementary reflection similar to LAPACK. The reflector is not Hermitian but
