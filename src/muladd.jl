@@ -445,7 +445,14 @@ mulzeros(::Type{T}, M) where T<:AbstractArray = _mulzeros!(similar(Array{T}, axe
 # Fill
 ###
 
-copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout}) = M.A * M.B * M.α + M.C * M.β
+function copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout})
+    if iszero(M.β)
+        M.C .= M.A * M.B * M.α
+    else
+        M.C .= M.A * M.B * M.α + M.C * M.β
+    end
+    M.C
+end
 
 ###
 # DualLayout

@@ -778,4 +778,26 @@ Random.seed!(0)
     @testset "Vec * Adj" begin
         @test ArrayLayouts.mul(1:5, (1:4)') == (1:5) * (1:4)'
     end
+
+    @testset "Fill" begin
+        mutable struct MFillMat{T} <: FillArrays.AbstractFill{T,2,NTuple{2,Base.OneTo{Int}}}
+            x :: T
+            sz :: NTuple{2,Int}
+        end
+        MFillMat(x::T, sz::NTuple{2,Int}) where {T} = MFillMat{T}(x, sz)
+        MFillMat(x::T, sz::Vararg{Int,2}) where {T} = MFillMat{T}(x, sz)
+        Base.size(M::MFillMat) = M.sz
+        FillArrays.getindex_value(M::MFillMat) = M.x
+        Base.copyto!(M::MFillMat, A::Broadcast.Broadcasted) = (M.x = only(unique(A)); M)
+        Base.copyto!(M::MFillMat, A::Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}) = (M.x = only(unique(A)); M)
+
+        M = MulAdd(1, Fill(2,4,4), Fill(3,4,4), 2, MFillMat(2,4,4))
+        X = copy(M)
+        @test X isa MFillMat
+        @test X == MFillMat(28,4,4)
+
+        M = MulAdd(1, Fill(2,4,4), Fill(3,4,4), 0, MFillMat(2,4,4))
+        X = copy(M)
+        @test X == MFillMat(24,4,4)
+    end
 end
