@@ -793,11 +793,10 @@ Random.seed!(0)
 
         M = MulAdd(1, Fill(2,4,4), Fill(3,4,4), 2, MFillMat(2,4,4))
         X = copy(M)
-        @test X isa MFillMat
-        @test X == MFillMat(28,4,4)
+        @test X == Fill(28,4,4)
 
         M = MulAdd(1, Fill(2,4,4), Fill(3,4,4), 0, MFillMat(2,4,4))
         X = copy(M)
-        @test X == MFillMat(24,4,4)
+        @test X == Fill(24,4,4)
     end
 end

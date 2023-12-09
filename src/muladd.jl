@@ -447,11 +447,10 @@ mulzeros(::Type{T}, M) where T<:AbstractArray = _mulzeros!(similar(Array{T}, axe
 
 function copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout})
     if iszero(M.β)
-        M.C .= M.A * M.B * M.α
+        M.A * M.B * M.α
     else
-        M.C .= M.A * M.B * M.α + M.C * M.β
+        M.A * M.B * M.α + M.C * M.β
     end
-    M.C
 end
 
 ###
