@@ -1,4 +1,4 @@
-using ArrayLayouts, FillArrays, Random, StableRNGs, LinearAlgebra, Test
+using ArrayLayouts, FillArrays, Random, StableRNGs, LinearAlgebra, Test, Quaternions
 using ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul, zero!
 
 Random.seed!(0)
@@ -709,7 +709,7 @@ Random.seed!(0)
         b = randn(5)
         c = randn(5) + im*randn(5)
         d = randn(5) + im*randn(5)
-        
+
         @test ArrayLayouts.dot(a,b) ≈ ArrayLayouts.dotu(a,b) ≈ mul(a',b)
         @test ArrayLayouts.dot(a,b) ≈ dot(a,b)
         @test eltype(Dot(a,1:5)) == Float64
@@ -722,7 +722,7 @@ Random.seed!(0)
         @test ArrayLayouts.dot(c,b) == mul(c',b)
         @test ArrayLayouts.dotu(c,b) == mul(transpose(c),b)
         @test ArrayLayouts.dot(c,b) ≈ dot(c,b)
-        
+
         @test ArrayLayouts.dot(a,d) == mul(a',d)
         @test ArrayLayouts.dotu(a,d) == mul(transpose(a),d)
         @test ArrayLayouts.dot(a,d) ≈ dot(a,d)
@@ -799,5 +799,48 @@ Random.seed!(0)
         M = MulAdd(1, Fill(2,4,4), Fill(3,4,4), 0, MFillMat(2,4,4))
         X = copy(M)
         @test X == Fill(24,4,4)
+    end
+
+    @testset "non-commutative" begin
+        A = [quat(rand(4)...) for i in 1:4, j in 1:4]
+        B = [quat(rand(4)...) for i in 1:4, j in 1:4]
+        C = [quat(rand(4)...) for i in 1:4, j in 1:4]
+        α, β = quat(0,0,0,1), quat(0,1,0,0)
+        M = MulAdd(α, A, B, β, C)
+        @test copy(M) ≈ mul!(copy(C), A, B, α, β) ≈ A * B * α + C * β
+
+        SA = Symmetric(A)
+        M = MulAdd(α, SA, B, β, C)
+        @test copy(M) ≈ mul!(copy(C), SA, B, α, β) ≈ SA * B * α + C * β
+
+        B = [quat(rand(4)...) for i in 1:4]
+        C = [quat(rand(4)...) for i in 1:4]
+        M = MulAdd(α, A, B, β, C)
+        @test copy(M) ≈ mul!(copy(C), A, B, α, β) ≈ A * B * α + C * β
+
+        M = MulAdd(α, SA, B, β, C)
+        @test copy(M) ≈ mul!(copy(C), SA, B, α, β) ≈ SA * B * α + C * β
+
+        A = [quat(rand(4)...) for i in 1:4]
+        B = [quat(rand(4)...) for i in 1:1, j in 1:1]
+        C = [quat(rand(4)...) for i in 1:4, j in 1:1]
+        M = MulAdd(α, A, B, β, C)
+        @test copy(M) ≈ mul!(copy(C), A, B, α, β) ≈ A * B * α + C * β
+
+        D = Diagonal(Fill(quat(rand(4)...), 4))
+        b = [quat(rand(4)...) for i in 1:4]
+        c = [quat(rand(4)...) for i in 1:4]
+        M = MulAdd(α, D, b, β, c)
+        @test copy(M) ≈ mul!(copy(c), D, b, α, β) ≈ D * b * α + c * β
+
+        D = Diagonal(Fill(quat(rand(4)...), 1))
+        b = [quat(rand(4)...) for i in 1:4]
+        c = [quat(rand(4)...) for i in 1:4, j in 1:1]
+        M = MulAdd(α, b, D, β, c)
+        if VERSION >= v"1.9"
+            @test copy(M) ≈ mul!(copy(c), b, D, α, β) ≈ b * D * α + c * β
+        else
+            @test copy(M) ≈ b * D * α + c * β
+        end
     end
 end
