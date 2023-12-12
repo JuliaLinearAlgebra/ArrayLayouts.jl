@@ -94,7 +94,7 @@ function tiled_blasmul!(tile_size, α, A::AbstractMatrix{T}, B::AbstractMatrix{S
     size(C) == (mA, nB) || throw(DimensionMismatch("Dimensions must match"))
 
     (iszero(mA) || iszero(nB)) && return C
-    iszero(nA) && return lmul!(β, C)
+    iszero(nA) && return rmul!(C, β)
 
     @inbounds begin
         sz = (tile_size, tile_size)
@@ -116,7 +116,7 @@ function tiled_blasmul!(tile_size, α, A::AbstractMatrix{T}, B::AbstractMatrix{S
                     for k = 1:nA
                         s += Atile[aoff+k] * Btile[boff+k]
                     end
-                    C[i,j] = α*s + β*C[i,j]
+                    C[i,j] = s * α + C[i,j] * β
                 end
             end
         else
@@ -142,7 +142,7 @@ function tiled_blasmul!(tile_size, α, A::AbstractMatrix{T}, B::AbstractMatrix{S
                                 for k = 1:klen
                                     s += Atile[aoff+k] * Btile[bcoff+k]
                                 end
-                                Ctile[bcoff+i] += α*s
+                                Ctile[bcoff+i] += s * α
                             end
                         end
                     end
@@ -161,7 +161,7 @@ end
     @simd for ν = rowsupport(A,k) ∩ colsupport(B,j)
         Ctmp = @inbounds muladd(A[k, ν],B[ν, j],Ctmp)
     end
-    @inbounds C[k,j] = muladd(α,Ctmp, C[k,j])
+    @inbounds C[k,j] = muladd(Ctmp, α, C[k,j])
 end
 
 function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::AbstractMatrix)
@@ -170,7 +170,7 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
     nA == mB || throw(DimensionMismatch("Dimensions must match"))
     size(C) == (mA, nB) || throw(DimensionMismatch("Dimensions must match"))
 
-    lmul!(β, C)
+    rmul!(C, β)
 
     (iszero(mA) || iszero(nB)) && return C
     iszero(nA) && return C
@@ -196,7 +196,7 @@ function default_blasmul!(α, A::AbstractVector, B::AbstractMatrix, β, C::Abstr
     1 == mB || throw(DimensionMismatch("Dimensions must match"))
     size(C) == (mA, nB) || throw(DimensionMismatch("Dimensions must match"))
 
-    lmul!(β, C)
+    rmul!(C, β)
 
     (iszero(mA) || iszero(nB)) && return C
 
@@ -213,7 +213,7 @@ function _default_blasmul!(::IndexLinear, α, A::AbstractMatrix, B::AbstractVect
     nA == mB || throw(DimensionMismatch("Dimensions must match"))
     length(C) == mA || throw(DimensionMismatch("Dimensions must match"))
 
-    lmul!(β, C)
+    rmul!(C, β)
     (nA == 0 || mB == 0)  && return C
 
     z = zero(A[1]*B[1] + A[1]*B[1])
@@ -223,7 +223,7 @@ function _default_blasmul!(::IndexLinear, α, A::AbstractMatrix, B::AbstractVect
         aoffs = (k-1)*Astride
         b = B[k]
         for i = 1:mA
-            C[i] += α * A[aoffs + i] * b
+            C[i] += A[aoffs + i] * b * α
         end
     end
 
@@ -236,13 +236,13 @@ function _default_blasmul!(::IndexCartesian, α, A::AbstractMatrix, B::AbstractV
     nA == mB || throw(DimensionMismatch("Dimensions must match"))
     length(C) == mA || throw(DimensionMismatch("Dimensions must match"))
 
-    lmul!(β, C)
+    rmul!(C, β)
     (nA == 0 || mB == 0)  && return C
 
     z = zero(A[1,1]*B[1] + A[1,1]*B[1])
 
     @inbounds for k in colsupport(B,1)
-        b = α * B[k]
+        b = B[k] * α
         for i = colsupport(A,k)
             C[i] += A[i,k] * b
         end
@@ -386,16 +386,29 @@ similar(M::MulAdd{<:DiagonalLayout,<:DiagonalLayout}, ::Type{T}, axes) where T =
 similar(M::MulAdd{<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.B, T, axes)
 similar(M::MulAdd{<:Any,<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.A, T, axes)
 # equivalent to rescaling
-function materialize!(M::MulAdd{<:DiagonalLayout{<:AbstractFillLayout}})
-    checkdimensions(M)
-    M.C .= (M.α * getindex_value(M.A.diag)) .* M.B .+ M.β .* M.C
-    M.C
+for MatMulT in (:MatMulMatAdd, :MatMulVecAdd, :MulAdd)
+    @eval function materialize!(M::$MatMulT{<:DiagonalLayout{<:AbstractFillLayout}})
+        checkdimensions(M)
+        if iszero(M.β)
+            M.C .= Ref(getindex_value(M.A.diag)) .* M.B .* M.α
+        else
+            M.C .= Ref(getindex_value(M.A.diag)) .* M.B .* M.α .+ M.C .* M.β
+        end
+        M.C
+    end
 end
 
-function materialize!(M::MulAdd{<:Any,<:DiagonalLayout{<:AbstractFillLayout}})
-    checkdimensions(M)
-    M.C .= M.α .* M.A .* getindex_value(M.B.diag) .+ M.β .* M.C
-    M.C
+for MatMulT in (:MulAdd, :VecMulMatAdd)
+    @eval function materialize!(M::$MatMulT{<:Any,<:DiagonalLayout{<:AbstractFillLayout}})
+        checkdimensions(M)
+        Bα = Ref(getindex_value(M.B.diag) * M.α)
+        if iszero(M.β)
+            M.C .= M.A .* Bα
+        else
+            M.C .= M.A .* Bα .+ M.C .* M.β
+        end
+        M.C
+    end
 end
 
 
@@ -432,7 +445,13 @@ mulzeros(::Type{T}, M) where T<:AbstractArray = _mulzeros!(similar(Array{T}, axe
 # Fill
 ###
 
-copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout}) = M.α*M.A*M.B + M.β*M.C
+function copy(M::MulAdd{<:AbstractFillLayout,<:AbstractFillLayout,<:AbstractFillLayout})
+    if iszero(M.β)
+        M.A * M.B * M.α
+    else
+        M.A * M.B * M.α + M.C * M.β
+    end
+end
 
 ###
 # DualLayout

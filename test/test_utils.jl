@@ -34,5 +34,11 @@ using ArrayLayouts, LinearAlgebra, FillArrays, Test
                 @test ArrayLayouts._copy_oftype(v, S) !== v
             end
         end
+
+        A = [1 3; 2 4]
+        ArrayLayouts._fill_lmul!(2.0, A)
+        @test A == 2 * [1 3; 2 4]
+        ArrayLayouts._fill_lmul!(0, A)
+        @test all(==(0), A)
     end
 end

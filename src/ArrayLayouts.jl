@@ -299,7 +299,7 @@ LinearAlgebra.norm(A::LayoutArray, p::Real=2) = _norm(MemoryLayout(A), A, p)
 LinearAlgebra.norm(A::SubArray{<:Any,N,<:LayoutArray}, p::Real=2) where N = _norm(MemoryLayout(A), A, p)
 
 
-_fill_lmul!(β, A::AbstractArray{T}) where T = iszero(β) ? zero!(A) : lmul!(β, A)
+_fill_lmul!(β, A::AbstractArray) = iszero(β) ? zero!(A) : lmul!(β, A)
 
 
 # Elementary reflection similar to LAPACK. The reflector is not Hermitian but

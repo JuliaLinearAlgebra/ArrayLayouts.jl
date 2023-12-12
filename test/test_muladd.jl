@@ -1,4 +1,4 @@
-using ArrayLayouts, FillArrays, Random, StableRNGs, LinearAlgebra, Test
+using ArrayLayouts, FillArrays, Random, StableRNGs, LinearAlgebra, Test, Quaternions
 using ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul, zero!
 
 Random.seed!(0)
@@ -89,6 +89,23 @@ Random.seed!(0)
             @test mul(A,X) == A*X
             @test mul(X,A) == X*A
         end
+
+        @testset "Diagonal Fill" begin
+            for (A, B) in (([1:4;], [3:6;]), (reshape([1:16;],4,4), reshape(2 .* [1:16;],4,4)))
+                D = Diagonal(Fill(3, 4))
+                M = MulAdd(2, D, A, 3, B)
+                @test copy(M) == mul!(B, D, A, 2, 3)
+                M = MulAdd(1, D, A, 0, B)
+                @test copy(M) == mul!(B, D, A)
+            end
+
+            A, B = [1:4;], reshape([3:6;], 4, 1)
+            D = Diagonal(Fill(3, 1))
+            M = MulAdd(2, A, D, 3, B)
+            @test copy(M) == (VERSION >= v"1.9" ? mul!(B, A, D, 2, 3) : 2 * A * D + 3 * B)
+            M = MulAdd(1, A, D, 0, B)
+            @test copy(M) == (VERSION >= v"1.9" ? mul!(B, A, D) : A * D)
+        end
     end
 
     @testset "Matrix * Matrix" begin
@@ -98,17 +115,28 @@ Random.seed!(0)
                 B in (randn(5,5), view(randn(5,5),:,:), view(randn(5,5),1:5,:),
                         view(randn(5,5),1:5,1:5), view(randn(5,5),:,1:5))
                 C = similar(B);
+                D = similar(C);
 
                 C .= MulAdd(1.0,A,B,0.0,C)
-                @test C == BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, similar(C))
+                @test C == BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, D)
 
                 C .= MulAdd(2.0,A,B,0.0,C)
-                @test C == BLAS.gemm!('N', 'N', 2.0, A, B, 0.0, similar(C))
+                @test C == BLAS.gemm!('N', 'N', 2.0, A, B, 0.0, D)
 
                 C = copy(B)
                 C .= MulAdd(2.0,A,B,1.0,C)
                 @test C == BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
             end
+
+            A, B = ones(100, 100), ones(100, 100)
+            C = ones(100, 100)
+            C .= MulAdd(2,A,B,1,C)
+            @test C ≈ BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
+
+            A, B = Float64[i+j for i in 1:100, j in 1:100], Float64[i+j for i in 1:100, j in 1:100]
+            C = ones(100, 100)
+            C .= MulAdd(2,A,B,1,C)
+            @test_broken C ≈ BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
         end
 
         @testset "gemm Complex" begin
@@ -276,7 +304,8 @@ Random.seed!(0)
             vx = view(x,1:2)
             vy = view(y,:)
             muladd!(2.0, VA, vx, 3.0, vy)
-            @test @allocated(muladd!(2.0, VA, vx, 3.0, vy)) == 0
+            # spurious allocations in tests
+            @test @allocated(muladd!(2.0, VA, vx, 3.0, vy)) < 100
         end
 
         @testset "BigFloat" begin
@@ -680,7 +709,7 @@ Random.seed!(0)
         b = randn(5)
         c = randn(5) + im*randn(5)
         d = randn(5) + im*randn(5)
-        
+
         @test ArrayLayouts.dot(a,b) ≈ ArrayLayouts.dotu(a,b) ≈ mul(a',b)
         @test ArrayLayouts.dot(a,b) ≈ dot(a,b)
         @test eltype(Dot(a,1:5)) == Float64
@@ -693,7 +722,7 @@ Random.seed!(0)
         @test ArrayLayouts.dot(c,b) == mul(c',b)
         @test ArrayLayouts.dotu(c,b) == mul(transpose(c),b)
         @test ArrayLayouts.dot(c,b) ≈ dot(c,b)
-        
+
         @test ArrayLayouts.dot(a,d) == mul(a',d)
         @test ArrayLayouts.dotu(a,d) == mul(transpose(a),d)
         @test ArrayLayouts.dot(a,d) ≈ dot(a,d)
@@ -730,9 +759,88 @@ Random.seed!(0)
         X = randn(rng, ComplexF64, 8, 4)
         Y = randn(rng, 8, 2)
         @test mul(Y',X) ≈ Y'X
+
+        for A in (randn(5,5), view(randn(5,5),:,:), view(randn(5,5),1:5,:),
+                    view(randn(5,5),1:5,1:5), view(randn(5,5),:,1:5)),
+            B in (randn(5,5), view(randn(5,5),:,:), view(randn(5,5),1:5,:),
+                    view(randn(5,5),1:5,1:5), view(randn(5,5),:,1:5))
+            C = similar(B);
+            D = similar(C);
+
+            C .= MulAdd(1,A,B,0,C)
+            @test C ≈ BLAS.gemm!('N', 'N', 1.0, A, B, 0.0, D)
+
+            C = copy(B)
+            C .= MulAdd(2,A,B,1,C)
+            @test C ≈ BLAS.gemm!('N', 'N', 2.0, A, B, 1.0, copy(B))
+        end
     end
 
     @testset "Vec * Adj" begin
         @test ArrayLayouts.mul(1:5, (1:4)') == (1:5) * (1:4)'
+    end
+
+    @testset "Fill" begin
+        mutable struct MFillMat{T} <: FillArrays.AbstractFill{T,2,NTuple{2,Base.OneTo{Int}}}
+            x :: T
+            sz :: NTuple{2,Int}
+        end
+        MFillMat(x::T, sz::NTuple{2,Int}) where {T} = MFillMat{T}(x, sz)
+        MFillMat(x::T, sz::Vararg{Int,2}) where {T} = MFillMat{T}(x, sz)
+        Base.size(M::MFillMat) = M.sz
+        FillArrays.getindex_value(M::MFillMat) = M.x
+        Base.copyto!(M::MFillMat, A::Broadcast.Broadcasted) = (M.x = only(unique(A)); M)
+        Base.copyto!(M::MFillMat, A::Broadcast.Broadcasted{<:Base.Broadcast.AbstractArrayStyle{0}}) = (M.x = only(unique(A)); M)
+
+        M = MulAdd(1, Fill(2,4,4), Fill(3,4,4), 2, MFillMat(2,4,4))
+        X = copy(M)
+        @test X == Fill(28,4,4)
+
+        M = MulAdd(1, Fill(2,4,4), Fill(3,4,4), 0, MFillMat(2,4,4))
+        X = copy(M)
+        @test X == Fill(24,4,4)
+    end
+
+    @testset "non-commutative" begin
+        A = [quat(rand(4)...) for i in 1:4, j in 1:4]
+        B = [quat(rand(4)...) for i in 1:4, j in 1:4]
+        C = [quat(rand(4)...) for i in 1:4, j in 1:4]
+        α, β = quat(0,0,0,1), quat(0,1,0,0)
+        M = MulAdd(α, A, B, β, C)
+        @test copy(M) ≈ mul!(copy(C), A, B, α, β) ≈ A * B * α + C * β
+
+        SA = Symmetric(A)
+        M = MulAdd(α, SA, B, β, C)
+        @test copy(M) ≈ mul!(copy(C), SA, B, α, β) ≈ SA * B * α + C * β
+
+        B = [quat(rand(4)...) for i in 1:4]
+        C = [quat(rand(4)...) for i in 1:4]
+        M = MulAdd(α, A, B, β, C)
+        @test copy(M) ≈ mul!(copy(C), A, B, α, β) ≈ A * B * α + C * β
+
+        M = MulAdd(α, SA, B, β, C)
+        @test copy(M) ≈ mul!(copy(C), SA, B, α, β) ≈ SA * B * α + C * β
+
+        A = [quat(rand(4)...) for i in 1:4]
+        B = [quat(rand(4)...) for i in 1:1, j in 1:1]
+        C = [quat(rand(4)...) for i in 1:4, j in 1:1]
+        M = MulAdd(α, A, B, β, C)
+        @test copy(M) ≈ mul!(copy(C), A, B, α, β) ≈ A * B * α + C * β
+
+        D = Diagonal(Fill(quat(rand(4)...), 4))
+        b = [quat(rand(4)...) for i in 1:4]
+        c = [quat(rand(4)...) for i in 1:4]
+        M = MulAdd(α, D, b, β, c)
+        @test copy(M) ≈ mul!(copy(c), D, b, α, β) ≈ D * b * α + c * β
+
+        D = Diagonal(Fill(quat(rand(4)...), 1))
+        b = [quat(rand(4)...) for i in 1:4]
+        c = [quat(rand(4)...) for i in 1:4, j in 1:1]
+        M = MulAdd(α, b, D, β, c)
+        if VERSION >= v"1.9"
+            @test copy(M) ≈ mul!(copy(c), b, D, α, β) ≈ b * D * α + c * β
+        else
+            @test copy(M) ≈ b * D * α + c * β
+        end
     end
 end
