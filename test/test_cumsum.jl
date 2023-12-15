@@ -1,5 +1,7 @@
 using ArrayLayouts, Test
 
+include("infinitearrays.jl")
+
 @testset "RangeCumsum" begin
     for r in (RangeCumsum(Base.OneTo(5)), RangeCumsum(2:5), RangeCumsum(2:2:6), RangeCumsum(6:-2:1))
         @test r == cumsum(r.range)
@@ -20,4 +22,7 @@ using ArrayLayouts, Test
     a = RangeCumsum(Base.OneTo(3))
     b = RangeCumsum(1:3)
     @test oftype(a, b) === a
+
+    r = RangeCumsum(InfiniteArrays.OneToInf())
+    @test axes(r, 1) == InfiniteArrays.OneToInf()
 end
