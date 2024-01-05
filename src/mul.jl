@@ -252,7 +252,7 @@ macro layoutmul(Typ)
             (*)(A::$Typ, B::LinearAlgebra.$Struc) = ArrayLayouts.mul(A,B)
         end
     end
-    for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian)
+    for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian, :AbstractTriangular)
         ret = quote
             $ret
 
