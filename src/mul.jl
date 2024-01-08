@@ -252,7 +252,7 @@ macro layoutmul(Typ)
             (*)(A::$Typ, B::LinearAlgebra.$Struc) = ArrayLayouts.mul(A,B)
         end
     end
-    for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian, :UpperOrLowerTriangular)
+    for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian)
         ret = quote
             $ret
 
@@ -297,6 +297,31 @@ macro layoutmul(Typ)
         end
     end
 
+    ret = quote
+        $ret
+
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::UpperOrLowerTriangular{<:Any,<:AbstractMatrix}) =
+            ArrayLayouts.mul!(dest,A,b)
+        LinearAlgebra.mul!(dest::AbstractVector, A::UpperOrLowerTriangular{<:Any,<:$Typ}, b::AbstractVector) =
+            ArrayLayouts.mul!(dest,A,b)
+        LinearAlgebra.mul!(dest::AbstractVector, A::UpperOrLowerTriangular{<:Any,<:$Typ}, b::AbstractVector, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,b,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular{<:Any,<:$Typ}, B::AbstractMatrix, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::AbstractMatrix, B::UpperOrLowerTriangular{<:Any,<:$Typ}, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular{<:Any,<:$Typ}, B::$Typ, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::UpperOrLowerTriangular{<:Any,<:$Typ}, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular{<:Any,<:AbstractVecOrMat}, B::$Typ, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::UpperOrLowerTriangular{<:Any,<:AbstractVecOrMat}, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular{<:Any,<:$Typ}, B::UpperOrLowerTriangular{<:Any,<:$Typ}, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+
+    end
     esc(ret)
 end
 
@@ -316,6 +341,7 @@ end
 *(x::TransposeAbsVec{<:Any,<:Zeros{<:Any,1}}, D::Diagonal, y::LayoutVector) = FillArrays._triple_zeromul(x, D, y)
 
 
+*(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
 *(A::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}, B::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
 *(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}) = mul(A, B)
 *(A::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}, B::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}) = mul(A, B)
