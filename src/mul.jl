@@ -252,7 +252,7 @@ macro layoutmul(Typ)
             (*)(A::$Typ, B::LinearAlgebra.$Struc) = ArrayLayouts.mul(A,B)
         end
     end
-    for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian, :AbstractTriangular)
+    for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian, :UpperOrLowerTriangular)
         ret = quote
             $ret
 
@@ -316,7 +316,6 @@ end
 *(x::TransposeAbsVec{<:Any,<:Zeros{<:Any,1}}, D::Diagonal, y::LayoutVector) = FillArrays._triple_zeromul(x, D, y)
 
 
-*(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
 *(A::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}, B::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
 *(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}) = mul(A, B)
 *(A::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}, B::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}) = mul(A, B)
