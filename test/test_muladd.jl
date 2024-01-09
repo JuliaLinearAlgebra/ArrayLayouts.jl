@@ -785,7 +785,6 @@ Random.seed!(0)
             x :: T
             sz :: NTuple{2,Int}
         end
-        MFillMat(x::T, sz::NTuple{2,Int}) where {T} = MFillMat{T}(x, sz)
         MFillMat(x::T, sz::Vararg{Int,2}) where {T} = MFillMat{T}(x, sz)
         Base.size(M::MFillMat) = M.sz
         FillArrays.getindex_value(M::MFillMat) = M.x
