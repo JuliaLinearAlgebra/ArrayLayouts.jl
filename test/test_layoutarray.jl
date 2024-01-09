@@ -536,6 +536,27 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
     end
 end
 
+@testset "mul involving a triangular" begin
+    A = MyMatrix(rand(4,4))
+    UA = UpperTriangular(A)
+    MA = Matrix(A)
+    MUA = Matrix(UA)
+    B = rand(4,4)
+    UB = UpperTriangular(B)
+    @test mul!(zeros(4,4), A, UB) ≈ MA * UB
+    @test mul!(ones(4,4), A, UB, 2, 2) ≈ 2 * MA * UB .+ 2
+    @test mul!(zeros(4,4), UA, UB) ≈ MUA * UB
+    @test mul!(ones(4,4), UA, UB, 2, 2) ≈ 2 * MUA * UB .+ 2
+    @test mul!(zeros(4,4), UB, A) ≈ UB * MA
+    @test mul!(ones(4,4), UB, A, 2, 2) ≈ 2 * UB * MA .+ 2
+    @test mul!(zeros(4,4), UB, UA) ≈ UB * MUA
+    @test mul!(ones(4,4), UB, UA, 2, 2) ≈ 2 * UB * MUA .+ 2
+
+    v = rand(4)
+    @test mul!(zeros(4), UA, v) ≈ MUA * v
+    @test mul!(ones(4), UA, v, 2, 2) ≈ 2 * MUA * v .+ 2
+end
+
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
     A::UpperTriangular{T,Matrix{T}}
 end

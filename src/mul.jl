@@ -300,7 +300,9 @@ macro layoutmul(Typ)
     ret = quote
         $ret
 
-        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::UpperOrLowerTriangular{<:Any,<:AbstractMatrix}) =
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, b::UpperOrLowerTriangular) =
+            ArrayLayouts.mul!(dest,A,b)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular, b::$Typ) =
             ArrayLayouts.mul!(dest,A,b)
         LinearAlgebra.mul!(dest::AbstractVector, A::UpperOrLowerTriangular{<:Any,<:$Typ}, b::AbstractVector) =
             ArrayLayouts.mul!(dest,A,b)
@@ -308,15 +310,19 @@ macro layoutmul(Typ)
             ArrayLayouts.mul!(dest,A,b,α,β)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular{<:Any,<:$Typ}, B::AbstractMatrix, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular{<:Any,<:$Typ}, B::UpperOrLowerTriangular, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::AbstractMatrix, B::UpperOrLowerTriangular{<:Any,<:$Typ}, α::Number, β::Number) =
+            ArrayLayouts.mul!(dest,A,B,α,β)
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular, B::UpperOrLowerTriangular{<:Any,<:$Typ}, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular{<:Any,<:$Typ}, B::$Typ, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::UpperOrLowerTriangular{<:Any,<:$Typ}, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
-        LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular{<:Any,<:AbstractVecOrMat}, B::$Typ, α::Number, β::Number) =
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular, B::$Typ, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
-        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::UpperOrLowerTriangular{<:Any,<:AbstractVecOrMat}, α::Number, β::Number) =
+        LinearAlgebra.mul!(dest::AbstractMatrix, A::$Typ, B::UpperOrLowerTriangular, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
         LinearAlgebra.mul!(dest::AbstractMatrix, A::UpperOrLowerTriangular{<:Any,<:$Typ}, B::UpperOrLowerTriangular{<:Any,<:$Typ}, α::Number, β::Number) =
             ArrayLayouts.mul!(dest,A,B,α,β)
