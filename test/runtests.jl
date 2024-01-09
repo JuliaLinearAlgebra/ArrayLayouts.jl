@@ -1,11 +1,9 @@
-using ArrayLayouts
-import Aqua
-using FillArrays
-using Random
-using SparseArrays
-using Test
+module ArrayLayoutsTests
 
-import ArrayLayouts: MemoryLayout, @_layoutlmul, triangulardata
+import ArrayLayouts
+import Aqua
+import Random
+using Test
 
 @testset "Project quality" begin
     Aqua.test_all(ArrayLayouts,
@@ -22,3 +20,5 @@ include("test_muladd.jl")
 include("test_ldiv.jl")
 include("test_layoutarray.jl")
 include("test_cumsum.jl")
+
+end

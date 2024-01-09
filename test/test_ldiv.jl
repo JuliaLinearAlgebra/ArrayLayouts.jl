@@ -1,3 +1,5 @@
+module TestLdiv
+
 using ArrayLayouts, LinearAlgebra, FillArrays, Test
 import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout, QRPackedQLayout, QRPackedLayout
 
@@ -286,3 +288,4 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
     end
 end
 
+end

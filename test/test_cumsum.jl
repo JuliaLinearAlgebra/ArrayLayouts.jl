@@ -1,3 +1,5 @@
+module TestCumsum
+
 using ArrayLayouts, Test
 
 include("infinitearrays.jl")
@@ -25,4 +27,6 @@ include("infinitearrays.jl")
 
     r = RangeCumsum(InfiniteArrays.OneToInf())
     @test axes(r, 1) == InfiniteArrays.OneToInf()
+end
+
 end

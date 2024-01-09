@@ -1,3 +1,5 @@
+module TestUtils
+
 using ArrayLayouts, LinearAlgebra, FillArrays, Test
 
 @testset "_copy_oftype" begin
@@ -41,4 +43,6 @@ using ArrayLayouts, LinearAlgebra, FillArrays, Test
         ArrayLayouts._fill_lmul!(0, A)
         @test all(==(0), A)
     end
+end
+
 end
