@@ -1,5 +1,8 @@
-using ArrayLayouts, LinearAlgebra, FillArrays, Test
-using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum
+module TestLayoutArray
+
+using ArrayLayouts, LinearAlgebra, FillArrays, Test, SparseArrays
+using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum, @_layoutlmul
+import ArrayLayouts: triangulardata
 
 struct MyMatrix <: LayoutMatrix{Float64}
     A::Matrix{Float64}
@@ -37,7 +40,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test a[1:3] == a.A[1:3]
         @test a[:] == a
         @test (a')[1,:] == (a')[1,1:3] == a
-        @test sprint(show, "text/plain", a) == "3-element MyVector{Float64}:\n 1.0\n 2.0\n 3.0"
+        @test sprint(show, "text/plain", a) == "3-element $MyVector{Float64}:\n 1.0\n 2.0\n 3.0"
         @test B*a ≈ B*a.A
         @test B'*a ≈ B'*a.A
         @test transpose(B)*a ≈ transpose(B)*a.A
@@ -209,7 +212,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         end
 
         C = MyMatrix([1 2; 3 4])
-        @test sprint(show, "text/plain", C) == "2×2 MyMatrix:\n 1.0  2.0\n 3.0  4.0"
+        @test sprint(show, "text/plain", C) == "2×2 $MyMatrix:\n 1.0  2.0\n 3.0  4.0"
 
         @testset "layoutldiv" begin
             A = MyMatrix(randn(5,5))
@@ -476,6 +479,38 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test UpperTriangular(A') * UnitUpperTriangular(A') ≈ UpperTriangular(A.A') * UnitUpperTriangular(A.A')
     end
 
+    @testset "mul! involving a triangular" begin
+        A = MyMatrix(rand(4,4))
+        UA = UpperTriangular(A)
+        MA = Matrix(A)
+        MUA = Matrix(UA)
+        B = rand(4,4)
+        UB = UpperTriangular(B)
+        @test mul!(zeros(4,4), A, UB) ≈ MA * UB
+        @test mul!(ones(4,4), A, UB, 2, 2) ≈ 2 * MA * UB .+ 2
+        @test mul!(zeros(4,4), UA, B) ≈ MUA * B
+        @test mul!(ones(4,4), UA, B, 2, 2) ≈ 2 * MUA * B .+ 2
+        @test mul!(zeros(4,4), UA, UB) ≈ MUA * UB
+        @test mul!(ones(4,4), UA, UB, 2, 2) ≈ 2 * MUA * UB .+ 2
+        @test mul!(zeros(4,4), UB, A) ≈ UB * MA
+        @test mul!(ones(4,4), UB, A, 2, 2) ≈ 2 * UB * MA .+ 2
+        @test mul!(zeros(4,4), UB, UA) ≈ UB * MUA
+        @test mul!(ones(4,4), UB, UA, 2, 2) ≈ 2 * UB * MUA .+ 2
+        @test mul!(zeros(4,4), B, UA) ≈ B * MUA
+        @test mul!(ones(4,4), B, UA, 2, 2) ≈ 2 * B * MUA .+ 2
+        @test mul!(zeros(4,4), A, UA) ≈ MA * MUA
+        @test mul!(ones(4,4), A, UA, 2, 2) ≈ 2 * MA * MUA .+ 2
+        @test mul!(zeros(4,4), UA, A) ≈ MUA * MA
+        @test mul!(ones(4,4), UA, A, 2, 2) ≈ 2 * MUA * MA .+ 2
+        @test mul!(zeros(4,4), UA, UA) ≈ MUA * MUA
+        @test mul!(ones(4,4), UA, UA, 2, 2) ≈ 2 * MUA * MUA .+ 2
+
+
+        v = rand(4)
+        @test mul!(zeros(4), UA, v) ≈ MUA * v
+        @test mul!(ones(4), UA, v, 2, 2) ≈ 2 * MUA * v .+ 2
+    end
+
     if isdefined(LinearAlgebra, :copymutable_oftype)
         @testset "copymutable_oftype" begin
             A = MyMatrix(randn(3,3))
@@ -536,38 +571,6 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
     end
 end
 
-@testset "mul involving a triangular" begin
-    A = MyMatrix(rand(4,4))
-    UA = UpperTriangular(A)
-    MA = Matrix(A)
-    MUA = Matrix(UA)
-    B = rand(4,4)
-    UB = UpperTriangular(B)
-    @test mul!(zeros(4,4), A, UB) ≈ MA * UB
-    @test mul!(ones(4,4), A, UB, 2, 2) ≈ 2 * MA * UB .+ 2
-    @test mul!(zeros(4,4), UA, B) ≈ MUA * B
-    @test mul!(ones(4,4), UA, B, 2, 2) ≈ 2 * MUA * B .+ 2
-    @test mul!(zeros(4,4), UA, UB) ≈ MUA * UB
-    @test mul!(ones(4,4), UA, UB, 2, 2) ≈ 2 * MUA * UB .+ 2
-    @test mul!(zeros(4,4), UB, A) ≈ UB * MA
-    @test mul!(ones(4,4), UB, A, 2, 2) ≈ 2 * UB * MA .+ 2
-    @test mul!(zeros(4,4), UB, UA) ≈ UB * MUA
-    @test mul!(ones(4,4), UB, UA, 2, 2) ≈ 2 * UB * MUA .+ 2
-    @test mul!(zeros(4,4), B, UA) ≈ B * MUA
-    @test mul!(ones(4,4), B, UA, 2, 2) ≈ 2 * B * MUA .+ 2
-    @test mul!(zeros(4,4), A, UA) ≈ MA * MUA
-    @test mul!(ones(4,4), A, UA, 2, 2) ≈ 2 * MA * MUA .+ 2
-    @test mul!(zeros(4,4), UA, A) ≈ MUA * MA
-    @test mul!(ones(4,4), UA, A, 2, 2) ≈ 2 * MUA * MA .+ 2
-    @test mul!(zeros(4,4), UA, UA) ≈ MUA * MUA
-    @test mul!(ones(4,4), UA, UA, 2, 2) ≈ 2 * MUA * MUA .+ 2
-
-
-    v = rand(4)
-    @test mul!(zeros(4), UA, v) ≈ MUA * v
-    @test mul!(ones(4), UA, v, 2, 2) ≈ 2 * MUA * v .+ 2
-end
-
 struct MyUpperTriangular{T} <: AbstractMatrix{T}
     A::UpperTriangular{T,Matrix{T}}
 end
@@ -610,4 +613,6 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
 
     @test MyMatrix(A) / U ≈ A / U
     VERSION >= v"1.9" && @test U / MyMatrix(A) ≈ U / A
+end
+
 end

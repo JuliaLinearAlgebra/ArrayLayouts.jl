@@ -1,3 +1,5 @@
+module TestMulAdd
+
 using ArrayLayouts, FillArrays, Random, StableRNGs, LinearAlgebra, Test, Quaternions
 using ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul, zero!
 
@@ -842,4 +844,6 @@ Random.seed!(0)
             @test copy(M) ≈ b * D * α + c * β
         end
     end
+end
+
 end

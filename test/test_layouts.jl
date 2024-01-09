@@ -1,3 +1,5 @@
+module TestLayouts
+
 using ArrayLayouts, LinearAlgebra, FillArrays, Test
 import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayout,
                         ConjLayout, RowMajor, ColumnMajor, UnitStride,
@@ -455,4 +457,6 @@ struct FooNumber <: Number end
     @testset "bug in vec views BandedMatrices#233" begin
         @test colsupport(view(randn(5,5),:,1),1:1) ≡ Base.OneTo(5)
     end
+end
+
 end
