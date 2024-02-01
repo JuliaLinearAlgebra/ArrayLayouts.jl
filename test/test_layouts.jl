@@ -316,9 +316,21 @@ struct FooNumber <: Number end
         @test isempty(rowsupport(Zeros(5,10), 2))
 
         @testset "OneElement" begin
-            for ind in (4, 20)
+            @testset for ind in (4, 20)
                 o = OneElement(2, ind, 10)
                 @test sum(o) == sum(o[colsupport(o)])
+                @test sum(o) == sum(o[colsupport(o),rowsupport(o)])
+            end
+            @testset for ind in ((3,4), (15,20))
+                O = OneElement(2, ind, (10,10))
+                @test isempty(colsupport(O,1))
+                if ind[2] < size(O,2)
+                    @test colsupport(O,ind[2]) == ind[1]:ind[1]
+                end
+                if ind[1] < size(O,1)
+                    @test rowsupport(O,ind[1]) == ind[2]:ind[2]
+                end
+                @test sum(O) == sum(O[colsupport(O),rowsupport(O)])
             end
         end
 
