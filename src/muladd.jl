@@ -179,7 +179,7 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
     jindsid = all(k -> rowsupport(B,rowsupport(A,k)) == r, colsupport(A))
 
     if jindsid
-        for j in rowsupport(B,rowsupport(A,1)), k in colsupport(A)
+        for j in r, k in colsupport(A)
             _default_blasmul_loop!(α, A, B, β, C, k, j)
         end
     else

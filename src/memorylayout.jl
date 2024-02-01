@@ -641,9 +641,14 @@ rowsupport(_, A, k) = axes(A,2)
 """
     rowsupport(A, k)
 
-gives an iterator containing the possible non-zero entries in the k-th row of A.
+Return an iterator containing the column indices of the possible non-zero entries in the `k`-th row of `A`.
 """
 rowsupport(A, k) = rowsupport(MemoryLayout(A), A, k)
+"""
+    rowsupport(A)
+
+Return an iterator containing the column indices of the possible non-zero entries in `A`.
+"""
 rowsupport(A) = rowsupport(A, axes(A,1))
 
 colsupport(_, A, j) = axes(A,1)
@@ -652,9 +657,14 @@ colsupport(_, A, j) = axes(A,1)
 """
     colsupport(A, j)
 
-gives an iterator containing the possible non-zero entries in the j-th column of A.
+Return an iterator containing the row indices of the possible non-zero entries in the `j`-th column of `A`.
 """
 colsupport(A, j) = colsupport(MemoryLayout(A), A, j)
+"""
+    colsupport(A)
+
+Return an iterator containing the row indices of the possible non-zero entries in `A`.
+"""
 colsupport(A) = colsupport(A, axes(A,2))
 
 # TODO: generalise to other subarrays
@@ -668,6 +678,12 @@ colsupport(::ZerosLayout, A, _) = 1:0
 
 colsupport(::UnknownLayout, A::OneElement{<:Any,1}, _) =
     intersect(axes(A,1), A.ind[1]:A.ind[1])
+function colsupport(::UnknownLayout, A::OneElement{<:Any,2}, j)
+    intersect(axes(A,1), range(A.ind[1], length = Int(A.ind[2] ∈ j)))
+end
+function rowsupport(::UnknownLayout, A::OneElement{<:Any,2}, k)
+    intersect(axes(A,2), range(A.ind[2], length = Int(A.ind[1] ∈ k)))
+end
 
 rowsupport(::DiagonalLayout, _, k) = k
 colsupport(::DiagonalLayout, _, j) = j
