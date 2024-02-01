@@ -1,26 +1,29 @@
 ### This support BLAS style multiplication
-#           α * A * B + β C
+#           A * B * α + C * β
 # but avoids the broadcast machinery
 
-# Lazy representation of α*A*B + β*C
+# Lazy representation of A*B*α + C*β
 struct MulAdd{StyleA, StyleB, StyleC, T, AA, BB, CC}
     α::T
     A::AA
     B::BB
     β::T
     C::CC
+    CZeros::Bool # this flag indicates whether and C isa Zeros, or a copy of one
 end
 
-@inline MulAdd{StyleA,StyleB,StyleC}(α::T, A::AA, B::BB, β::T, C::CC) where {StyleA,StyleB,StyleC,T,AA,BB,CC} =
-    MulAdd{StyleA,StyleB,StyleC,T,AA,BB,CC}(α,A,B,β,C)
+@inline function MulAdd{StyleA,StyleB,StyleC}(α::T, A::AA, B::BB, β::T, C::CC;
+            CZeros = C isa Zeros) where {StyleA,StyleB,StyleC,T,AA,BB,CC}
+    MulAdd{StyleA,StyleB,StyleC,T,AA,BB,CC}(α,A,B,β,C,CZeros)
+end
 
-@inline function MulAdd{StyleA,StyleB,StyleC}(αT, A, B, βV, C) where {StyleA,StyleB,StyleC}
+@inline function MulAdd{StyleA,StyleB,StyleC}(αT, A, B, βV, C; kw...) where {StyleA,StyleB,StyleC}
     α,β = promote(αT,βV)
-    MulAdd{StyleA,StyleB,StyleC}(α, A, B, β, C)
+    MulAdd{StyleA,StyleB,StyleC}(α, A, B, β, C; kw...)
 end
 
-@inline MulAdd(α, A::AA, B::BB, β, C::CC) where {AA,BB,CC} =
-    MulAdd{typeof(MemoryLayout(AA)), typeof(MemoryLayout(BB)), typeof(MemoryLayout(CC))}(α, A, B, β, C)
+@inline MulAdd(α, A::AA, B::BB, β, C::CC; kw...) where {AA,BB,CC} =
+    MulAdd{typeof(MemoryLayout(AA)), typeof(MemoryLayout(BB)), typeof(MemoryLayout(CC))}(α, A, B, β, C; kw...)
 
 MulAdd(A, B) = MulAdd(Mul(A, B))
 function MulAdd(M::Mul)
@@ -67,7 +70,7 @@ const BlasMatMulVecAdd{StyleA,StyleB,StyleC,T<:BlasFloat} = MulAdd{StyleA,StyleB
 const BlasMatMulMatAdd{StyleA,StyleB,StyleC,T<:BlasFloat} = MulAdd{StyleA,StyleB,StyleC,T,<:AbstractMatrix{T},<:AbstractMatrix{T},<:AbstractMatrix{T}}
 const BlasVecMulMatAdd{StyleA,StyleB,StyleC,T<:BlasFloat} = MulAdd{StyleA,StyleB,StyleC,T,<:AbstractVector{T},<:AbstractMatrix{T},<:AbstractMatrix{T}}
 
-muladd!(α, A, B, β, C) = materialize!(MulAdd(α, A, B, β, C))
+muladd!(α, A, B, β, C; kw...) = materialize!(MulAdd(α, A, B, β, C; kw...))
 materialize(M::MulAdd) = copy(instantiate(M))
 copy(M::MulAdd) = copyto!(similar(M), M)
 
@@ -75,7 +78,7 @@ _fill_copyto!(dest, C) = copyto!(dest, C)
 _fill_copyto!(dest, C::Zeros) = zero!(dest) # exploit special fill! overload
 
 @inline copyto!(dest::AbstractArray{T}, M::MulAdd) where T =
-    muladd!(M.α, unalias(dest,M.A), unalias(dest,M.B), M.β, _fill_copyto!(dest, M.C))
+    muladd!(M.α, unalias(dest,M.A), unalias(dest,M.B), M.β, _fill_copyto!(dest, M.C); CZeros = M.CZeros)
 
 # Modified from LinearAlgebra._generic_matmatmul!
 const tilebufsize = 10800  # Approximately 32k/3
