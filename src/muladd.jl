@@ -9,12 +9,12 @@ struct MulAdd{StyleA, StyleB, StyleC, T, AA, BB, CC}
     B::BB
     β::T
     C::CC
-    CZeros::Bool # this flag indicates whether and C isa Zeros, or a copy of one
+    Czero::Bool # this flag indicates whether and C isa Zeros, or a copy of one
 end
 
 @inline function MulAdd{StyleA,StyleB,StyleC}(α::T, A::AA, B::BB, β::T, C::CC;
-            CZeros = C isa Zeros) where {StyleA,StyleB,StyleC,T,AA,BB,CC}
-    MulAdd{StyleA,StyleB,StyleC,T,AA,BB,CC}(α,A,B,β,C,CZeros)
+            Czero = C isa Zeros) where {StyleA,StyleB,StyleC,T,AA,BB,CC}
+    MulAdd{StyleA,StyleB,StyleC,T,AA,BB,CC}(α,A,B,β,C,Czero)
 end
 
 @inline function MulAdd{StyleA,StyleB,StyleC}(αT, A, B, βV, C; kw...) where {StyleA,StyleB,StyleC}
@@ -78,7 +78,7 @@ _fill_copyto!(dest, C) = copyto!(dest, C)
 _fill_copyto!(dest, C::Zeros) = zero!(dest) # exploit special fill! overload
 
 @inline copyto!(dest::AbstractArray{T}, M::MulAdd) where T =
-    muladd!(M.α, unalias(dest,M.A), unalias(dest,M.B), M.β, _fill_copyto!(dest, M.C); CZeros = M.CZeros)
+    muladd!(M.α, unalias(dest,M.A), unalias(dest,M.B), M.β, _fill_copyto!(dest, M.C); Czero = M.Czero)
 
 # Modified from LinearAlgebra._generic_matmatmul!
 const tilebufsize = 10800  # Approximately 32k/3
