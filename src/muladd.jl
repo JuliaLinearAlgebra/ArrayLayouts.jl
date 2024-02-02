@@ -9,7 +9,9 @@ struct MulAdd{StyleA, StyleB, StyleC, T, AA, BB, CC}
     B::BB
     β::T
     C::CC
-    Czero::Bool # this flag indicates whether and C isa Zeros, or a copy of one
+    Czero::Bool # this flag indicates whether C isa Zeros, or a copy of one
+    # the idea is that if Czero == true, then downstream packages don't need to
+    # fill C with zero before performing the muladd
 end
 
 @inline function MulAdd{StyleA,StyleB,StyleC}(α::T, A::AA, B::BB, β::T, C::CC;
