@@ -13,7 +13,8 @@ Base.setindex!(A::MyMatrix, v, k::Int, j::Int) = setindex!(A.A, v, k, j)
 Base.size(A::MyMatrix) = size(A.A)
 Base.strides(A::MyMatrix) = strides(A.A)
 Base.elsize(::Type{MyMatrix}) = sizeof(Float64)
-Base.unsafe_convert(::Type{Ptr{T}}, A::MyMatrix) where T = Base.unsafe_convert(Ptr{T}, A.A)
+Base.cconvert(::Type{Ptr{Float64}}, A::MyMatrix) = A.A
+Base.unsafe_convert(::Type{Ptr{Float64}}, A::MyMatrix) = Base.unsafe_convert(Ptr{T}, A.A)
 MemoryLayout(::Type{MyMatrix}) = DenseColumnMajor()
 Base.copy(A::MyMatrix) = MyMatrix(copy(A.A))
 
@@ -26,6 +27,7 @@ Base.setindex!(A::MyVector, v, k::Int) = setindex!(A.A, v, k)
 Base.size(A::MyVector) = size(A.A)
 Base.strides(A::MyVector) = strides(A.A)
 Base.elsize(::Type{MyVector}) = sizeof(Float64)
+Base.cconvert(::Type{Ptr{T}}, A::MyVector{T}) where {T} = A.A
 Base.unsafe_convert(::Type{Ptr{T}}, A::MyVector) where T = Base.unsafe_convert(Ptr{T}, A.A)
 MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
