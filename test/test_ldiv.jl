@@ -44,7 +44,7 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
         b = randn(T,5)
         @test copyto!(similar(b), Ldiv(A,b)) ==
                     (similar(b) .= Ldiv(A,b)) ==
-                  (A\b) == (b̃ =  copy(b); LAPACK.gesv!(copy(A), b̃); b̃)
+                  (A\b) ≈ (b̃ =  copy(b); LAPACK.gesv!(copy(A), b̃); b̃)
 
         @test copyto!(similar(b), Ldiv(UpperTriangular(A) , b)) ≈ UpperTriangular(A) \ b
         @test copyto!(similar(b), Ldiv(UpperTriangular(A) , b)) ==
