@@ -19,7 +19,8 @@ include("infinitearrays.jl")
 
     a,b = RangeCumsum(Base.OneTo(5)), RangeCumsum(Base.OneTo(6))
     @test union(a,b) ≡ union(b,a) ≡ b
-    @test sort!(a) ≡ a == Vector(a)
+    @test sort!(copy(a)) == a
+    @test sort!(a) ≡ a
     @test sort(a) ≡ a == Vector(a)
 
     r = RangeCumsum(-4:4)
