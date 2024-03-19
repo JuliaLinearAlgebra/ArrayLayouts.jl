@@ -7,7 +7,7 @@ using Base: AbstractCartesianIndex, OneTo, oneto, RangeIndex, ReinterpretArray, 
             Slice, tuple_type_tail, unalias,
             @propagate_inbounds
 
-import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, union, sort!,
+import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, union, sort!, sort,
                 ==, *, +, -, /, \, copy, copyto!, similar, getproperty, getindex, strides,
                 reverse, unsafe_convert, convert, view
 
