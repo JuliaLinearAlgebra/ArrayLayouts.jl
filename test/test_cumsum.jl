@@ -5,16 +5,20 @@ using ArrayLayouts, Test
 include("infinitearrays.jl")
 
 @testset "RangeCumsum" begin
-    for r in (RangeCumsum(Base.OneTo(5)), RangeCumsum(2:5), RangeCumsum(2:2:6), RangeCumsum(6:-2:1))
-        @test r == cumsum(r.range)
+    @testset for p in (Base.OneTo(5), 2:5, 2:2:6, 6:-2:1, -1.0:3.0:5.0, (-1.0:3.0:5.0)*im,
+                        Base.IdentityUnitRange(4:6))
+        r = RangeCumsum(p)
         @test r == r
-        @test r .+ 1 == cumsum(r.range) .+ 1
-        @test r[Base.OneTo(3)] == r[1:3]
-        @test @view(r[Base.OneTo(3)]) === r[Base.OneTo(3)] == r[1:3]
-        @test @view(r[Base.OneTo(3)]) isa RangeCumsum
-        @test last(r) == r[end]
-        @test diff(r) == diff(Vector(r))
-        @test first(r) == r[1]
+        if axes(r) isa Base.OneTo
+            @test r == cumsum(p)
+            @test r .+ 1 == cumsum(p) .+ 1
+            @test r[Base.OneTo(3)] == r[1:3]
+            @test @view(r[Base.OneTo(3)]) === r[Base.OneTo(3)] == r[1:3]
+            @test @view(r[Base.OneTo(3)]) isa RangeCumsum
+            @test diff(r) == diff(Vector(r))
+        end
+        @test last(r) == r[end] == sum(p)
+        @test first(r) == r[firstindex(r)] == first(p)
     end
 
     a,b = RangeCumsum(Base.OneTo(5)), RangeCumsum(Base.OneTo(6))

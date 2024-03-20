@@ -13,16 +13,13 @@ axes(c::RangeCumsum) = axes(c.range)
 ==(a::RangeCumsum, b::RangeCumsum) = a.range == b.range
 BroadcastStyle(::Type{<:RangeCumsum{<:Any,RR}}) where RR = BroadcastStyle(RR)
 
+_getindex(r::AbstractUnitRange{<:Integer}, k) = k * (2first(r) + k - 1) ÷ 2
+Base.@propagate_inbounds _getindex(r::AbstractRange, k) = sum(r[range(firstindex(r), length=k)])
 
 Base.@propagate_inbounds function getindex(c::RangeCumsum{<:Any,<:AbstractRange}, k::Integer)
     @boundscheck checkbounds(c, k)
     r = c.range
-    k * (first(r) + r[k]) ÷ 2
-end
-Base.@propagate_inbounds function getindex(c::RangeCumsum{<:Any,<:AbstractUnitRange}, k::Integer)
-    @boundscheck checkbounds(c, k)
-    r = c.range
-    k * (2first(r) + k - 1) ÷ 2
+    _getindex(r, k-firstindex(r)+1)
 end
 
 Base.@propagate_inbounds getindex(c::RangeCumsum, kr::OneTo) = RangeCumsum(c.range[kr])
@@ -31,7 +28,7 @@ Base.@propagate_inbounds view(c::RangeCumsum, kr::OneTo) = c[kr]
 
 first(r::RangeCumsum) = first(r.range)
 last(r::RangeCumsum) = sum(r.range)
-diff(r::RangeCumsum) = r.range[2:end]
+diff(r::RangeCumsum) = r.range[firstindex(r)+1:end]
 isempty(r::RangeCumsum) = isempty(r.range)
 
 union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) =
