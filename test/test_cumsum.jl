@@ -17,6 +17,7 @@ include("infinitearrays.jl")
             @test @view(r[Base.OneTo(3)]) isa RangeCumsum
             @test diff(r) == diff(Vector(r))
         end
+        @test diff(r) == p[firstindex(p)+1:end]
         @test last(r) == r[end] == sum(p)
         @test first(r) == r[firstindex(r)] == first(p)
     end
