@@ -41,7 +41,9 @@ include("infinitearrays.jl")
     @testset "multiplication by a number" begin
         function test_broadcast(n, r)
             w = Vector(r)
+            @test n * r isa RangeCumsum
             @test n * r ≈ n * w
+            @test r * n isa RangeCumsum
             @test r * n ≈ w * n
         end
         for p in (Base.OneTo(4), -4:4, -4:2:4, -1.0:3.0:5.0)
