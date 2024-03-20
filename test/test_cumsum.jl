@@ -11,6 +11,7 @@ include("infinitearrays.jl")
         @test r == r
         if axes(r) isa Base.OneTo
             @test r == cumsum(p)
+            @test parent(r) == p
             @test r .+ 1 == cumsum(p) .+ 1
             @test r[Base.OneTo(3)] == r[1:3]
             @test @view(r[Base.OneTo(3)]) === r[Base.OneTo(3)] == r[1:3]
