@@ -39,11 +39,16 @@ include("infinitearrays.jl")
     @test axes(r, 1) == InfiniteArrays.OneToInf()
 
     @testset "multiplication by a number" begin
+        function test_broadcast(n, r)
+            w = Vector(r)
+            @test n * r ≈ n * w
+            @test r * n ≈ w * n
+        end
         for p in (Base.OneTo(4), -4:4, -4:2:4, -1.0:3.0:5.0)
             r = RangeCumsum(p)
-            @test 3 * r ≈ 3 * Vector(r)
-            @test 3.5 * r ≈ 3.5 * Vector(r)
-            @test (3.5 + 2im) * r ≈ (3.5 + 2im) * Vector(r)
+            test_broadcast(3, r)
+            test_broadcast(3.5, r)
+            test_broadcast(3.5 + 2im, r)
         end
     end
 end
