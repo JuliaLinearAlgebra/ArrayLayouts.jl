@@ -37,6 +37,7 @@ isempty(r::RangeCumsum) = isempty(r.range)
 union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) =
     RangeCumsum(OneTo(max(last(a.range), last(b.range))))
 
-sort!(a::RangeCumsum{<:Any,<:AbstractUnitRange}) = a
+sort!(a::RangeCumsum{<:Any,<:Base.OneTo}) = a
+sort(a::RangeCumsum{<:Any,<:Base.OneTo}) = a
 
 convert(::Type{RangeCumsum{T,R}}, r::RangeCumsum) where {T,R} = RangeCumsum{T,R}(convert(R, r.range))
