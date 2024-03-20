@@ -10,6 +10,8 @@ end
 size(c::RangeCumsum) = size(c.range)
 axes(c::RangeCumsum) = axes(c.range)
 
+Base.parent(r::RangeCumsum) = r.range
+
 ==(a::RangeCumsum, b::RangeCumsum) = a.range == b.range
 BroadcastStyle(::Type{<:RangeCumsum{<:Any,RR}}) where RR = BroadcastStyle(RR)
 
