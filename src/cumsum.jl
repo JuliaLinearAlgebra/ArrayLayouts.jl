@@ -18,9 +18,11 @@ BroadcastStyle(::Type{<:RangeCumsum{<:Any,RR}}) where RR = BroadcastStyle(RR)
 _half(x::Integer) = x ÷ 2
 _half(x) = x / 2
 
-_half_prod(a, b) = _half(a) * b
 function _half_prod(a::Integer, b::Integer)
-    iseven(a) ? (a ÷ 2) * b : a * (b ÷ 2)
+    iseven(a) ? (a÷2) * b : a * (b÷2)
+end
+function _onethird_prod(a::Integer, b::Integer)
+    mod(a, 3) == 0 ? (a÷3) * b : a * (b÷3)
 end
 
 function _getindex(r::AbstractRange{<:Real}, k)
@@ -45,10 +47,6 @@ first(r::RangeCumsum) = first(r.range)
 last(r::RangeCumsum) = sum(r.range)
 diff(r::RangeCumsum) = r.range[firstindex(r)+1:end]
 isempty(r::RangeCumsum) = isempty(r.range)
-
-function _onethird_prod(a::Integer, b::Integer)
-    mod(a, 3) == 0 ? (a÷3) * b : a * (b÷3)
-end
 
 function Base.sum(r::RangeCumsum{<:Real})
     N = length(r)
