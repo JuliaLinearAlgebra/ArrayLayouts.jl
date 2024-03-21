@@ -15,9 +15,6 @@ Base.parent(r::RangeCumsum) = r.range
 ==(a::RangeCumsum, b::RangeCumsum) = a.range == b.range
 BroadcastStyle(::Type{<:RangeCumsum{<:Any,RR}}) where RR = BroadcastStyle(RR)
 
-_half(x::Integer) = x ÷ 2
-_half(x) = x / 2
-
 function _half_prod(a::Integer, b::Integer)
     iseven(a) ? (a÷2) * b : a * (b÷2)
 end
