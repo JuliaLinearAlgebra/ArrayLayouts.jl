@@ -46,7 +46,7 @@ last(r::RangeCumsum) = sum(r.range)
 diff(r::RangeCumsum) = r.range[firstindex(r)+1:end]
 isempty(r::RangeCumsum) = isempty(r.range)
 
-function _third_prod(a::Integer, b::Integer)
+function _onethird_prod(a::Integer, b::Integer)
     mod(a, 3) == 0 ? (a÷3) * b : a * (b÷3)
 end
 
@@ -56,7 +56,7 @@ function Base.sum(r::RangeCumsum{<:Real})
     s = step(r.range)
     # avoid overflow, if possible
     halfnnp1 = _half_prod(N, N+1)
-    v * halfnnp1 + s * _third_prod(halfnnp1, N-1)
+    v * halfnnp1 + s * _onethird_prod(halfnnp1, N-1)
 end
 
 union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) =
