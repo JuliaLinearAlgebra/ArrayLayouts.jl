@@ -15,7 +15,14 @@ Base.parent(r::RangeCumsum) = r.range
 ==(a::RangeCumsum, b::RangeCumsum) = a.range == b.range
 BroadcastStyle(::Type{<:RangeCumsum{<:Any,RR}}) where RR = BroadcastStyle(RR)
 
-_getindex(r::AbstractUnitRange{<:Integer}, k) = k * (2first(r) + k - 1) ÷ 2
+_half(x::Integer) = x ÷ 2
+_half(x) = x / 2
+
+function _getindex(r::AbstractRange{<:Real}, k)
+    v = first(r)
+    s = step(r)
+    _half(k * (2v - s + s*k))
+end
 Base.@propagate_inbounds _getindex(r::AbstractRange, k) = sum(r[range(firstindex(r), length=k)])
 
 Base.@propagate_inbounds function getindex(c::RangeCumsum{<:Any,<:AbstractRange}, k::Integer)
@@ -32,6 +39,13 @@ first(r::RangeCumsum) = first(r.range)
 last(r::RangeCumsum) = sum(r.range)
 diff(r::RangeCumsum) = r.range[firstindex(r)+1:end]
 isempty(r::RangeCumsum) = isempty(r.range)
+
+function Base.sum(r::RangeCumsum{<:Real})
+    N = length(r)
+    v = first(r)
+    s = step(r.range)
+    _half((2v-s)*(N*(N+1)÷2) + s*(N*(N+1)*(2N+1)÷6))
+end
 
 union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) =
     RangeCumsum(OneTo(max(last(a.range), last(b.range))))
