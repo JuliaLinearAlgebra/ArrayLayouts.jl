@@ -10,13 +10,14 @@ include("infinitearrays.jl")
         r = RangeCumsum(p)
         @test parent(r) == p
         @test r == r
-        if axes(r) isa Base.OneTo
+        if axes(r,1) isa Base.OneTo
             @test r == cumsum(p)
             @test r .+ 1 == cumsum(p) .+ 1
             @test r[Base.OneTo(3)] == r[1:3]
             @test @view(r[Base.OneTo(3)]) === r[Base.OneTo(3)] == r[1:3]
             @test @view(r[Base.OneTo(3)]) isa RangeCumsum
             @test diff(r) == diff(Vector(r))
+            @test -r == -Vector(r)
         end
         @test diff(r) == p[firstindex(p)+1:end]
         @test last(r) == r[end] == sum(p)

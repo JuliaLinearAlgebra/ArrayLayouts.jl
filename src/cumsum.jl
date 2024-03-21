@@ -41,6 +41,9 @@ sort(a::RangeCumsum{<:Any,<:Base.OneTo}) = a
 
 convert(::Type{RangeCumsum{T,R}}, r::RangeCumsum) where {T,R} = RangeCumsum{T,R}(convert(R, r.range))
 
+function Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{1}, ::typeof(-), r::RangeCumsum)
+    RangeCumsum(.-r.range)
+end
 function Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{1}, ::typeof(*), x::Number, r::RangeCumsum)
     RangeCumsum(x * r.range)
 end
