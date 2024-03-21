@@ -8,6 +8,7 @@ include("infinitearrays.jl")
     @testset for p in (Base.OneTo(5), 2:5, 2:2:6, 6:-2:1, -1.0:3.0:5.0, (-1.0:3.0:5.0)*im,
                         Base.IdentityUnitRange(4:6))
         r = RangeCumsum(p)
+        @test parent(r) == p
         @test r == r
         if axes(r) isa Base.OneTo
             @test r == cumsum(p)
