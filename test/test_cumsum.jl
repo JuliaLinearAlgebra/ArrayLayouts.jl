@@ -51,6 +51,17 @@ cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
     r = RangeCumsum(InfiniteArrays.OneToInf())
     @test axes(r, 1) == InfiniteArrays.OneToInf()
 
+    @testset "overflow" begin
+        r = RangeCumsum(typemax(Int)÷2 .+ (0:1))
+        @test last(r) == typemax(Int)
+        r = RangeCumsum(typemin(Int)÷2 .- (1:1))
+        @test first(r) == typemin(Int)÷2 - 1
+        r = RangeCumsum(typemax(Int) .+ (0:0))
+        @test sum(r) == typemax(Int)
+        r = RangeCumsum(typemin(Int) .+ (0:0))
+        @test sum(r) == typemin(Int)
+    end
+
     @testset "multiplication by a number" begin
         function test_broadcast(n, r)
             w = Vector(r)
