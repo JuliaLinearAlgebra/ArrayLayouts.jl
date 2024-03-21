@@ -15,13 +15,18 @@ Base.parent(r::RangeCumsum) = r.range
 ==(a::RangeCumsum, b::RangeCumsum) = a.range == b.range
 BroadcastStyle(::Type{<:RangeCumsum{<:Any,RR}}) where RR = BroadcastStyle(RR)
 
-_half(x::Integer) = x ÷ 2
-_half(x) = x / 2
+function _half_prod(a::Integer, b::Integer)
+    iseven(a) ? (a÷2) * b : a * (b÷2)
+end
+function _onethird_prod(a::Integer, b::Integer)
+    mod(a, 3) == 0 ? (a÷3) * b : a * (b÷3)
+end
 
 function _getindex(r::AbstractRange{<:Real}, k)
     v = first(r)
     s = step(r)
-    _half(k * (2v - s + s*k))
+    # avoid overflow, if possible
+    k * v + s * _half_prod(k, k-1)
 end
 Base.@propagate_inbounds _getindex(r::AbstractRange, k) = sum(r[range(firstindex(r), length=k)])
 
@@ -44,7 +49,9 @@ function Base.sum(r::RangeCumsum{<:Real})
     N = length(r)
     v = first(r)
     s = step(r.range)
-    _half((2v-s)*(N*(N+1)÷2) + s*(N*(N+1)*(2N+1)÷6))
+    # avoid overflow, if possible
+    halfnnp1 = _half_prod(N, N+1)
+    v * halfnnp1 + s * _onethird_prod(halfnnp1, N-1)
 end
 
 union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) =
