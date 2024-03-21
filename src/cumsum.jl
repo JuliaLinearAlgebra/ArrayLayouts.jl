@@ -15,8 +15,8 @@ Base.parent(r::RangeCumsum) = r.range
 ==(a::RangeCumsum, b::RangeCumsum) = a.range == b.range
 BroadcastStyle(::Type{<:RangeCumsum{<:Any,RR}}) where RR = BroadcastStyle(RR)
 
-_half(x::Integer) = x ÷ oftype(x, 2)
-_half(x) = x / oftype(x, 2)
+_half(x::Integer) = x ÷ 2
+_half(x) = x / 2
 
 function _getindex(r::AbstractRange{<:Real}, k)
     v = first(r)
