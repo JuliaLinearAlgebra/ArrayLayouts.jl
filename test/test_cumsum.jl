@@ -33,6 +33,7 @@ cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
         @test diff(r) == p[firstindex(p)+1:end]
         @test last(r) == r[end] == sum(p)
         @test first(r) == r[firstindex(r)] == first(p)
+        @test repr(r) == "$RangeCumsum($p)"
     end
 
     a,b = RangeCumsum(Base.OneTo(5)), RangeCumsum(Base.OneTo(6))
