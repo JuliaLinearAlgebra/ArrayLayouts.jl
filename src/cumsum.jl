@@ -71,3 +71,5 @@ end
 function Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{1}, ::typeof(*), r::RangeCumsum, x::Number)
     RangeCumsum(r.range * x)
 end
+
+Base.show(io::IO, r::RangeCumsum) = print(io, RangeCumsum, "(", r.range, ")")
