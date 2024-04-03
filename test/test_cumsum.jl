@@ -107,6 +107,8 @@ cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
         a = RangeCumsum(2:1)
         @test_throws ArgumentError minimum(a)
         @test_throws ArgumentError maximum(a)
+        @test minimum(a, init=10) == 10
+        @test maximum(a, init=0) == 0
 
         a = RangeCumsum(Base.OneTo(4))
         @test maximum(a) == 10
@@ -114,6 +116,8 @@ cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
         a = RangeCumsum(Base.OneTo(0))
         @test_throws ArgumentError minimum(a)
         @test_throws ArgumentError maximum(a)
+        @test minimum(a, init=10) == 10
+        @test maximum(a, init=0) == 0
 
         @testset "infinite" begin
             r = RangeCumsum(-5:ℵ₀)

@@ -72,16 +72,21 @@ function Base.issorted(a::RangeCumsum{<:Any,<:AbstractUnitRange{<:Integer}})
     length(r2) <= 1 + (last(r) >= 0)
 end
 
-function Base.minimum(a::RangeCumsum{<:Any, <:OneTo})
-    isempty(a) && throw(ArgumentError("RangeCumsum must be non-empty"))
+struct _InitialValue end
+
+_reduce_empty(init) = init
+_reduce_empty(::_InitialValue) = throw(ArgumentError("RangeCumsum must be non-empty"))
+
+function Base.minimum(a::RangeCumsum{<:Any, <:OneTo}; init = _InitialValue())
+    isempty(a) && return _reduce_empty(init)
     first(a)
 end
-function Base.maximum(a::RangeCumsum{<:Any, <:OneTo})
-    isempty(a) && throw(ArgumentError("RangeCumsum must be non-empty"))
+function Base.maximum(a::RangeCumsum{<:Any, <:OneTo}; init = _InitialValue())
+    isempty(a) && return _reduce_empty(init)
     last(a)
 end
-function Base.maximum(a::RangeCumsum{<:Any, <:AbstractUnitRange{<:Integer}})
-    isempty(a) && throw(ArgumentError("RangeCumsum must be non-empty"))
+function Base.maximum(a::RangeCumsum{<:Any, <:AbstractUnitRange{<:Integer}}; init = _InitialValue())
+    isempty(a) && return _reduce_empty(init)
     r = parent(a)
     if -first(r) in r
         r2 = r[searchsortedfirst(r, -first(r)+1):end]
@@ -90,8 +95,8 @@ function Base.maximum(a::RangeCumsum{<:Any, <:AbstractUnitRange{<:Integer}})
         max(first(r), sum(r))
     end
 end
-function Base.minimum(a::RangeCumsum{<:Any, <:AbstractUnitRange{<:Integer}})
-    isempty(a) && throw(ArgumentError("RangeCumsum must be non-empty"))
+function Base.minimum(a::RangeCumsum{<:Any, <:AbstractUnitRange{<:Integer}}; init = _InitialValue())
+    isempty(a) && return _reduce_empty(init)
     r = parent(a)
     if zero(eltype(r)) in r
         r2 = r[firstindex(r):searchsortedlast(r, zero(eltype(r)))]
