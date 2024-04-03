@@ -36,6 +36,12 @@ cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
         @test repr(r) == "$RangeCumsum($p)"
     end
 
+    @testset "promote" begin
+        r1 = RangeCumsum(Int8(1):Int8(3))
+        r2 = RangeCumsum(Float32(1):Float32(3))
+        @test promote(r1, r2) == (r2, r2)
+    end
+
     a,b = RangeCumsum(Base.OneTo(5)), RangeCumsum(Base.OneTo(6))
     @test union(a,b) ≡ union(b,a) ≡ b
     @test sort!(copy(a)) == a

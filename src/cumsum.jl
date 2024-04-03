@@ -12,6 +12,11 @@ axes(c::RangeCumsum) = axes(c.range)
 
 Base.parent(r::RangeCumsum) = r.range
 
+function Base.promote_rule(::Type{RangeCumsum{T1, R1}}, ::Type{RangeCumsum{T2, R2}}) where {T1,T2,R1,R2}
+    R = promote_type(R1, R2)
+    RangeCumsum{promote_type(T1, T2), R}
+end
+
 ==(a::RangeCumsum, b::RangeCumsum) = a.range == b.range
 BroadcastStyle(::Type{<:RangeCumsum{<:Any,RR}}) where RR = BroadcastStyle(RR)
 
