@@ -1,6 +1,6 @@
 module TestCumsum
 
-using ArrayLayouts, Test
+using ArrayLayouts, Test, Infinities
 
 include("infinitearrays.jl")
 
@@ -114,6 +114,15 @@ cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
         a = RangeCumsum(Base.OneTo(0))
         @test_throws ArgumentError minimum(a)
         @test_throws ArgumentError maximum(a)
+
+        @testset "infinite" begin
+            r = RangeCumsum(-5:ℵ₀)
+            @test maximum(r) == ℵ₀
+            @test minimum(r) == minimum(RangeCumsum(-5:5))
+            r = RangeCumsum(InfiniteArrays.OneToInf())
+            @test maximum(r) == ℵ₀
+            @test minimum(r) == 1
+        end
     end
 end
 
