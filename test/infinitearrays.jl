@@ -11,6 +11,7 @@ module InfiniteArrays
     Base.axes(r::AbstractInfUnitRange) = (OneToInf(),)
 
     Base.IteratorSize(::Type{<:AbstractInfUnitRange}) = Base.IsInfinite()
+    Base.sum(r::AbstractInfUnitRange) = last(r)
 
     """
         OneToInf(n)
@@ -26,6 +27,7 @@ module InfiniteArrays
     Base.first(r::OneToInf{T}) where {T} = oneunit(T)
     Base.oneto(::InfiniteCardinal{0}) = OneToInf()
 
+
     struct InfUnitRange{T<:Real} <: AbstractInfUnitRange{T}
         start::T
     end
@@ -34,8 +36,16 @@ module InfiniteArrays
     InfUnitRange{T}(a::AbstractInfUnitRange) where T<:Real = InfUnitRange{T}(first(a))
     InfUnitRange(a::AbstractInfUnitRange{T}) where T<:Real = InfUnitRange{T}(first(a))
     Base.:(:)(start::T, stop::InfiniteCardinal{0}) where {T<:Integer} = InfUnitRange{T}(start)
-    function getindex(v::InfUnitRange{T}, i::Integer) where T
-        @boundscheck i > 0 || Base.throw_boundserror(v, i)
+    function Base.getindex(v::InfUnitRange{T}, i::Integer) where T
+        @boundscheck i > 0 || throw(BoundsError(v, i))
         convert(T, first(v) + i - 1)
+    end
+    function Base.getindex(v::InfUnitRange{T}, i::AbstractUnitRange{<:Integer}) where T
+        @boundscheck checkbounds(v, i)
+        v[first(i)]:v[last(i)]
+    end
+    function Base.getindex(v::InfUnitRange{T}, i::AbstractInfUnitRange{<:Integer}) where T
+        @boundscheck checkbounds(v, first(i))
+        v[first(i)]:ℵ₀
     end
 end

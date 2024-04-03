@@ -1,6 +1,6 @@
 module TestCumsum
 
-using ArrayLayouts, Test
+using ArrayLayouts, Test, Infinities
 
 include("infinitearrays.jl")
 
@@ -82,6 +82,46 @@ cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
             test_broadcast(3, r)
             test_broadcast(3.5, r)
             test_broadcast(3.5 + 2im, r)
+        end
+    end
+
+    @testset "issorted" begin
+        @testset "RangeCumsum($start:$stop)" for start in -15:15, stop in start-1:20
+            a = RangeCumsum(start:stop)
+            v = Vector(a)
+            @test issorted(a) == issorted(v)
+        end
+        a = RangeCumsum(Base.OneTo(4))
+        @test issorted(a)
+        a = RangeCumsum(Base.OneTo(0))
+        @test issorted(a)
+    end
+
+    @testset "minimum/maximum" begin
+        @testset "RangeCumsum($start:$stop)" for start in -15:15, stop in start:20
+            a = RangeCumsum(start:stop)
+            v = Vector(a)
+            @test minimum(a) == minimum(v)
+            @test maximum(a) == maximum(v)
+        end
+        a = RangeCumsum(2:1)
+        @test_throws ArgumentError minimum(a)
+        @test_throws ArgumentError maximum(a)
+
+        a = RangeCumsum(Base.OneTo(4))
+        @test maximum(a) == 10
+        @test minimum(a) == 1
+        a = RangeCumsum(Base.OneTo(0))
+        @test_throws ArgumentError minimum(a)
+        @test_throws ArgumentError maximum(a)
+
+        @testset "infinite" begin
+            r = RangeCumsum(-5:ℵ₀)
+            @test maximum(r) == ℵ₀
+            @test minimum(r) == minimum(RangeCumsum(-5:5))
+            r = RangeCumsum(InfiniteArrays.OneToInf())
+            @test maximum(r) == ℵ₀
+            @test minimum(r) == 1
         end
     end
 end

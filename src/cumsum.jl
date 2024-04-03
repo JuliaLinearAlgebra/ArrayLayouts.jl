@@ -64,16 +64,52 @@ union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) =
 
 sort!(a::RangeCumsum{<:Any,<:Base.OneTo}) = a
 sort(a::RangeCumsum{<:Any,<:Base.OneTo}) = a
+Base.issorted(a::RangeCumsum{<:Any,<:Base.OneTo}) = true
+function Base.issorted(a::RangeCumsum{<:Any,<:AbstractUnitRange{<:Integer}})
+    r = parent(a)
+    r2 = r[firstindex(r):searchsortedlast(r, zero(eltype(r)))]
+    # at max one negative value is allowed
+    length(r2) <= 1 + (last(r) >= 0)
+end
+
+function Base.minimum(a::RangeCumsum{<:Any, <:OneTo})
+    isempty(a) && throw(ArgumentError("RangeCumsum must be non-empty"))
+    first(a)
+end
+function Base.maximum(a::RangeCumsum{<:Any, <:OneTo})
+    isempty(a) && throw(ArgumentError("RangeCumsum must be non-empty"))
+    last(a)
+end
+function Base.maximum(a::RangeCumsum{<:Any, <:AbstractUnitRange{<:Integer}})
+    isempty(a) && throw(ArgumentError("RangeCumsum must be non-empty"))
+    r = parent(a)
+    if -first(r) in r
+        r2 = r[searchsortedfirst(r, -first(r)+1):end]
+        max(zero(eltype(r)), sum(r2))
+    else
+        max(first(r), sum(r))
+    end
+end
+function Base.minimum(a::RangeCumsum{<:Any, <:AbstractUnitRange{<:Integer}})
+    isempty(a) && throw(ArgumentError("RangeCumsum must be non-empty"))
+    r = parent(a)
+    if zero(eltype(r)) in r
+        r2 = r[firstindex(r):searchsortedlast(r, zero(eltype(r)))]
+        min(sum(r2), zero(eltype(r)))
+    else
+        min(first(r), sum(r))
+    end
+end
 
 convert(::Type{RangeCumsum{T,R}}, r::RangeCumsum) where {T,R} = RangeCumsum{T,R}(convert(R, r.range))
 
-function Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{1}, ::typeof(-), r::RangeCumsum)
+function Broadcast.broadcasted(::typeof(-), r::RangeCumsum)
     RangeCumsum(.-r.range)
 end
-function Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{1}, ::typeof(*), x::Number, r::RangeCumsum)
+function Broadcast.broadcasted(::typeof(*), x::Number, r::RangeCumsum)
     RangeCumsum(x * r.range)
 end
-function Broadcast.broadcasted(::Broadcast.DefaultArrayStyle{1}, ::typeof(*), r::RangeCumsum, x::Number)
+function Broadcast.broadcasted(::typeof(*), r::RangeCumsum, x::Number)
     RangeCumsum(r.range * x)
 end
 
