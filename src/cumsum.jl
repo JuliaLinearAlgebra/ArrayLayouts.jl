@@ -65,7 +65,7 @@ union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) =
 sort!(a::RangeCumsum{<:Any,<:Base.OneTo}) = a
 sort(a::RangeCumsum{<:Any,<:Base.OneTo}) = a
 Base.issorted(a::RangeCumsum{<:Any,<:Base.OneTo}) = true
-function Base.issorted(a::RangeCumsum{<:Any,<:AbstractUnitRange{<:Real}})
+function Base.issorted(a::RangeCumsum{<:Any,<:AbstractUnitRange{<:Integer}})
     r = parent(a)
     r2 = r[firstindex(r):searchsortedlast(r, zero(eltype(r)))]
     # at max one negative value is allowed
