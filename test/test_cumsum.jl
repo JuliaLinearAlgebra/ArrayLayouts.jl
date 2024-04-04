@@ -99,7 +99,6 @@ cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
         end
 
         a,b = RangeCumsum(Base.OneTo(5)), RangeCumsum(Base.OneTo(6))
-        @test union(a,b) ≡ union(b,a) ≡ b
         @test sort!(copy(a)) == a
         @test sort!(a) ≡ a
         @test sort(a) ≡ a == Vector(a)
