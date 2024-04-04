@@ -44,12 +44,6 @@ cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
 
     a,b = RangeCumsum(Base.OneTo(5)), RangeCumsum(Base.OneTo(6))
     @test union(a,b) ≡ union(b,a) ≡ b
-    @test sort!(copy(a)) == a
-    @test sort!(a) ≡ a
-    @test sort(a) ≡ a == Vector(a)
-
-    r = RangeCumsum(-4:4)
-    @test sort(r) == sort(Vector(r))
 
     a = RangeCumsum(Base.OneTo(3))
     b = RangeCumsum(1:3)
@@ -95,6 +89,20 @@ cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
         @test issorted(a)
         a = RangeCumsum(Base.OneTo(0))
         @test issorted(a)
+    end
+
+    @testset "sort" begin
+        @testset "RangeCumsum($start:$stop)" for start in -15:15, stop in start-1:20
+            a = RangeCumsum(start:stop)
+            v = Vector(a)
+            @test sort(a) == sort(v)
+        end
+
+        a,b = RangeCumsum(Base.OneTo(5)), RangeCumsum(Base.OneTo(6))
+        @test union(a,b) ≡ union(b,a) ≡ b
+        @test sort!(copy(a)) == a
+        @test sort!(a) ≡ a
+        @test sort(a) ≡ a == Vector(a)
     end
 
     @testset "minimum/maximum" begin
