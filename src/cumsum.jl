@@ -64,6 +64,16 @@ union(a::RangeCumsum{<:Any,<:OneTo}, b::RangeCumsum{<:Any,<:OneTo}) =
 
 sort!(a::RangeCumsum{<:Any,<:Base.OneTo}) = a
 sort(a::RangeCumsum{<:Any,<:Base.OneTo}) = a
+function sort(a::RangeCumsum{<:Any,<:AbstractUnitRange{<:Integer}})
+    r = parent(a)
+    #= A RangeCumsum with a range (-a:b) for positive (a,b) may be viewed as a concatenation
+    of two components: (-a:a) and (a+1:b). The second is strictly increasing.
+    We only sort the first component, and concatenate the second to the result.
+    =#
+    a1 = RangeCumsum(r[firstindex(r):searchsortedlast(r, -first(r))])
+    a2 = RangeCumsum(r[searchsortedfirst(r, -first(r)+1):end])
+    vcat(sort!(Vector(a1)), a2)
+end
 Base.issorted(a::RangeCumsum{<:Any,<:Base.OneTo}) = true
 function Base.issorted(a::RangeCumsum{<:Any,<:AbstractUnitRange{<:Integer}})
     r = parent(a)
