@@ -122,6 +122,12 @@ MemoryLayout(::Type{<:LinearAlgebra.QRCompactWYQ{<:Any,S}}) where {S} =
 adjointlayout(::Type, ::QRPackedQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRPackedQLayout{SLAY,TLAY}()
 adjointlayout(::Type, ::QRCompactWYQLayout{SLAY,TLAY}) where {SLAY,TLAY} = AdjQRCompactWYQLayout{SLAY,TLAY}()
 
+colsupport(::QRPackedQLayout, Q, j) = oneto(maximum(colsupport(Q.factors, j)))
+rowsupport(::QRPackedQLayout, Q, k) = minimum(rowsupport(Q.factors, k)):size(Q,2)
+colsupport(::AdjQRPackedQLayout, Q, j) = minimum(colsupport(Q'.factors, j)):size(Q,1)
+rowsupport(::AdjQRPackedQLayout, Q, k) = oneto(maximum(rowsupport(Q'.factors, k)))
+
+
 copy(M::Lmul{<:AbstractQLayout}) = copyto!(similar(M), M)
 mulreduce(M::Mul{<:AbstractQLayout,<:AbstractQLayout}) = Lmul(M)
 mulreduce(M::Mul{<:AbstractQLayout}) = Lmul(M)
