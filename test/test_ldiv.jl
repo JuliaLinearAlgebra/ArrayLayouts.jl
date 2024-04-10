@@ -258,6 +258,15 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
                 @test ArrayLayouts.ldiv!(F, v) === v
                 @test ArrayLayouts.ldiv!(F, view(copy(b),:)) ≈ A \ b
             end
+
+            @testset "row/colsupport" begin
+                n = 10
+                B = Bidiagonal(randn(n), randn(n-1), :L)
+                Q = LinearAlgebra.qrfactUnblocked!(Matrix(T))
+                Q = LinearAlgebra.QRPackedQ(Tridiagonal(Q.factors), Q.τ)
+                @test rowsupport(Q, 4) ≡ colsupport(Q', 4) ≡ 3:10
+                @test colsupport(Q, 4) ≡ rowsupport(Q', 4) ≡ Base.OneTo(5)
+            end
         end
     end
 
