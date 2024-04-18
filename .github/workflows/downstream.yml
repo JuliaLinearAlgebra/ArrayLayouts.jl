@@ -43,6 +43,7 @@ jobs:
           - {repo: LazyBandedMatrices.jl, group: JuliaLinearAlgebra}
           - {repo: BlockBandedMatrices.jl, group: JuliaLinearAlgebra}
           - {repo: InfiniteArrays.jl, group: JuliaArrays}
+          - {repo: InfiniteLinearAlgebra.jl, group: JuliaLinearAlgebra}
 
     steps:
       - uses: actions/checkout@v4
