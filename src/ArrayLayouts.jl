@@ -15,17 +15,15 @@ using Base.Broadcast: Broadcasted
 
 import Base.Broadcast: BroadcastStyle, broadcastable, instantiate, materialize, materialize!
 
-using LinearAlgebra: AbstractQ, QRCompactWYQ, QRPackedQ, HessenbergQ,
-                        AbstractTriangular, checksquare, pinv, cholcopy,
-                        norm2, norm1, normInf, normMinusInf,
-                        AdjOrTrans, HermOrSym, RealHermSymComplexHerm, AdjointAbsVec, TransposeAbsVec,
-                        checknonsingular, _apply_ipiv_rows!, ipiv2perm, chkfullrank
+using LinearAlgebra: AbstractQ, AbstractTriangular, AdjOrTrans, AdjointAbsVec, HermOrSym, HessenbergQ, QRCompactWYQ,
+                     QRPackedQ, RealHermSymComplexHerm, TransposeAbsVec, _apply_ipiv_rows!, checknonsingular,
+                     checksquare, chkfullrank, cholcopy, ipiv2perm
 
-using LinearAlgebra.BLAS: BlasFloat, BlasReal, BlasComplex
+using LinearAlgebra.BLAS: BlasComplex, BlasFloat, BlasReal
 
 AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
 
-using FillArrays: AbstractFill, getindex_value, axes_print_matrix_row
+using FillArrays: AbstractFill, axes_print_matrix_row, getindex_value
 
 using Base: require_one_based_indexing
 
