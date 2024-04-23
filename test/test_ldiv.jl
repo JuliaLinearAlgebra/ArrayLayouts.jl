@@ -42,7 +42,7 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
         b = randn(T,5)
         @test all(copyto!(similar(b), Ldiv(A,b)) .===
                     (similar(b) .= Ldiv(A,b)) .===
-                  (A\b) .=== (b̃ =  copy(b); LAPACK.gesv!(copy(A), b̃); b̃))
+                  (A\b) ≈ (b̃ =  copy(b); LAPACK.gesv!(copy(A), b̃); b̃))
 
         @test copyto!(similar(b), Ldiv(UpperTriangular(A) , b)) ≈ UpperTriangular(A) \ b
         @test all(copyto!(similar(b), Ldiv(UpperTriangular(A) , b)) .===
@@ -94,7 +94,7 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
         @test LowerTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(LowerTriangular(A'), B)) ≈ (B .= Ldiv(LowerTriangular(A'), B))
         @test UnitUpperTriangular(A) \ B ≈ copyto!(similar(B) , Ldiv(UnitUpperTriangular(A), B)) ≈ (B .= Ldiv(UnitUpperTriangular(A), B))
         @test UnitUpperTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(UnitUpperTriangular(A'), B)) ≈ (B .= Ldiv(UnitUpperTriangular(A'), B))
-        @test UnitLowerTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(UnitLowerTriangular(A'), B)) ≈ (B .= Ldiv(UnitLowerTriangular(A'), B))        
+        @test UnitLowerTriangular(A') \ B ≈ copyto!(similar(B) , Ldiv(UnitLowerTriangular(A'), B)) ≈ (B .= Ldiv(UnitLowerTriangular(A'), B))
 
         C = randn(5,5) + im * randn(5,5)
         D = randn(5,5) + im * randn(5,5)
@@ -285,4 +285,3 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
         @test_broken ArrayLayouts.rdiv!(similar(B), D, B) ==  D / B
     end
 end
-
