@@ -844,6 +844,14 @@ Random.seed!(0)
             @test copy(M) ≈ b * D * α + c * β
         end
     end
+
+    @testset "dual" begin
+        a = randn(5)
+        X = randn(5,6)
+        @test copyto!(similar(a,6)', MulAdd(2.0, a', X, 3.0, Zeros(6)')) ≈ 2a'*X
+        @test copyto!(transpose(similar(a,6)), MulAdd(2.0, a', X, 3.0, Zeros(6)')) ≈ 2a'*X
+        @test copyto!(transpose(similar(a,6)), MulAdd(2.0, transpose(a), X, 3.0, transpose(Zeros(6)))) ≈ 2a'*X
+    end
 end
 
 end
