@@ -62,7 +62,7 @@ end
 @static if VERSION ≥ v"1.8.0"
     import Base: LazyString
 else
-    const LazyString = String
+    const LazyString = string
 end
 
 # Originally defined in FillArrays
