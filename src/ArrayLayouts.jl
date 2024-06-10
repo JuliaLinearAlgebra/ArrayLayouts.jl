@@ -59,6 +59,12 @@ else
                                               LinearAlgebra.UnitLowerTriangular{T,S}}
 end
 
+@static if VERSION ≥ v"1.8.0"
+    import Base: LazyString
+else
+    const LazyString = String
+end
+
 # Originally defined in FillArrays
 _copy_oftype(A::AbstractArray, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : AbstractArray{S}(A)
 _copy_oftype(A::AbstractRange, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : map(S, A)

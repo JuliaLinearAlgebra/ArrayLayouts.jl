@@ -152,8 +152,8 @@ function copyto!(dest::AbstractArray, M::Ldiv{<:AbstractQLayout})
     ldiv!(A,dest)
 end
 
-materialize!(M::Lmul{LAY}) where LAY<:AbstractQLayout = error("Overload materialize!(::Lmul{$(LAY)})")
-materialize!(M::Rmul{LAY}) where LAY<:AbstractQLayout = error("Overload materialize!(::Rmul{$(LAY)})")
+materialize!(M::Lmul{LAY}) where LAY<:AbstractQLayout = error(LazyString("Overload materialize!(::Lmul{", LAY, "})"))
+materialize!(M::Rmul{LAY}) where LAY<:AbstractQLayout = error(LazyString("Overload materialize!(::Rmul{", LAY, "})"))
 
 materialize!(M::Ldiv{<:AbstractQLayout}) = materialize!(Lmul(M.A',M.B))
 
@@ -309,10 +309,10 @@ end
 __qr(layout, lengths, A; kwds...) = invoke(qr, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
 _qr(layout, axes, A; kwds...) = __qr(layout, map(length, axes), A; kwds...)
 _qr(layout, axes, A, pivot::P; kwds...) where P = invoke(qr, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
-_qr!(layout, axes, A, args...; kwds...) = error("Overload _qr!(::$(typeof(layout)), axes, A)")
+_qr!(layout, axes, A, args...; kwds...) = error(LazyString("Overload _qr!(::", typeof(layout), ", axes, A)"))
 _lu(layout, axes, A; kwds...) = invoke(lu, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
 _lu(layout, axes, A, pivot::P; kwds...) where P = invoke(lu, Tuple{AbstractMatrix{eltype(A)},P}, A, pivot; kwds...)
-_lu!(layout, axes, A, args...; kwds...) = error("Overload _lu!(::$(typeof(layout)), axes, A)")
+_lu!(layout, axes, A, args...; kwds...) = error(LazyString("Overload _lu!(::", typeof(layout), ", axes, A)"))
 _cholesky(layout, axes, A, ::CNoPivot=CNoPivot(); check::Bool = true) = cholesky!(cholcopy(A); check = check)
 _cholesky(layout, axes, A, ::CRowMaximum; tol = 0.0, check::Bool = true) = cholesky!(cholcopy(A), CRowMaximum(); tol = tol, check = check)
 _factorize(layout, axes, A) = qr(A) # Default to QR

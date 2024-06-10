@@ -73,12 +73,12 @@ end
     Rdiv(instantiate(L.A), instantiate(L.B))
 end
 
-__ldiv!(::Mat, ::Mat, B) where Mat = error("Overload materialize!(::Ldiv{$(typeof(MemoryLayout(Mat))),$(typeof(MemoryLayout(B)))})")
-__ldiv!(::Mat, ::Mat, B::LayoutArray) where Mat = error("Overload materialize!(::Ldiv{$(typeof(MemoryLayout(Mat))),$(typeof(MemoryLayout(B)))})")
+__ldiv!(::Mat, ::Mat, B) where Mat = error(LazyString("Overload materialize!(::Ldiv{", typeof(MemoryLayout(Mat)), ",", typeof(MemoryLayout(B)), "})"))
+__ldiv!(::Mat, ::Mat, B::LayoutArray) where Mat = error(LazyString("Overload materialize!(::Ldiv{", typeof(MemoryLayout(Mat)), ",", typeof(MemoryLayout(B)), "})"))
 __ldiv!(_, F, B) = LinearAlgebra.ldiv!(F, B)
 @inline _ldiv!(A, B) = __ldiv!(A, factorize(A), B)
 @inline _ldiv!(A::Factorization, B) = LinearAlgebra.ldiv!(A, B)
-@inline _ldiv!(A::Factorization, B::LayoutArray) = error("Overload materialize!(::Ldiv{$(typeof(MemoryLayout(A))),$(typeof(MemoryLayout(B)))})")
+@inline _ldiv!(A::Factorization, B::LayoutArray) = error(LazyString("Overload materialize!(::Ldiv{", typeof(MemoryLayout(A)), ",", typeof(MemoryLayout(B)), "})"))
 
 @inline _ldiv!(dest, A, B; kwds...) = ldiv!(dest, factorize(A), B; kwds...)
 @inline _ldiv!(dest, A::Factorization, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
