@@ -585,8 +585,8 @@ diagonaldata(D::Bidiagonal) = D.dv
 diagonaldata(D::SymTridiagonal) = D.dv
 diagonaldata(D::Tridiagonal) = D.d
 
-supdiagonaldata(D::Bidiagonal) = D.uplo == 'U' ? D.ev : throw(ArgumentError("$D is lower-bidiagonal"))
-subdiagonaldata(D::Bidiagonal) = D.uplo == 'L' ? D.ev : throw(ArgumentError("$D is upper-bidiagonal"))
+supdiagonaldata(D::Bidiagonal) = D.uplo == 'U' ? D.ev : throw(ArgumentError(LazyString(D, " is lower-bidiagonal")))
+subdiagonaldata(D::Bidiagonal) = D.uplo == 'L' ? D.ev : throw(ArgumentError(LazyString(D, " is upper-bidiagonal")))
 
 supdiagonaldata(D::SymTridiagonal) = D.ev
 subdiagonaldata(D::SymTridiagonal) = D.ev

@@ -2,6 +2,7 @@ module TestLdiv
 
 using ArrayLayouts, LinearAlgebra, FillArrays, Test
 import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout, QRPackedQLayout, QRPackedLayout
+using StaticArrays
 
 @testset "Ldiv" begin
     @testset "Float64 \\ *" begin
@@ -294,6 +295,25 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
         @test ArrayLayouts.ldiv!(similar(B), B, D) == B \ D
         @test ArrayLayouts.rdiv!(similar(B), B, D) ==  B / D
         @test_broken ArrayLayouts.rdiv!(similar(B), D, B) ==  D / B
+    end
+
+    @testset "error paths" begin
+        v = rand(Int,3)
+        A = rand(2,2)
+        S = SMatrix{2,2}(A)
+        errA(U) = DimensionMismatch("second dimension of A, $(size(U,2)), does not match length of x, $(length(v))")
+        errS(U) = DimensionMismatch("second axis of A, $(axes(U,2)), and first axis of B, $(axes(v,1)), must match")
+        for (M, errf) in ((A, errA), (S, errS))
+            U = UpperTriangular(M)
+            err = errf(U)
+            @test_throws err ArrayLayouts.materialize!(ArrayLayouts.Ldiv(U, v))
+            UU = UnitUpperTriangular(M)
+            @test_throws err ArrayLayouts.materialize!(ArrayLayouts.Ldiv(UU, v))
+            L = LowerTriangular(M)
+            @test_throws err ArrayLayouts.materialize!(ArrayLayouts.Ldiv(L, v))
+            UL = UnitLowerTriangular(M)
+            @test_throws err ArrayLayouts.materialize!(ArrayLayouts.Ldiv(UL, v))
+        end
     end
 end
 

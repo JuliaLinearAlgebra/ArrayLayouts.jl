@@ -59,6 +59,12 @@ else
                                               LinearAlgebra.UnitLowerTriangular{T,S}}
 end
 
+@static if VERSION ≥ v"1.8.0"
+    import Base: LazyString
+else
+    const LazyString = string
+end
+
 # Originally defined in FillArrays
 _copy_oftype(A::AbstractArray, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : AbstractArray{S}(A)
 _copy_oftype(A::AbstractRange, ::Type{S}) where {S} = eltype(A) == S ? copy(A) : map(S, A)
@@ -205,7 +211,7 @@ getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) =
 function *(a::Transpose{T, <:LayoutVector{T}}, b::Zeros{T, 1}) where T<:Real
     la, lb = length(a), length(b)
     if la ≠ lb
-        throw(DimensionMismatch("dot product arguments have lengths $la and $lb"))
+        throw(DimensionMismatch(LazyString("dot product arguments have lengths ", la, " and ", lb)))
     end
     return zero(T)
 end
@@ -334,7 +340,7 @@ end
 @inline function reflectorApply!(x::AbstractVector, τ::Number, A::AbstractVecOrMat)
     m,n = size(A,1),size(A,2)
     if length(x) != m
-        throw(DimensionMismatch("reflector has length $(length(x)), which must match the first dimension of matrix A, $m"))
+        throw(DimensionMismatch(LazyString("reflector has length ", length(x), ", which must match the first dimension of matrix A, ", m)))
     end
     m == 0 && return A
     @inbounds begin

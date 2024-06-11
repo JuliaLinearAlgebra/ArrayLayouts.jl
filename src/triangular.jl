@@ -26,7 +26,7 @@ function materialize!(M::Lmul{<:TriangularLayout{'U','N'}})
     A,B = M.A,M.B
     m, n = size(B, 1), size(B, 2)
     if m != size(A, 1)
-        throw(DimensionMismatch("right hand side B needs first dimension of size $(size(A,1)), has size $m"))
+        throw(DimensionMismatch(LazyString("right hand side B needs first dimension of size ", size(A,1), ", has size ", m)))
     end
     Adata = triangulardata(A)
     for j = rowsupport(B)
@@ -46,7 +46,7 @@ function materialize!(M::Lmul{<:TriangularLayout{'U','U'}})
     A,B = M.A,M.B
     m, n = size(B, 1), size(B, 2)
     if m != size(A, 1)
-        throw(DimensionMismatch("right hand side B needs first dimension of size $(size(A,1)), has size $m"))
+        throw(DimensionMismatch(LazyString("right hand side B needs first dimension of size ", size(A,1), ", has size ", m)))
     end
     Adata = triangulardata(A)
     for j = rowsupport(B)
@@ -66,7 +66,7 @@ function materialize!(M::Lmul{<:TriangularLayout{'L','N'}})
     A,B = M.A,M.B
     m, n = size(B, 1), size(B, 2)
     if m != size(A, 1)
-        throw(DimensionMismatch("right hand side B needs first dimension of size $(size(A,1)), has size $m"))
+        throw(DimensionMismatch(LazyString("right hand side B needs first dimension of size ", size(A,1), ", has size ", m)))
     end
     Adata = triangulardata(A)
     for j = 1:n
@@ -84,7 +84,7 @@ function materialize!(M::Lmul{<:TriangularLayout{'L','U'}})
     A,B = M.A,M.B
     m, n = size(B, 1), size(B, 2)
     if m != size(A, 1)
-        throw(DimensionMismatch("right hand side B needs first dimension of size $(size(A,1)), has size $m"))
+        throw(DimensionMismatch(LazyString("right hand side B needs first dimension of size ", size(A,1), ", has size ", m)))
     end
     Adata = triangulardata(A)
     for j = 1:n
@@ -264,10 +264,7 @@ end
 function materialize!(M::MatLdivVec{<:TriangularLayout{'U','N'}})
     A,b = M.A,M.B
     require_one_based_indexing(A, b)
-    n = size(A, 2)
-    if !(n == length(b))
-        throw(DimensionMismatch("second dimension of left hand side A, $n, and length of right hand side b, $(length(b)), must be equal"))
-    end
+    check_mul_axes(A, b)
     data = triangulardata(A)
     @inbounds for j in reverse(colsupport(b,1))
         iszero(data[j,j]) && throw(SingularException(j))
@@ -282,10 +279,7 @@ end
 function materialize!(M::MatLdivVec{<:TriangularLayout{'U','U'}})
     A,b = M.A,M.B
     require_one_based_indexing(A, b)
-    n = size(A, 2)
-    if !(n == length(b))
-        throw(DimensionMismatch("second dimension of left hand side A, $n, and length of right hand side b, $(length(b)), must be equal"))
-    end
+    check_mul_axes(A, b)
     data = triangulardata(A)
     @inbounds for j in reverse(colsupport(b,1))
         iszero(data[j,j]) && throw(SingularException(j))
@@ -300,11 +294,9 @@ end
 function materialize!(M::MatLdivVec{<:TriangularLayout{'L','N'}})
     A,b = M.A,M.B
     require_one_based_indexing(A, b)
-    n = size(A, 2)
-    if !(n == length(b))
-        throw(DimensionMismatch("second dimension of left hand side A, $n, and length of right hand side b, $(length(b)), must be equal"))
-    end
+    check_mul_axes(A, b)
     data = triangulardata(A)
+    n = size(A, 2)
     @inbounds for j in 1:n
         iszero(data[j,j]) && throw(SingularException(j))
         bj = b[j] = data[j,j] \ b[j]
@@ -318,11 +310,9 @@ end
 function materialize!(M::MatLdivVec{<:TriangularLayout{'L','U'}})
     A,b = M.A,M.B
     require_one_based_indexing(A, b)
-    n = size(A, 2)
-    if !(n == length(b))
-        throw(DimensionMismatch("second dimension of left hand side A, $n, and length of right hand side b, $(length(b)), must be equal"))
-    end
+    check_mul_axes(A, b)
     data = triangulardata(A)
+    n = size(A, 2)
     @inbounds for j in 1:n
         iszero(data[j,j]) && throw(SingularException(j))
         bj = b[j]
@@ -379,7 +369,7 @@ function materialize!(M::MatLdivVec{<:BidiagonalLayout})
     require_one_based_indexing(A, b)
     N = size(A, 2)
     if N != length(b)
-        throw(DimensionMismatch("second dimension of A, $N, does not match one of the length of b, $(length(b))"))
+        throw(DimensionMismatch(LazyString("second dimension of A, ", N, ", does not match one of the length of b, ", length(b))))
     end
 
     if N == 0
