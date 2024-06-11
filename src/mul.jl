@@ -92,18 +92,19 @@ check_mul_axes(A) = nothing
 _check_mul_axes(::Number, ::Number) = nothing
 _check_mul_axes(::Number, _) = nothing
 _check_mul_axes(_, ::Number) = nothing
-_check_mul_axes(A, B) = axes(A, 2) == axes(B, 1) || throw(DimensionMismatch("Second axis of A, $(axes(A,2)), and first axis of B, $(axes(B,1)) must match"))
+_check_mul_axes(A, B) = axes(A, 2) == axes(B, 1) || throw(
+    DimensionMismatch(LazyString("Second axis of A, ", axes(A,2), ", and first axis of B, ", axes(B,1), " must match")))
 # we need to special case AbstractQ as it allows non-compatiple multiplication
 const FlexibleLeftQs = Union{QRCompactWYQ,QRPackedQ,HessenbergQ}
 _check_mul_axes(::FlexibleLeftQs, ::Number) = nothing
 _check_mul_axes(Q::FlexibleLeftQs, B) =
     axes(Q.factors, 1) == axes(B, 1) || axes(Q.factors, 2) == axes(B, 1) ||
-        throw(DimensionMismatch("First axis of B, $(axes(B,1)) must match either axes of A, $(axes(Q.factors))"))
+        throw(DimensionMismatch(LazyString("First axis of B, ", axes(B,1), " must match either axes of A, ", axes(Q.factors))))
 _check_mul_axes(::Number, ::AdjointQtype{<:Any,<:FlexibleLeftQs}) = nothing
 function _check_mul_axes(A, adjQ::AdjointQtype{<:Any,<:FlexibleLeftQs})
     Q = parent(adjQ)
     axes(A, 2) == axes(Q.factors, 1) || axes(A, 2) == axes(Q.factors, 2) ||
-        throw(DimensionMismatch("Second axis of A, $(axes(A,2)) must match either axes of B, $(axes(Q.factors))"))
+        throw(DimensionMismatch(LazyString("Second axis of A, ", axes(A,2), " must match either axes of B, ", axes(Q.factors))))
 end
 _check_mul_axes(Q::FlexibleLeftQs, adjQ::AdjointQtype{<:Any,<:FlexibleLeftQs}) =
     invoke(_check_mul_axes, Tuple{Any,Any}, Q, adjQ)
@@ -115,7 +116,7 @@ end
 # we need to special case AbstractQ as it allows non-compatiple multiplication
 function check_mul_axes(A::Union{QRCompactWYQ,QRPackedQ}, B, C...)
     axes(A.factors, 1) == axes(B, 1) || axes(A.factors, 2) == axes(B, 1) ||
-        throw(DimensionMismatch("First axis of B, $(axes(B,1)) must match either axes of A, $(axes(A))"))
+        throw(DimensionMismatch(LazyString("First axis of B, ", axes(B,1), " must match either axes of A, ", axes(A))))
     check_mul_axes(B, C...)
 end
 

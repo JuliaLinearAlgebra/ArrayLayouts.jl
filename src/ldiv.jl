@@ -56,10 +56,10 @@ _getindex(::Type{Tuple{I,J}}, L::Ldiv, (k,j)::Tuple{Colon,J}) where {I,J} = Ldiv
 _getindex(::Type{Tuple{I,J}}, L::Ldiv, (k,j)::Tuple{I,J}) where {I,J} = L[:,j][k]
 
 check_ldiv_axes(A, B) =
-    axes(A,1) == axes(B,1) || throw(DimensionMismatch("First axis of A, $(axes(A,1)), and first axis of B, $(axes(B,1)) must match"))
+    axes(A,1) == axes(B,1) || throw(DimensionMismatch(LazyString("First axis of A, ", axes(A,1), ", and first axis of B, ", axes(B,1), " must match")))
 
 check_rdiv_axes(A, B) =
-    axes(A,2) == axes(B,2) || throw(DimensionMismatch("Second axis of A, $(axes(A,2)), and second axis of B, $(axes(B,2)) must match"))
+    axes(A,2) == axes(B,2) || throw(DimensionMismatch(LazyString("Second axis of A, ", axes(A,2), ", and second axis of B, ", axes(B,2), " must match")))
 
 
 

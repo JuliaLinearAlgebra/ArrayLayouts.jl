@@ -179,7 +179,7 @@ function materialize!(M::Lmul{<:QRPackedQLayout})
     mA, nA = size(A.factors)
     mB, nB = size(B,1), size(B,2)
     if mA != mB
-        throw(DimensionMismatch("matrix A has dimensions ($mA,$nA) but B has dimensions ($mB, $nB)"))
+        throw(DimensionMismatch(LazyString("matrix A has dimensions (", mA, ",", nA, ") but B has dimensions (", mB, ", ", nB, ")")))
     end
     Afactors = A.factors
     @inbounds begin
@@ -217,7 +217,7 @@ function materialize!(M::Lmul{<:AdjQRPackedQLayout})
     mA, nA = size(A.factors)
     mB, nB = size(B,1), size(B,2)
     if mA != mB
-        throw(DimensionMismatch("matrix A has dimensions ($mA,$nA) but B has dimensions ($mB, $nB)"))
+        throw(DimensionMismatch(LazyString("matrix A has dimensions (", mA, ",", nA, ") but B has dimensions (", mB, ", ", nB, ")")))
     end
     Afactors = A.factors
     @inbounds begin
@@ -248,7 +248,7 @@ function materialize!(M::Rmul{<:Any,<:QRPackedQLayout})
     mQ, nQ = size(Q.factors)
     mA, nA = size(A,1), size(A,2)
     if nA != mQ
-        throw(DimensionMismatch("matrix A has dimensions ($mA,$nA) but matrix Q has dimensions ($mQ, $nQ)"))
+        throw(DimensionMismatch(LazyString("matrix A has dimensions (", mA, ",", nA, ") but matrix Q has dimensions (", mQ, ", ", nQ, ")")))
     end
     Qfactors = Q.factors
     @inbounds begin
@@ -284,7 +284,7 @@ function materialize!(M::Rmul{<:Any,<:AdjQRPackedQLayout})
     mQ, nQ = size(Q.factors)
     mA, nA = size(A,1), size(A,2)
     if nA != mQ
-        throw(DimensionMismatch("matrix A has dimensions ($mA,$nA) but matrix Q has dimensions ($mQ, $nQ)"))
+        throw(DimensionMismatch(LazyString("matrix A has dimensions (", mA, ",", nA, ") but matrix Q has dimensions (", mQ, ", ", nQ, ")")))
     end
     Qfactors = Q.factors
     @inbounds begin
