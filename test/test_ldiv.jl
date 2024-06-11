@@ -295,6 +295,18 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
         @test ArrayLayouts.rdiv!(similar(B), B, D) ==  B / D
         @test_broken ArrayLayouts.rdiv!(similar(B), D, B) ==  D / B
     end
+
+    @testset "error paths" begin
+        v = rand(Int,3)
+        U = UpperTriangular(rand(2,2))
+        @test_throws DimensionMismatch ArrayLayouts.materialize!(U, v)
+        UU = UnitUpperTriangular(rand(2,2))
+        @test_throws DimensionMismatch ArrayLayouts.materialize!(UU, v)
+        L = LowerTriangular(rand(2,2))
+        @test_throws DimensionMismatch ArrayLayouts.materialize!(L, v)
+        UL = UnitLowerTriangular(rand(2,2))
+        @test_throws DimensionMismatch ArrayLayouts.materialize!(UL, v)
+    end
 end
 
 end

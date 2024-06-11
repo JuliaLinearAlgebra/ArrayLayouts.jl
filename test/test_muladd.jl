@@ -844,6 +844,15 @@ Random.seed!(0)
             @test copy(M) ≈ b * D * α + c * β
         end
     end
+
+    @testset "Error paths" begin
+        Q = qr(rand(2,2), ColumnNorm()).Q
+        v = rand(Float32, 3)
+        @test_throws DimensionMismatch ArrayLayouts.materialize!(ArrayLayouts.Rmul(v, Q))
+        @test_throws DimensionMismatch ArrayLayouts.materialize!(ArrayLayouts.Rmul(v, Q'))
+        @test_throws DimensionMismatch ArrayLayouts.materialize!(ArrayLayouts.Lmul(Q, v))
+        @test_throws DimensionMismatch ArrayLayouts.materialize!(ArrayLayouts.Lmul(Q', v))
+    end
 end
 
 end
