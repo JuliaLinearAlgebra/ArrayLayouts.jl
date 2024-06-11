@@ -77,7 +77,7 @@ materialize(M::MulAdd) = copy(instantiate(M))
 copy(M::MulAdd) = copyto!(similar(M), M)
 
 _fill_copyto!(dest, C) = copyto!(dest, C)
-_fill_copyto!(dest, C::Zeros) = zero!(dest) # exploit special fill! overload
+_fill_copyto!(dest, C::Union{Zeros,AdjOrTrans{<:Any,<:Zeros}}) = zero!(dest) # exploit special fill! overload
 
 @inline copyto!(dest::AbstractArray{T}, M::MulAdd) where T =
     muladd!(M.α, unalias(dest,M.A), unalias(dest,M.B), M.β, _fill_copyto!(dest, M.C); Czero = M.Czero)

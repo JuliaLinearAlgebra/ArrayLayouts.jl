@@ -291,6 +291,10 @@ Base.permutedims(D::Diagonal{<:Any,<:LayoutVector}) = D
 
 zero!(A) = zero!(MemoryLayout(A), A)
 zero!(_, A) = fill!(A,zero(eltype(A)))
+function zero!(::DualLayout, A)
+    zero!(parent(A))
+    A
+end
 function zero!(_, A::AbstractArray{<:AbstractArray})
     for a in A
         zero!(a)
