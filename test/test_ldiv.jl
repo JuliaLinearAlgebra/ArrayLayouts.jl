@@ -298,14 +298,16 @@ import ArrayLayouts: ApplyBroadcastStyle, QRCompactWYQLayout, QRCompactWYLayout,
 
     @testset "error paths" begin
         v = rand(Int,3)
-        U = UpperTriangular(rand(2,2))
-        @test_throws DimensionMismatch ArrayLayouts.materialize!(U, v)
-        UU = UnitUpperTriangular(rand(2,2))
-        @test_throws DimensionMismatch ArrayLayouts.materialize!(UU, v)
-        L = LowerTriangular(rand(2,2))
-        @test_throws DimensionMismatch ArrayLayouts.materialize!(L, v)
-        UL = UnitLowerTriangular(rand(2,2))
-        @test_throws DimensionMismatch ArrayLayouts.materialize!(UL, v)
+        M = rand(2,2)
+        U = UpperTriangular(M)
+        err = DimensionMismatch("second dimension of A, $(size(U,2)), does not match length of x, $(length(v))")
+        @test_throws err ArrayLayouts.materialize!(ArrayLayouts.Ldiv(U, v))
+        UU = UnitUpperTriangular(M)
+        @test_throws err ArrayLayouts.materialize!(ArrayLayouts.Ldiv(UU, v))
+        L = LowerTriangular(M)
+        @test_throws err ArrayLayouts.materialize!(ArrayLayouts.Ldiv(L, v))
+        UL = UnitLowerTriangular(M)
+        @test_throws err ArrayLayouts.materialize!(ArrayLayouts.Ldiv(UL, v))
     end
 end
 

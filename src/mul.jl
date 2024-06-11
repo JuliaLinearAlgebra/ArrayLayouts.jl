@@ -92,8 +92,17 @@ check_mul_axes(A) = nothing
 _check_mul_axes(::Number, ::Number) = nothing
 _check_mul_axes(::Number, _) = nothing
 _check_mul_axes(_, ::Number) = nothing
-_check_mul_axes(A, B) = axes(A, 2) == axes(B, 1) || throw(
-    DimensionMismatch(LazyString("Second axis of A, ", axes(A,2), ", and first axis of B, ", axes(B,1), " must match")))
+_check_mul_axes(A, B) = axes(A, 2) == axes(B, 1) || throw_mul_axes_err(axes(A,2), axes(B,1))
+@noinline function throw_mul_axes_err(axA2, axB1)
+    throw(
+        DimensionMismatch(
+            LazyString("second axis of A, ", axA2, ", and first axis of B, ", axB1, " must match")))
+end
+@noinline function throw_mul_axes_err(axA2::Base.OneTo, axB1::Base.OneTo)
+    throw(
+        DimensionMismatch(
+            LazyString("second dimension of A, ", length(axA2), ", does not match length of x, ", length(axB1))))
+end
 # we need to special case AbstractQ as it allows non-compatiple multiplication
 const FlexibleLeftQs = Union{QRCompactWYQ,QRPackedQ,HessenbergQ}
 _check_mul_axes(::FlexibleLeftQs, ::Number) = nothing

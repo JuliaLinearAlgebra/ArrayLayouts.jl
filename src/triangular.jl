@@ -264,11 +264,7 @@ end
 function materialize!(M::MatLdivVec{<:TriangularLayout{'U','N'}})
     A,b = M.A,M.B
     require_one_based_indexing(A, b)
-    n = size(A, 2)
-    if !(n == length(b))
-        throw(DimensionMismatch(
-            LazyString("second dimension of left hand side A, ", n, ", and length of right hand side b, ", length(b), ", must be equal")))
-    end
+    check_mul_axes(A, b)
     data = triangulardata(A)
     @inbounds for j in reverse(colsupport(b,1))
         iszero(data[j,j]) && throw(SingularException(j))
@@ -283,10 +279,7 @@ end
 function materialize!(M::MatLdivVec{<:TriangularLayout{'U','U'}})
     A,b = M.A,M.B
     require_one_based_indexing(A, b)
-    n = size(A, 2)
-    if !(n == length(b))
-        throw(DimensionMismatch(LazyString("second dimension of left hand side A, ", n, ", and length of right hand side b, ", length(b), ", must be equal")))
-    end
+    check_mul_axes(A, b)
     data = triangulardata(A)
     @inbounds for j in reverse(colsupport(b,1))
         iszero(data[j,j]) && throw(SingularException(j))
@@ -301,10 +294,7 @@ end
 function materialize!(M::MatLdivVec{<:TriangularLayout{'L','N'}})
     A,b = M.A,M.B
     require_one_based_indexing(A, b)
-    n = size(A, 2)
-    if !(n == length(b))
-        throw(DimensionMismatch(LazyString("second dimension of left hand side A, ", n, ", and length of right hand side b, ", length(b), ", must be equal")))
-    end
+    check_mul_axes(A, b)
     data = triangulardata(A)
     @inbounds for j in 1:n
         iszero(data[j,j]) && throw(SingularException(j))
@@ -319,10 +309,7 @@ end
 function materialize!(M::MatLdivVec{<:TriangularLayout{'L','U'}})
     A,b = M.A,M.B
     require_one_based_indexing(A, b)
-    n = size(A, 2)
-    if !(n == length(b))
-        throw(DimensionMismatch(LazyString("second dimension of left hand side A, ", n, ", and length of right hand side b, ", length(b), ", must be equal")))
-    end
+    check_mul_axes(A, b)
     data = triangulardata(A)
     @inbounds for j in 1:n
         iszero(data[j,j]) && throw(SingularException(j))
