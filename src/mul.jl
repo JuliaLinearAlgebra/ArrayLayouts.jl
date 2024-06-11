@@ -96,7 +96,7 @@ _check_mul_axes(A, B) = axes(A, 2) == axes(B, 1) || throw_mul_axes_err(axes(A,2)
 @noinline function throw_mul_axes_err(axA2, axB1)
     throw(
         DimensionMismatch(
-            LazyString("second axis of A, ", axA2, ", and first axis of B, ", axB1, " must match")))
+            LazyString("second axis of A, ", axA2, ", and first axis of B, ", axB1, ", must match")))
 end
 @noinline function throw_mul_axes_err(axA2::Base.OneTo, axB1::Base.OneTo)
     throw(
