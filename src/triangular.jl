@@ -296,6 +296,7 @@ function materialize!(M::MatLdivVec{<:TriangularLayout{'L','N'}})
     require_one_based_indexing(A, b)
     check_mul_axes(A, b)
     data = triangulardata(A)
+    n = size(A, 2)
     @inbounds for j in 1:n
         iszero(data[j,j]) && throw(SingularException(j))
         bj = b[j] = data[j,j] \ b[j]
@@ -311,6 +312,7 @@ function materialize!(M::MatLdivVec{<:TriangularLayout{'L','U'}})
     require_one_based_indexing(A, b)
     check_mul_axes(A, b)
     data = triangulardata(A)
+    n = size(A, 2)
     @inbounds for j in 1:n
         iszero(data[j,j]) && throw(SingularException(j))
         bj = b[j]
