@@ -846,7 +846,11 @@ Random.seed!(0)
     end
 
     @testset "Error paths" begin
-        Q = qr(rand(2,2), ColumnNorm()).Q
+        if VERSION >= v"1.10.0"
+            Q = qr(rand(2,2), ColumnNorm()).Q
+        else
+            Q = qr(rand(2,2), Val(true)).Q
+        end
         v = rand(Float32, 3)
         @test_throws DimensionMismatch ArrayLayouts.materialize!(ArrayLayouts.Rmul(v, Q))
         @test_throws DimensionMismatch ArrayLayouts.materialize!(ArrayLayouts.Rmul(v, Q'))
