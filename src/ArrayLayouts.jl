@@ -256,27 +256,29 @@ end
 \(A::Diagonal, B::Diagonal{<:Any,<:LayoutVector}) = ldiv(A, B)
 
 
-_copyto!(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} =
+copyto!_layout(_, _, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N} =
     invoke(copyto!, Tuple{AbstractArray{T,N},AbstractArray{V,N}}, dest, src)
 
+const _copyto! = copyto!_layout # TODO: deprecate
 
-_copyto!(dest, src) = _copyto!(MemoryLayout(dest), MemoryLayout(src), dest, src)
-copyto!(dest::LayoutArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = _copyto!(dest, src)
-copyto!(dest::AbstractArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = _copyto!(dest, src)
-copyto!(dest::LayoutArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N = _copyto!(dest, src)
 
-copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::SubArray{<:Any,N,<:LayoutArray}) where N = _copyto!(dest, src)
-copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::LayoutArray{<:Any,N}) where N = _copyto!(dest, src)
-copyto!(dest::LayoutArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = _copyto!(dest, src)
-copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) where N = _copyto!(dest, src)
-copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = _copyto!(dest, src)
+copyto!_layout(dest, src) = copyto!_layout(MemoryLayout(dest), MemoryLayout(src), dest, src)
+copyto!(dest::LayoutArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = copyto!_layout(dest, src)
+copyto!(dest::AbstractArray{<:Any,N}, src::LayoutArray{<:Any,N}) where N = copyto!_layout(dest, src)
+copyto!(dest::LayoutArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N = copyto!_layout(dest, src)
 
-copyto!(dest::LayoutMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
-copyto!(dest::LayoutMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
-copyto!(dest::AbstractMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
-copyto!(dest::SubArray{<:Any,2,<:LayoutArray}, src::AdjOrTrans{<:Any,<:LayoutArray}) = _copyto!(dest, src)
-copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
-copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = _copyto!(dest, src)
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::SubArray{<:Any,N,<:LayoutArray}) where N = copyto!_layout(dest, src)
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::LayoutArray{<:Any,N}) where N = copyto!_layout(dest, src)
+copyto!(dest::LayoutArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = copyto!_layout(dest, src)
+copyto!(dest::SubArray{<:Any,N,<:LayoutArray}, src::AbstractArray{<:Any,N}) where N = copyto!_layout(dest, src)
+copyto!(dest::AbstractArray{<:Any,N}, src::SubArray{<:Any,N,<:LayoutArray}) where N = copyto!_layout(dest, src)
+
+copyto!(dest::LayoutMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = copyto!_layout(dest, src)
+copyto!(dest::LayoutMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = copyto!_layout(dest, src)
+copyto!(dest::AbstractMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = copyto!_layout(dest, src)
+copyto!(dest::SubArray{<:Any,2,<:LayoutArray}, src::AdjOrTrans{<:Any,<:LayoutArray}) = copyto!_layout(dest, src)
+copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = copyto!_layout(dest, src)
+copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = copyto!_layout(dest, src)
 if isdefined(LinearAlgebra, :copymutable_oftype)
     LinearAlgebra.copymutable_oftype(A::Union{LayoutArray,Symmetric{<:Any,<:LayoutMatrix},Hermitian{<:Any,<:LayoutMatrix},
                                                                 UpperOrLowerTriangular{<:Any,<:LayoutMatrix},

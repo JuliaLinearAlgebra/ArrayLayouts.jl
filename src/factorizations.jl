@@ -306,13 +306,6 @@ function materialize!(M::Rmul{<:Any,<:AdjQRPackedQLayout})
 end
 
 
-const _factorize = factorize_layout
-const _qr = qr_layout
-const _qr! = qr!_layout
-const _lu = lu_layout
-const _cholesky = cholesky_layout
-const _lu! = lu!_layout
-
 
 _qr_layout(layout, lengths, A; kwds...) = invoke(qr, Tuple{AbstractMatrix{eltype(A)}}, A; kwds...)
 qr_layout(layout, axes, A; kwds...) = _qr_layout(layout, map(length, axes), A; kwds...)
@@ -412,8 +405,6 @@ function _inv_eye(A, ::Type{T}, (rows,cols)) where T
     dest
 end
 
-const _inv = inv_layout # for back compatibility, TODO: deprecate
-
 function inv_layout(layout, axes, A)
     T = eltype(A)
     (rows,cols) = axes
@@ -427,13 +418,13 @@ end
 
 macro _layoutfactorizations(Typ)
     esc(quote
-        LinearAlgebra.cholesky(A::$Typ, v::ArrayLayouts.CNoPivot = ArrayLayouts.CNoPivot(); kwds...) = ArrayLayouts._cholesky(ArrayLayouts.MemoryLayout(A), axes(A), A, v; kwds...)
-        LinearAlgebra.cholesky(A::$Typ, v::ArrayLayouts.CRowMaximum; kwds...) = ArrayLayouts._cholesky(ArrayLayouts.MemoryLayout(A), axes(A), A, v; kwds...)
-        LinearAlgebra.cholesky!(A::LinearAlgebra.RealHermSymComplexHerm{<:Real,<:$Typ}, v::ArrayLayouts.CNoPivot = ArrayLayouts.CNoPivot(); check::Bool = true) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check)
-        LinearAlgebra.cholesky!(A::LinearAlgebra.RealHermSymComplexHerm{<:Real,<:$Typ}, v::ArrayLayouts.CRowMaximum; check::Bool = true, tol = 0.0) = ArrayLayouts._cholesky!(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check, tol=tol)
+        LinearAlgebra.cholesky(A::$Typ, v::ArrayLayouts.CNoPivot = ArrayLayouts.CNoPivot(); kwds...) = ArrayLayouts.cholesky_layout(ArrayLayouts.MemoryLayout(A), axes(A), A, v; kwds...)
+        LinearAlgebra.cholesky(A::$Typ, v::ArrayLayouts.CRowMaximum; kwds...) = ArrayLayouts.cholesky_layout(ArrayLayouts.MemoryLayout(A), axes(A), A, v; kwds...)
+        LinearAlgebra.cholesky!(A::LinearAlgebra.RealHermSymComplexHerm{<:Real,<:$Typ}, v::ArrayLayouts.CNoPivot = ArrayLayouts.CNoPivot(); check::Bool = true) = ArrayLayouts.cholesky!_layout(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check)
+        LinearAlgebra.cholesky!(A::LinearAlgebra.RealHermSymComplexHerm{<:Real,<:$Typ}, v::ArrayLayouts.CRowMaximum; check::Bool = true, tol = 0.0) = ArrayLayouts.cholesky!_layout(ArrayLayouts.MemoryLayout(A), axes(A), A, v; check=check, tol=tol)
         LinearAlgebra.qr(A::$Typ, args...; kwds...) = ArrayLayouts.qr_layout(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.qr!(A::$Typ, args...; kwds...) = ArrayLayouts.qr!_layout(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
-        LinearAlgebra.lu(A::$Typ, pivot::Union{ArrayLayouts.NoPivot,ArrayLayouts.RowMaximum}; kwds...) = ArrayLayouts._lu(ArrayLayouts.MemoryLayout(A), axes(A), A, pivot; kwds...)
+        LinearAlgebra.lu(A::$Typ, pivot::Union{ArrayLayouts.NoPivot,ArrayLayouts.RowMaximum}; kwds...) = ArrayLayouts.lu_layout(ArrayLayouts.MemoryLayout(A), axes(A), A, pivot; kwds...)
         LinearAlgebra.lu(A::$Typ{T}; kwds...) where T = ArrayLayouts.lu_layout(ArrayLayouts.MemoryLayout(A), axes(A), A; kwds...)
         LinearAlgebra.lu!(A::$Typ, args...; kwds...) = ArrayLayouts.lu!_layout(ArrayLayouts.MemoryLayout(A), axes(A), A, args...; kwds...)
         LinearAlgebra.factorize(A::$Typ) = ArrayLayouts.factorize_layout(ArrayLayouts.MemoryLayout(A), axes(A), A)
@@ -463,3 +454,15 @@ end
 
 LinearAlgebra.ldiv!(L::LU{<:Any,<:LayoutMatrix}, B::LayoutVector) = ArrayLayouts.ldiv!(L, B)
 
+
+
+# for back compatibility, TODO: deprecate
+const _factorize = factorize_layout
+const __qr = _qr_layout
+const _qr = qr_layout
+const _qr! = qr!_layout
+const _lu = lu_layout
+const _cholesky = cholesky_layout
+const _cholesky! = cholesky!_layout
+const _lu! = lu!_layout
+const _inv = inv_layout
