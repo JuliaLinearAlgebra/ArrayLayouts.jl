@@ -438,9 +438,9 @@ macro layoutfactorizations(Typ)
     esc(quote
         ArrayLayouts.@_layoutfactorizations $Typ
         ArrayLayouts.@_layoutfactorizations SubArray{<:Any,2,<:$Typ}
-        ArrayLayouts.@_layoutfactorizations LinearAlgebra.RealHermSymComplexHerm{<:Real,<:$Typ}
-        ArrayLayouts.@_layoutfactorizations LinearAlgebra.RealHermSymComplexHerm{<:Real,<:SubArray{<:Real,2,<:$Typ}}
-        ArrayLayouts.@_layoutfactorizations LinearAlgebra.UpperOrLowerTriangular{<:Real,<:SubArray{<:Real,2,<:$Typ}}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.RealHermSymComplexHerm{<:Real,<:$Typ}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.RealHermSymComplexHerm{<:Real,<:SubArray{<:Real,2,<:$Typ}}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.UpperOrLowerTriangular{<:Real,<:SubArray{<:Real,2,<:$Typ}}
     end)
 end
 
