@@ -440,9 +440,17 @@ macro layoutfactorizations(Typ)
         ArrayLayouts.@_layoutfactorizations SubArray{<:Any,2,<:$Typ}
         ArrayLayouts.@_layoutfactorizations ArrayLayouts.RealHermSymComplexHerm{<:Real,<:$Typ}
         ArrayLayouts.@_layoutfactorizations ArrayLayouts.RealHermSymComplexHerm{<:Real,<:SubArray{<:Real,2,<:$Typ}}
-        ArrayLayouts.@_layoutfactorizations ArrayLayouts.UpperOrLowerTriangular{<:Real,<:SubArray{<:Real,2,<:$Typ}}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.LowerTriangular{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.LowerTriangular{<:Any,<:SubArray{<:Any,2,<:$Typ}}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.UpperTriangular{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.UpperTriangular{<:Any,<:SubArray{<:Any,2,<:$Typ}}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.UnitLowerTriangular{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.UnitLowerTriangular{<:Any,<:SubArray{<:Any,2,<:$Typ}}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.UnitUpperTriangular{<:Any,<:$Typ}
+        ArrayLayouts.@_layoutfactorizations ArrayLayouts.UnitUpperTriangular{<:Any,<:SubArray{<:Any,2,<:$Typ}}
     end)
 end
+
 
 function ldiv!(C::Cholesky{<:Any,<:AbstractMatrix}, B::LayoutArray)
     if C.uplo == 'L'
