@@ -307,8 +307,8 @@ sub_materialize(::DualLayout{ML}, A::AbstractMatrix{<:Real}) where ML = sub_mate
 sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML<:ConjLayout = sub_materialize(adjointlayout(eltype(A), ML()), _dual_adjoint(A))'
 sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML = transpose(sub_materialize(transposelayout(ML()), _dual_transpose(A)))
 
-_copyto!(dlay, ::DualLayout{ML}, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N,ML} =
-    _copyto!(dlay, ML(), dest, src)
+copyto!_layout(dlay, ::DualLayout{ML}, dest::AbstractArray{T,N}, src::AbstractArray{V,N}) where {T,V,N,ML} =
+    copyto!_layout(dlay, ML(), dest, src)
 
 # Layouts of PermutedDimsArrays
 """
@@ -541,7 +541,7 @@ reshapedlayout(L::AbstractFillLayout, _) = L
 adjointlayout(::Type, L::AbstractFillLayout) = L
 transposelayout(L::AbstractFillLayout) = L
 
-_copyto!(_, ::AbstractFillLayout, dest::AbstractArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N =
+copyto!_layout(_, ::AbstractFillLayout, dest::AbstractArray{<:Any,N}, src::AbstractArray{<:Any,N}) where N =
     fill!(dest, getindex_value(src))
 
 sub_materialize(::AbstractFillLayout, V, ax) = Fill(getindex_value(V), ax)

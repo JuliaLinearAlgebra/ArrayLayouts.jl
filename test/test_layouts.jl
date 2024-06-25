@@ -99,7 +99,7 @@ struct FooNumber <: Number end
             @test layout_getindex((a .+ im)',:,1:3) == (a .+ im)[1:3]'
             @test layout_getindex(transpose(a .+ im),:,1:3) == transpose((a .+ im)[1:3])
 
-            @test ArrayLayouts._copyto!(similar(a'), a') == a'
+            @test ArrayLayouts.copyto!_layout(similar(a'), a') == a'
 
             @test mul(randn(5)', Diagonal(1:5)) isa Adjoint
             @test mul(transpose(randn(5)), Diagonal(1:5)) isa Transpose
@@ -338,7 +338,7 @@ struct FooNumber <: Number end
         # as there was no strong need to delete their support
         v = SubArray(Fill(1,10),(1:3,))
         @test ArrayLayouts.sub_materialize(v) ≡ Fill(1,3)
-        @test ArrayLayouts._copyto!(Vector{Float64}(undef,3), v) == ones(3)
+        @test ArrayLayouts.copyto!_layout(Vector{Float64}(undef,3), v) == ones(3)
 
         T = Tridiagonal(Fill(1,10), Fill(2,11), Fill(3,10))
         @test MemoryLayout(UpperTriangular(T)) isa BidiagonalLayout{FillLayout,FillLayout}
