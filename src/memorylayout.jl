@@ -494,7 +494,7 @@ A matrix that has memory layout `UnitUpperTriangularLayout(layout)` must overrid
 Moreover, `transpose(A)` and `adjoint(A)` must return a matrix that has memory
 layout `UnitLowerTriangularLayout`.
 """
-UnitUpperTriangularLayout{ML} = TriangularLayout{'U','U',ML}
+const UnitUpperTriangularLayout{ML} = TriangularLayout{'U','U',ML}
 
 
 MemoryLayout(A::Type{UpperTriangular{T,P}}) where {T,P} = triangularlayout(UpperTriangularLayout, MemoryLayout(P))
