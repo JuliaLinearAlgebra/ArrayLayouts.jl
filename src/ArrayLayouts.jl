@@ -21,7 +21,7 @@ using LinearAlgebra: AbstractQ, AbstractTriangular, AdjOrTrans, AdjointAbsVec, H
 
 using LinearAlgebra.BLAS: BlasComplex, BlasFloat, BlasReal
 
-AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
+const AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
 
 using FillArrays: AbstractFill, axes_print_matrix_row, getindex_value
 
