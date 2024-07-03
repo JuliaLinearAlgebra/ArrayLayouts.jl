@@ -388,6 +388,7 @@ materialize!(M::BlasMatMulVecAdd{<:HermitianLayout{<:AbstractRowMajor},<:Abstrac
 
 # Diagonal multiplication never changes structure
 similar(M::MulAdd{<:DiagonalLayout,<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.B, T, axes)
+similar(M::MulAdd{<:DiagonalLayout,<:DiagonalLayout}, ::Type{T}, axes::NTuple{2,OneTo{Int}}) where T = similar(M.B, T, axes) # Need for ambiguity introduced in https://github.com/JuliaArrays/LazyArrays.jl/pull/331
 similar(M::MulAdd{<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.B, T, axes)
 similar(M::MulAdd{<:Any,<:DiagonalLayout}, ::Type{T}, axes) where T = similar(M.A, T, axes)
 # equivalent to rescaling
