@@ -625,10 +625,10 @@ using .InfiniteArrays
     tup = InfSymTridiagonal(), InfTridiagonal(), InfBidiagonal('U'),
         InfBidiagonal('L'),
         InfUnitUpperTriangular(), InfUnitLowerTriangular(),
-        InfUpperTriangular(), InfLowerTriangular(), InfDiagonal()
-    for A in tup
+        InfUpperTriangular(), InfLowerTriangular(), InfDiagonal();
+    for (i, A) in enumerate(tup)
         A_up, A_lo = A isa Union{UpperTriangular,UnitUpperTriangular}, A isa Union{LowerTriangular,UnitLowerTriangular}
-        for B in tup
+        for (j, B) in enumerate(tup)
             B_up, B_lo = B isa Union{UpperTriangular,UnitUpperTriangular}, B isa Union{LowerTriangular,UnitLowerTriangular}
             ((A_up && B_lo) || (A_lo && B_up)) && continue
             C = A * B 
