@@ -617,7 +617,7 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     VERSION >= v"1.9" && @test U / MyMatrix(A) ≈ U / A
 end
 
-#### Tests needed for InfiniteRandomArrays.jl (see https://github.com/DanielVandH/InfiniteRandomArrays.jl/issues/5) 
+# Tests needed for InfiniteRandomArrays.jl (see https://github.com/DanielVandH/InfiniteRandomArrays.jl/issues/5) 
 include("infinitearrays.jl")
 using .InfiniteArrays
 
@@ -626,7 +626,6 @@ using .InfiniteArrays
         InfBidiagonal('L'),
         InfUnitUpperTriangular(), InfUnitLowerTriangular(),
         InfUpperTriangular(), InfLowerTriangular(), InfDiagonal()
-    symtri, tri, bidiagup, bidiaglo, unitup, unitlo, up, lo, di = tup;
     for A in tup
         A_up, A_lo = A isa Union{UpperTriangular,UnitUpperTriangular}, A isa Union{LowerTriangular,UnitLowerTriangular}
         for B in tup
