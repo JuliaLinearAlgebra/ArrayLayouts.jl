@@ -100,10 +100,10 @@ module InfiniteArrays
     const InfSymTridiagonal = SymTridiagonal{Float64,<:InfVec}
     const InfTridiagonal = Tridiagonal{Float64,<:InfVec}
     const InfBidiagonal = Bidiagonal{Float64,<:InfVec}
-    const InfUnitUpperTriangular = UnitUpperTriangular{Float64,InfMat{Xoshiro}}
-    const InfUnitLowerTriangular = UnitLowerTriangular{Float64,InfMat{Xoshiro}}
-    const InfUpperTriangular = UpperTriangular{Float64,InfMat{Xoshiro}}
-    const InfLowerTriangular = LowerTriangular{Float64,InfMat{Xoshiro}}
+    const InfUnitUpperTriangular = UnitUpperTriangular{Float64,<:InfMat}
+    const InfUnitLowerTriangular = UnitLowerTriangular{Float64,<:InfMat}
+    const InfUpperTriangular = UpperTriangular{Float64,<:InfMat}
+    const InfLowerTriangular = LowerTriangular{Float64,<:InfMat}
     const InfDiagonal = Diagonal{Float64,<:InfVec}
     InfSymTridiagonal() = SymTridiagonal(InfVec(), InfVec())
     InfTridiagonal() = Tridiagonal(InfVec(), InfVec(), InfVec())
