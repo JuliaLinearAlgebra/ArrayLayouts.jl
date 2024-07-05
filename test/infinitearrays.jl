@@ -97,14 +97,14 @@ module InfiniteArrays
     ArrayLayouts.MemoryLayout(::Type{<:InfMat}) = DenseColumnMajor()
     Base.copy(A::InfMat) = InfMat(copy(A.vec))
 
-    const InfSymTridiagonal = SymTridiagonal{Float64,InfVec{Xoshiro}}
-    const InfTridiagonal = Tridiagonal{Float64,InfVec{Xoshiro}}
-    const InfBidiagonal = Bidiagonal{Float64,InfVec{Xoshiro}}
+    const InfSymTridiagonal = SymTridiagonal{Float64,<:InfVec}
+    const InfTridiagonal = Tridiagonal{Float64,<:InfVec}
+    const InfBidiagonal = Bidiagonal{Float64,<:InfVec}
     const InfUnitUpperTriangular = UnitUpperTriangular{Float64,InfMat{Xoshiro}}
     const InfUnitLowerTriangular = UnitLowerTriangular{Float64,InfMat{Xoshiro}}
     const InfUpperTriangular = UpperTriangular{Float64,InfMat{Xoshiro}}
     const InfLowerTriangular = LowerTriangular{Float64,InfMat{Xoshiro}}
-    const InfDiagonal = Diagonal{Float64,InfVec{Xoshiro}}
+    const InfDiagonal = Diagonal{Float64,<:InfVec}
     InfSymTridiagonal() = SymTridiagonal(InfVec(), InfVec())
     InfTridiagonal() = Tridiagonal(InfVec(), InfVec(), InfVec())
     InfBidiagonal(uplo) = Bidiagonal(InfVec(), InfVec(), uplo)
