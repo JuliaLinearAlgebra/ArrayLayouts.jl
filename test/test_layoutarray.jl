@@ -337,6 +337,22 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test B̃\D ≈ B̃\Matrix(D)
         @test D\D̃ ≈ D̃\D
         @test B̃/D ≈ B̃/Matrix(D)
+
+        @testset "Diagonal * Bidiagonal/Tridiagonal with structured diags" begin
+            n = size(D,1)
+            B = Bidiagonal(map(MyVector, (rand(n), rand(n-1)))..., :U)
+            S = SymTridiagonal(map(MyVector, (rand(n), rand(n-1)))...)
+            T = Tridiagonal(map(MyVector, (rand(n-1), rand(n), rand(n-1)))...)
+            DA, BA, SA, TA = map(Array, (D, B, S, T))
+            @test D * B ≈ DA * BA
+            @test B * D ≈ BA * DA
+            if VERSION >= v"1.12.0-DEV.824"
+                @test D * S ≈ DA * SA
+                @test D * T ≈ DA * TA
+                @test S * D ≈ SA * DA
+                @test T * D ≈ TA * DA
+            end
+        end
     end
 
     @testset "Adj/Trans" begin

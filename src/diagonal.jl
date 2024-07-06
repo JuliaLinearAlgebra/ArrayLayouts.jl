@@ -57,12 +57,12 @@ copy(M::Rdiv{<:DiagonalLayout,<:DiagonalLayout{<:AbstractFillLayout}}) = diagona
 
 
 ## bi/tridiagonal copy
-copy(M::Rmul{<:BidiagonalLayout,<:DiagonalLayout}) = convert(Bidiagonal, M.A) * M.B
-copy(M::Lmul{<:DiagonalLayout,<:BidiagonalLayout}) = M.A * convert(Bidiagonal, M.B)
-copy(M::Rmul{<:TridiagonalLayout,<:DiagonalLayout}) = convert(Tridiagonal, M.A) * M.B
-copy(M::Lmul{<:DiagonalLayout,<:TridiagonalLayout}) = M.A * convert(Tridiagonal, M.B)
-copy(M::Rmul{<:SymTridiagonalLayout,<:DiagonalLayout}) = convert(SymTridiagonal, M.A) * M.B
-copy(M::Lmul{<:DiagonalLayout,<:SymTridiagonalLayout}) = M.A * convert(SymTridiagonal, M.B)
+copy(M::Rmul{<:BidiagonalLayout,<:DiagonalLayout}) = convert(Bidiagonal, M.A) .* permutedims(parent(convert(Diagonal, M.B)))
+copy(M::Lmul{<:DiagonalLayout,<:BidiagonalLayout}) = parent(convert(Diagonal, M.A)) .* convert(Bidiagonal, M.B)
+copy(M::Rmul{<:TridiagonalLayout,<:DiagonalLayout}) = convert(Tridiagonal, M.A) .* permutedims(parent(convert(Diagonal, M.B)))
+copy(M::Lmul{<:DiagonalLayout,<:TridiagonalLayout}) = parent(convert(Diagonal, M.A)) .* convert(Tridiagonal, M.B)
+copy(M::Rmul{<:SymTridiagonalLayout,<:DiagonalLayout}) = convert(SymTridiagonal, M.A) .* permutedims(parent(convert(Diagonal, M.B)))
+copy(M::Lmul{<:DiagonalLayout,<:SymTridiagonalLayout}) = parent(convert(Diagonal, M.A)) .* convert(SymTridiagonal, M.B)
 
 copy(M::Lmul{DiagonalLayout{OnesLayout}}) = _copy_oftype(M.B, eltype(M))
 copy(M::Lmul{DiagonalLayout{OnesLayout},<:DiagonalLayout}) = Diagonal(_copy_oftype(diagonaldata(M.B), eltype(M)))
