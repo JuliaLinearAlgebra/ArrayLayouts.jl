@@ -1,7 +1,7 @@
 module TestLayoutArray
 
-using ArrayLayouts, LinearAlgebra, FillArrays, Test, SparseArrays
-using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum, @_layoutlmul
+using ArrayLayouts, LinearAlgebra, FillArrays, Test, SparseArrays, Random
+using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum, @_layoutlmul, Mul
 import ArrayLayouts: triangulardata
 
 struct MyMatrix <: LayoutMatrix{Float64}
@@ -615,6 +615,27 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
 
     @test MyMatrix(A) / U ≈ A / U
     VERSION >= v"1.9" && @test U / MyMatrix(A) ≈ U / A
+end
+
+# Tests needed for InfiniteRandomArrays.jl (see https://github.com/DanielVandH/InfiniteRandomArrays.jl/issues/5) 
+include("infinitearrays.jl")
+using .InfiniteArrays
+
+@testset "* for infinite layouts" begin
+    tup = InfSymTridiagonal(), InfTridiagonal(), InfBidiagonal('U'),
+        InfBidiagonal('L'),
+        InfUnitUpperTriangular(), InfUnitLowerTriangular(),
+        InfUpperTriangular(), InfLowerTriangular(), InfDiagonal();
+    for (i, A) in enumerate(tup)
+        A_up, A_lo = A isa Union{UpperTriangular,UnitUpperTriangular}, A isa Union{LowerTriangular,UnitLowerTriangular}
+        for (j, B) in enumerate(tup)
+            B_up, B_lo = B isa Union{UpperTriangular,UnitUpperTriangular}, B isa Union{LowerTriangular,UnitLowerTriangular}
+            ((A_up && B_lo) || (A_lo && B_up)) && continue
+            C = A * B 
+            _C = [C[i, j] for i in 1:100, j in 1:100] # else we need to fix the C[1:100, 1:100] MethodError from _getindex(::Mul, ...). This is easier
+            @test _C ≈ Matrix(A[1:100, 1:102]) * Matrix(B[1:102, 1:100])
+        end
+    end
 end
 
 end

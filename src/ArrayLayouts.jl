@@ -219,6 +219,8 @@ end
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 *(A::Diagonal{<:Any,<:LayoutVector}, B::AbstractMatrix) = mul(A, B)
 *(A::AbstractMatrix, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Union{Bidiagonal, Tridiagonal}, B::Diagonal{<:Any, <:LayoutVector}) = mul(A, B) # ambiguity
+*(A::Diagonal{<:Any, <:LayoutVector}, B::Union{Bidiagonal, Tridiagonal}) = mul(A, B) # ambiguity
 *(A::Diagonal{<:Any,<:LayoutVector}, B::LayoutMatrix) = mul(A, B)
 *(A::LayoutMatrix, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 *(A::UpperTriangular, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
