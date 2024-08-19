@@ -638,4 +638,13 @@ using .InfiniteArrays
     end
 end
 
+@testset "disambiguation with FillArrays" begin
+    v = [1,2,3]
+    lv = MyVector(v)
+    F = Fill(2, 3, 3)
+    @test F * lv == F * v
+    @test lv' * F == v' * F
+    @test transpose(lv) * F == transpose(v) * F
+end
+
 end
