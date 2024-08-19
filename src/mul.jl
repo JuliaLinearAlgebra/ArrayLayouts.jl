@@ -348,7 +348,7 @@ end
 *(A::Transpose{<:Any,<:LayoutVector}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A,B)
 
 # Disambiguation with FillArrays
-*(A::AbstractFill{<:Any,2}, B::LayoutVector) = @invoke *(A::AbstractFill{<:Any,2}, B::AbstractVector)
+*(A::AbstractFill{<:Any,2}, B::LayoutVector) = mul(A, B)
 
 ## special routines introduced in v0.9. We need to avoid these to support ∞-arrays
 
