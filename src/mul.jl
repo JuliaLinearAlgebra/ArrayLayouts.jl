@@ -347,6 +347,11 @@ end
 *(A::Transpose{<:Any,<:LayoutVector}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A,B)
 *(A::Transpose{<:Any,<:LayoutVector}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A,B)
 
+# Disambiguation with FillArrays
+*(A::AbstractFill{<:Any,2}, B::LayoutVector) = invoke(*, Tuple{AbstractFill{<:Any,2}, AbstractVector}, A, B)
+*(A::Adjoint{<:Any, <:LayoutVector}, B::AbstractFill{<:Any,2}) = invoke(*, Tuple{Adjoint{<:Any, <:AbstractVector}, AbstractFill{<:Any,2}}, A, B)
+*(A::Transpose{<:Any, <:LayoutVector}, B::AbstractFill{<:Any,2}) = invoke(*, Tuple{Transpose{<:Any, <:AbstractVector}, AbstractFill{<:Any,2}}, A, B)
+
 ## special routines introduced in v0.9. We need to avoid these to support ∞-arrays
 
 *(x::Adjoint{<:Any,<:LayoutVector},   D::Diagonal{<:Any,<:LayoutVector}) = mul(x, D)
