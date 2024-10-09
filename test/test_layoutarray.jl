@@ -122,7 +122,7 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
             @test cholesky!(deepcopy(S), CRowMaximum()).U ≈ cholesky(Matrix(S), CRowMaximum()).U
             @test cholesky(S) \ b ≈ cholesky(Matrix(S)) \ b ≈ cholesky(Matrix(S)) \ MyVector(b)
             @test cholesky(S, CRowMaximum()) \ b ≈ cholesky(Matrix(S), CRowMaximum()) \ b
-            @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(MyVector(b)))
+            @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(b))
             @test cholesky(S) \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
             @test cholesky(S) \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
             if VERSION >= v"1.9"
