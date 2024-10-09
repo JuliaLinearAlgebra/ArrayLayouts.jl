@@ -22,6 +22,7 @@ struct MyVector{T} <: LayoutVector{T}
     A::Vector{T}
 end
 
+MyVector(M::MyVector) = MyVector(M.A)
 Base.getindex(A::MyVector, k::Int) = A.A[k]
 Base.setindex!(A::MyVector, v, k::Int) = setindex!(A.A, v, k)
 Base.size(A::MyVector) = size(A.A)
@@ -30,6 +31,7 @@ Base.elsize(::Type{MyVector}) = sizeof(Float64)
 Base.cconvert(::Type{Ptr{T}}, A::MyVector{T}) where {T} = A.A
 Base.unsafe_convert(::Type{Ptr{T}}, A::MyVector{T}) where T = Base.unsafe_convert(Ptr{T}, A.A)
 MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
+Base.copy(A::MyVector) = MyVector(copy(A.A))
 
 # These need to test dispatch reduces to ArrayLayouts.mul, etc.
 @testset "LayoutArray" begin
@@ -104,8 +106,8 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test_throws ErrorException qr!(A)
             @test lu!(copy(A)).factors ≈ lu(A.A).factors
             b = randn(5)
-            @test A \ b == A.A \ b == A.A \ MyVector(b) == ldiv!(lu(A.A), copy(MyVector(b)))
-            @test A \ b == ldiv!(lu(A), copy(MyVector(b))) == ldiv!(lu(A), copy(b))
+            @test A \ b == A.A \ b == A.A \ MyVector(b) == ldiv!(lu(A.A), copy(b))
+            @test A \ b == ldiv!(lu(A), copy(b))
             @test lu(A).L == lu(A.A).L
             @test lu(A).U == lu(A.A).U
             @test lu(A).p == lu(A.A).p
@@ -120,7 +122,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
             @test cholesky!(deepcopy(S), CRowMaximum()).U ≈ cholesky(Matrix(S), CRowMaximum()).U
             @test cholesky(S) \ b ≈ cholesky(Matrix(S)) \ b ≈ cholesky(Matrix(S)) \ MyVector(b)
             @test cholesky(S, CRowMaximum()) \ b ≈ cholesky(Matrix(S), CRowMaximum()) \ b
-            @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(MyVector(b)))
+            @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(b))
             @test cholesky(S) \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
             @test cholesky(S) \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
             if VERSION >= v"1.9"
@@ -151,7 +153,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
                     @test_throws MethodError ldiv!(qr(A), MyVector(copy(c)))
                 end
                 @test_throws ErrorException ldiv!(eigen(randn(5,5)), c)
-                @test ArrayLayouts.ldiv!(svd(A.A), copy(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c
+                @test ArrayLayouts.ldiv!(svd(A.A), Vector(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c
                 if VERSION ≥ v"1.8"
                     @test ArrayLayouts.ldiv!(similar(c), transpose(lu(A.A)), copy(c)) ≈ A'\c
                 end
@@ -337,6 +339,24 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
         @test B̃\D ≈ B̃\Matrix(D)
         @test D\D̃ ≈ D̃\D
         @test B̃/D ≈ B̃/Matrix(D)
+
+        @testset "Diagonal * Bidiagonal/Tridiagonal with structured diags" begin
+            n = size(D,1)
+            B = Bidiagonal(map(MyVector, (rand(n), rand(n-1)))..., :U)
+            S = SymTridiagonal(map(MyVector, (rand(n), rand(n-1)))...)
+            T = Tridiagonal(map(MyVector, (rand(n-1), rand(n), rand(n-1)))...)
+            DA, BA, SA, TA = map(Array, (D, B, S, T))
+            if VERSION >= v"1.11"
+                @test D * B ≈ DA * BA
+                @test B * D ≈ BA * DA
+            end
+            if VERSION >= v"1.12.0-DEV.824"
+                @test D * S ≈ DA * SA
+                @test D * T ≈ DA * TA
+                @test S * D ≈ SA * DA
+                @test T * D ≈ TA * DA
+            end
+        end
     end
 
     @testset "Adj/Trans" begin
@@ -400,7 +420,7 @@ MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
 
     @testset "dot" begin
         a = MyVector(randn(5))
-        @test dot(a, Zeros(5)) ≡ dot(Zeros(5), a) ≡ 0.0
+        @test dot(a, Zeros(5)) ≡ dot(Zeros(5), a) == 0.0
     end
 
     @testset "layout_getindex scalar" begin
