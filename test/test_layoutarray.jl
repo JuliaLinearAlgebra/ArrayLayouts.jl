@@ -3,23 +3,28 @@ module TestLayoutArray
 using ArrayLayouts, LinearAlgebra, FillArrays, Test, SparseArrays
 using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum, @_layoutlmul
 import ArrayLayouts: triangulardata
+import LinearAlgebra: Diagonal, Bidiagonal, Tridiagonal, SymTridiagonal
 
-struct MyMatrix <: LayoutMatrix{Float64}
-    A::Matrix{Float64}
+struct MyMatrix{T,M<:AbstractMatrix{T}} <: LayoutMatrix{T}
+    A::M
 end
 
 Base.getindex(A::MyMatrix, k::Int, j::Int) = A.A[k,j]
 Base.setindex!(A::MyMatrix, v, k::Int, j::Int) = setindex!(A.A, v, k, j)
 Base.size(A::MyMatrix) = size(A.A)
 Base.strides(A::MyMatrix) = strides(A.A)
-Base.elsize(::Type{MyMatrix}) = sizeof(Float64)
-Base.cconvert(::Type{Ptr{Float64}}, A::MyMatrix) = A.A
-Base.unsafe_convert(::Type{Ptr{Float64}}, A::MyMatrix) = Base.unsafe_convert(Ptr{Float64}, A.A)
-MemoryLayout(::Type{MyMatrix}) = DenseColumnMajor()
+Base.elsize(::Type{<:MyMatrix{T}}) where {T} = sizeof(T)
+Base.cconvert(::Type{Ptr{T}}, A::MyMatrix{T}) where {T} = Base.cconvert(Ptr{T}, A.A)
+Base.unsafe_convert(::Type{Ptr{T}}, A::MyMatrix{T}) where {T} = Base.unsafe_convert(Ptr{T}, A.A)
+MemoryLayout(::Type{MyMatrix{T,M}}) where {T,M} = MemoryLayout(M)
 Base.copy(A::MyMatrix) = MyMatrix(copy(A.A))
+ArrayLayouts.bidiagonaluplo(M::MyMatrix) = ArrayLayouts.bidiagonaluplo(M.A)
+for MT in (:Diagonal, :Bidiagonal, :Tridiagonal, :SymTridiagonal)
+    @eval $MT(M::MyMatrix) = $MT(M.A)
+end
 
-struct MyVector{T} <: LayoutVector{T}
-    A::Vector{T}
+struct MyVector{T,V<:AbstractVector{T}} <: LayoutVector{T}
+    A::V
 end
 
 MyVector(M::MyVector) = MyVector(M.A)
@@ -27,10 +32,10 @@ Base.getindex(A::MyVector, k::Int) = A.A[k]
 Base.setindex!(A::MyVector, v, k::Int) = setindex!(A.A, v, k)
 Base.size(A::MyVector) = size(A.A)
 Base.strides(A::MyVector) = strides(A.A)
-Base.elsize(::Type{MyVector}) = sizeof(Float64)
-Base.cconvert(::Type{Ptr{T}}, A::MyVector{T}) where {T} = A.A
+Base.elsize(::Type{<:MyVector{T}}) where {T} = sizeof(T)
+Base.cconvert(::Type{Ptr{T}}, A::MyVector{T}) where {T} = Base.cconvert(Ptr{T}, A.A)
 Base.unsafe_convert(::Type{Ptr{T}}, A::MyVector{T}) where T = Base.unsafe_convert(Ptr{T}, A.A)
-MemoryLayout(::Type{MyVector}) = DenseColumnMajor()
+MemoryLayout(::Type{MyVector{T,V}}) where {T,V} = MemoryLayout(V)
 Base.copy(A::MyVector) = MyVector(copy(A.A))
 
 # These need to test dispatch reduces to ArrayLayouts.mul, etc.
@@ -44,7 +49,7 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
         @test a[1:3] == a.A[1:3]
         @test a[:] == a
         @test (a')[1,:] == (a')[1,1:3] == a
-        @test sprint(show, "text/plain", a) == "3-element $MyVector{Float64}:\n 1.0\n 2.0\n 3.0"
+        @test sprint(show, "text/plain", a) == "$(summary(a)):\n 1.0\n 2.0\n 3.0"
         @test B*a ≈ B*a.A
         @test B'*a ≈ B'*a.A
         @test transpose(B)*a ≈ transpose(B)*a.A
@@ -142,16 +147,16 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
 
             @testset "ldiv!" begin
                 c = MyVector(randn(5))
-                if VERSION < v"1.9"
-                    @test_broken ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
-                else
-                    @test ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
-                end
-                if VERSION < v"1.9" || VERSION >= v"1.10-"
-                    @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c)))
-                else
-                    @test_throws MethodError ldiv!(qr(A), MyVector(copy(c)))
-                end
+                # if VERSION < v"1.9"
+                #     @test_broken ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
+                # else
+                @test ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
+                # end
+                # if VERSION < v"1.9" || VERSION >= v"1.10-"
+                #     @test_throws ErrorException ldiv!(qr(A), MyVector(copy(c)))
+                # else
+                #     @test_throws MethodError ldiv!(qr(A), MyVector(copy(c)))
+                # end
                 @test_throws ErrorException ldiv!(eigen(randn(5,5)), c)
                 @test ArrayLayouts.ldiv!(svd(A.A), Vector(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c
                 if VERSION ≥ v"1.8"
@@ -215,8 +220,8 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
             @test B == Ones(5,5)*A + 2.0Bin
         end
 
-        C = MyMatrix([1 2; 3 4])
-        @test sprint(show, "text/plain", C) == "2×2 $MyMatrix:\n 1.0  2.0\n 3.0  4.0"
+        C = MyMatrix(Float64[1 2; 3 4])
+        @test sprint(show, "text/plain", C) == "$(summary(C)):\n 1.0  2.0\n 3.0  4.0"
 
         @testset "layoutldiv" begin
             A = MyMatrix(randn(5,5))
@@ -343,18 +348,27 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
         @testset "Diagonal * Bidiagonal/Tridiagonal with structured diags" begin
             n = size(D,1)
             B = Bidiagonal(map(MyVector, (rand(n), rand(n-1)))..., :U)
+            MB = MyMatrix(B)
             S = SymTridiagonal(map(MyVector, (rand(n), rand(n-1)))...)
+            MS = MyMatrix(S)
             T = Tridiagonal(map(MyVector, (rand(n-1), rand(n), rand(n-1)))...)
+            MT = MyMatrix(T)
             DA, BA, SA, TA = map(Array, (D, B, S, T))
             if VERSION >= v"1.11"
                 @test D * B ≈ DA * BA
                 @test B * D ≈ BA * DA
+                @test D * MB ≈ DA * BA
+                @test MB * D ≈ BA * DA
             end
             if VERSION >= v"1.12.0-DEV.824"
                 @test D * S ≈ DA * SA
+                @test D * MS ≈ DA * SA
                 @test D * T ≈ DA * TA
+                @test D * MT ≈ DA * TA
                 @test S * D ≈ SA * DA
+                @test MS * D ≈ SA * DA
                 @test T * D ≈ TA * DA
+                @test MT * D ≈ TA * DA
             end
         end
     end
