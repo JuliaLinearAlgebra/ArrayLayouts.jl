@@ -347,6 +347,11 @@ end
 *(A::Transpose{<:Any,<:LayoutVector}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A,B)
 *(A::Transpose{<:Any,<:LayoutVector}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A,B)
 
+# Disambiguation with FillArrays
+*(A::AbstractFill{<:Any,2}, B::LayoutVector) = invoke(*, Tuple{AbstractFill{<:Any,2}, AbstractVector}, A, B)
+*(A::Adjoint{<:Any, <:LayoutVector}, B::AbstractFill{<:Any,2}) = invoke(*, Tuple{Adjoint{<:Any, <:AbstractVector}, AbstractFill{<:Any,2}}, A, B)
+*(A::Transpose{<:Any, <:LayoutVector}, B::AbstractFill{<:Any,2}) = invoke(*, Tuple{Transpose{<:Any, <:AbstractVector}, AbstractFill{<:Any,2}}, A, B)
+
 ## special routines introduced in v0.9. We need to avoid these to support ∞-arrays
 
 *(x::Adjoint{<:Any,<:LayoutVector},   D::Diagonal{<:Any,<:LayoutVector}) = mul(x, D)
@@ -362,6 +367,25 @@ end
 *(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}) = mul(A, B)
 *(A::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}, B::UpperOrLowerTriangular{<:Any,<:AdjOrTrans{<:Any,<:LayoutMatrix}}) = mul(A, B)
 
+*(A::SymTridiagonal{<:Any,<:LayoutVector}, B::SymTridiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::SymTridiagonal{<:Any,<:LayoutVector}, B::Tridiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::SymTridiagonal{<:Any,<:LayoutVector}, B::Bidiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::SymTridiagonal{<:Any,<:LayoutVector}, B::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::SymTridiagonal, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B) # ambiguity
+*(A::Tridiagonal{<:Any,<:LayoutVector}, B::Tridiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Tridiagonal{<:Any,<:LayoutVector}, B::SymTridiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Tridiagonal{<:Any,<:LayoutVector}, B::Bidiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Tridiagonal{<:Any,<:LayoutVector}, B::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::Bidiagonal{<:Any,<:LayoutVector}, B::Bidiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Bidiagonal{<:Any,<:LayoutVector}, B::SymTridiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Bidiagonal{<:Any,<:LayoutVector}, B::Tridiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Bidiagonal{<:Any,<:LayoutVector}, B::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
+*(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::SymTridiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::Tridiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::Bidiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B) # ambiguity
+*(A::Diagonal{<:Any,<:LayoutVector}, B::SymTridiagonal{<:Any,<:LayoutVector}) = mul(A, B)
+*(A::Diagonal{<:Any,<:LayoutVector}, B::UpperOrLowerTriangular{<:Any,<:LayoutMatrix}) = mul(A, B)
 
 # mul! for subarray of layout matrix
 const SubLayoutMatrix = Union{SubArray{<:Any,2,<:LayoutMatrix}, SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutMatrix}}}
