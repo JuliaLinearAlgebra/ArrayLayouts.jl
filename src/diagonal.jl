@@ -57,12 +57,36 @@ copy(M::Rdiv{<:DiagonalLayout,<:DiagonalLayout{<:AbstractFillLayout}}) = diagona
 
 
 ## bi/tridiagonal copy
-copy(M::Rmul{<:BidiagonalLayout,<:DiagonalLayout}) = convert(Bidiagonal, M.A) * M.B
-copy(M::Lmul{<:DiagonalLayout,<:BidiagonalLayout}) = M.A * convert(Bidiagonal, M.B)
-copy(M::Rmul{<:TridiagonalLayout,<:DiagonalLayout}) = convert(Tridiagonal, M.A) * M.B
-copy(M::Lmul{<:DiagonalLayout,<:TridiagonalLayout}) = M.A * convert(Tridiagonal, M.B)
-copy(M::Rmul{<:SymTridiagonalLayout,<:DiagonalLayout}) = convert(SymTridiagonal, M.A) * M.B
-copy(M::Lmul{<:DiagonalLayout,<:SymTridiagonalLayout}) = M.A * convert(SymTridiagonal, M.B)
+# hack around the fact that a SymTridiagonal isn't fully mutable
+_similar(A) = similar(A)
+_similar(A::SymTridiagonal) = similar(Tridiagonal(A.ev, A.dv, A.ev))
+_copy_diag(M::T, ::T) where {T<:Rmul} = copyto!(_similar(M.A), M)
+_copy_diag(M::T, ::T) where {T<:Lmul} = copyto!(_similar(M.B), M)
+_copy_diag(M, _) = copy(M)
+function copy(M::Rmul{<:BidiagonalLayout,<:DiagonalLayout})
+    A = convert(Bidiagonal, M.A)
+    _copy_diag(Rmul(A, M.B), M)
+end
+function copy(M::Lmul{<:DiagonalLayout,<:BidiagonalLayout})
+    B = convert(Bidiagonal, M.B)
+    _copy_diag(Lmul(M.A, B), M)
+end
+function copy(M::Rmul{<:TridiagonalLayout,<:DiagonalLayout})
+    A = convert(Tridiagonal, M.A)
+    _copy_diag(Rmul(A, M.B), M)
+end
+function copy(M::Lmul{<:DiagonalLayout,<:TridiagonalLayout})
+    B = convert(Tridiagonal, M.B)
+    _copy_diag(Lmul(M.A, B), M)
+end
+function copy(M::Rmul{<:SymTridiagonalLayout,<:DiagonalLayout})
+    A = convert(SymTridiagonal, M.A)
+    _copy_diag(Rmul(A, M.B), M)
+end
+function copy(M::Lmul{<:DiagonalLayout,<:SymTridiagonalLayout})
+    B = convert(SymTridiagonal, M.B)
+    _copy_diag(Lmul(M.A, B), M)
+end
 
 copy(M::Lmul{DiagonalLayout{OnesLayout}}) = _copy_oftype(M.B, eltype(M))
 copy(M::Lmul{DiagonalLayout{OnesLayout},<:DiagonalLayout}) = Diagonal(_copy_oftype(diagonaldata(M.B), eltype(M)))
