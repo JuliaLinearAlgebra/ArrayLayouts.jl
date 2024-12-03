@@ -5,10 +5,12 @@ import Aqua
 import Random
 using Test
 
+downstream_test = "--downstream_integration_test" in ARGS
 @testset "Project quality" begin
     Aqua.test_all(ArrayLayouts,
     	ambiguities = false,
     	piracies = (; broken=true),
+        stale_deps = !downstream_test,
     )
 end
 
