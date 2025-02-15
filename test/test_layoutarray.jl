@@ -643,8 +643,7 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
 end
 
 # Tests needed for InfiniteRandomArrays.jl (see https://github.com/DanielVandH/InfiniteRandomArrays.jl/issues/5) 
-include("infinitearrays.jl")
-using .InfiniteArrays
+using ..InfiniteArrays
 
 @testset "* for infinite layouts" begin
     tup = InfSymTridiagonal(), InfTridiagonal(), InfBidiagonal('U'),

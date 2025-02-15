@@ -16,6 +16,7 @@ end
 
 Random.seed!(0)
 
+include("infinitearrays.jl")
 include("test_utils.jl")
 include("test_layouts.jl")
 include("test_muladd.jl")
