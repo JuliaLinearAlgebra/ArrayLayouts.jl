@@ -2,7 +2,7 @@
 # https://github.com/JuliaLang/julia/blob/master/test/testhelpers/InfiniteArrays.jl
 module InfiniteArrays
     using Infinities, LinearAlgebra, Random
-    using ..ArrayLayouts: ArrayLayouts, LayoutVector, LayoutMatrix, Mul, DenseColumnMajor
+    using ArrayLayouts: ArrayLayouts, LayoutVector, LayoutMatrix, Mul, DenseColumnMajor
     export OneToInf,
         InfSymTridiagonal,
         InfTridiagonal,

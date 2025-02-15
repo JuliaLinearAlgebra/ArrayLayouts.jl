@@ -1,8 +1,8 @@
 module TestLayoutArray
 
 using ArrayLayouts, LinearAlgebra, FillArrays, Test, SparseArrays, Random
-using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum, @_layoutlmul, Mul
-import ArrayLayouts: triangulardata
+using ArrayLayouts: sub_materialize, ColumnNorm, RowMaximum, CRowMaximum, @_layoutlmul, Mul
+import ArrayLayouts: triangulardata, MemoryLayout
 import LinearAlgebra: Diagonal, Bidiagonal, Tridiagonal, SymTridiagonal
 
 struct MyMatrix{T,M<:AbstractMatrix{T}} <: LayoutMatrix{T}
@@ -643,8 +643,7 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
 end
 
 # Tests needed for InfiniteRandomArrays.jl (see https://github.com/DanielVandH/InfiniteRandomArrays.jl/issues/5) 
-include("infinitearrays.jl")
-using .InfiniteArrays
+using ..InfiniteArrays
 
 @testset "* for infinite layouts" begin
     tup = InfSymTridiagonal(), InfTridiagonal(), InfBidiagonal('U'),
