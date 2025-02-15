@@ -1,8 +1,8 @@
 module TestLayoutArray
 
 using ArrayLayouts, LinearAlgebra, FillArrays, Test, SparseArrays, Random
-using ArrayLayouts: sub_materialize, MemoryLayout, ColumnNorm, RowMaximum, CRowMaximum, @_layoutlmul, Mul
-import ArrayLayouts: triangulardata
+using ArrayLayouts: sub_materialize, ColumnNorm, RowMaximum, CRowMaximum, @_layoutlmul, Mul
+import ArrayLayouts: triangulardata, MemoryLayout
 import LinearAlgebra: Diagonal, Bidiagonal, Tridiagonal, SymTridiagonal
 
 struct MyMatrix{T,M<:AbstractMatrix{T}} <: LayoutMatrix{T}
