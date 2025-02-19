@@ -65,13 +65,13 @@ _copy_diag(M::T, ::T) where {T<:Lmul} = copyto!(_similar(M.B), M)
 _copy_diag(M, _) = copy(M)
 _bidiagonal(A::Bidiagonal) = A
 function _bidiagonal(A)
+    # we assume that the matrix is indeed bidiagonal
     if iszero(view(A, diagind(A, -1)))
-        Bidiagonal(A, :U)
-    elseif iszero(view(A, diagind(A, 1)))
-        Bidiagonal(A, :L)
+        uplo = :U
     else
-        throw(InexactError(:Bidiagonal, A))
+        uplo = :L
     end
+    Bidiagonal(A, uplo)
 end
 function copy(M::Rmul{<:BidiagonalLayout,<:DiagonalLayout})
     A = _bidiagonal(M.A)
