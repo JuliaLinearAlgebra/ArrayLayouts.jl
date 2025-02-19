@@ -65,7 +65,8 @@ _copy_diag(M::T, ::T) where {T<:Lmul} = copyto!(_similar(M.B), M)
 _copy_diag(M, _) = copy(M)
 _bidiagonal(A::Bidiagonal) = A
 function _bidiagonal(A)
-    # we assume that the matrix is indeed bidiagonal
+    # we assume that the matrix is indeed bidiagonal,
+    # so that the conversion is lossless
     if iszero(view(A, diagind(A, -1)))
         uplo = :U
     else
@@ -81,6 +82,8 @@ function copy(M::Lmul{<:DiagonalLayout,<:BidiagonalLayout})
     B = _bidiagonal(M.B)
     _copy_diag(Lmul(M.A, B), M)
 end
+# we assume that the matrix is indeed tridiagonal,
+# so that the conversion is lossless
 _tridiagonal(A::Tridiagonal) = A
 _tridiagonal(A) = Tridiagonal(A)
 function copy(M::Rmul{<:TridiagonalLayout,<:DiagonalLayout})
@@ -91,6 +94,8 @@ function copy(M::Lmul{<:DiagonalLayout,<:TridiagonalLayout})
     B = _tridiagonal(M.B)
     _copy_diag(Lmul(M.A, B), M)
 end
+# we assume that the matrix is indeed symmetric tridiagonal,
+# so that the conversion is lossless
 _symtridiagonal(A::SymTridiagonal) = A
 _symtridiagonal(A) = SymTridiagonal(A)
 function copy(M::Rmul{<:SymTridiagonalLayout,<:DiagonalLayout})
