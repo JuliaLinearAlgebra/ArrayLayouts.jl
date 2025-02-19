@@ -63,28 +63,42 @@ _similar(A::SymTridiagonal) = similar(Tridiagonal(A.ev, A.dv, A.ev))
 _copy_diag(M::T, ::T) where {T<:Rmul} = copyto!(_similar(M.A), M)
 _copy_diag(M::T, ::T) where {T<:Lmul} = copyto!(_similar(M.B), M)
 _copy_diag(M, _) = copy(M)
+_bidiagonal(A::Bidiagonal) = A
+function _bidiagonal(A)
+    if iszero(view(A, diagind(A, -1)))
+        Bidiagonal(A, :U)
+    elseif iszero(view(A, diagind(A, 1)))
+        Bidiagonal(A, :L)
+    else
+        throw(InexactError(:Bidiagonal, A))
+    end
+end
 function copy(M::Rmul{<:BidiagonalLayout,<:DiagonalLayout})
-    A = convert(Bidiagonal, M.A)
+    A = _bidiagonal(M.A)
     _copy_diag(Rmul(A, M.B), M)
 end
 function copy(M::Lmul{<:DiagonalLayout,<:BidiagonalLayout})
-    B = convert(Bidiagonal, M.B)
+    B = _bidiagonal(M.B)
     _copy_diag(Lmul(M.A, B), M)
 end
+_tridiagonal(A::Tridiagonal) = A
+_tridiagonal(A) = Tridiagonal(A)
 function copy(M::Rmul{<:TridiagonalLayout,<:DiagonalLayout})
-    A = convert(Tridiagonal, M.A)
+    A = _tridiagonal(M.A)
     _copy_diag(Rmul(A, M.B), M)
 end
 function copy(M::Lmul{<:DiagonalLayout,<:TridiagonalLayout})
-    B = convert(Tridiagonal, M.B)
+    B = _tridiagonal(M.B)
     _copy_diag(Lmul(M.A, B), M)
 end
+_symtridiagonal(A::SymTridiagonal) = A
+_symtridiagonal(A) = SymTridiagonal(A)
 function copy(M::Rmul{<:SymTridiagonalLayout,<:DiagonalLayout})
-    A = convert(SymTridiagonal, M.A)
+    A = _symtridiagonal(M.A)
     _copy_diag(Rmul(A, M.B), M)
 end
 function copy(M::Lmul{<:DiagonalLayout,<:SymTridiagonalLayout})
-    B = convert(SymTridiagonal, M.B)
+    B = _symtridiagonal(M.B)
     _copy_diag(Lmul(M.A, B), M)
 end
 
