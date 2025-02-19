@@ -338,18 +338,24 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
 
         @testset "Diagonal * Bidiagonal/Tridiagonal with structured diags" begin
             n = size(D,1)
-            B = Bidiagonal(map(MyVector, (rand(n), rand(n-1)))..., :U)
-            MB = MyMatrix(B)
+            BU = Bidiagonal(map(MyVector, (rand(n), rand(n-1)))..., :U)
+            MBU = MyMatrix(BU)
+            BL = Bidiagonal(map(MyVector, (rand(n), rand(n-1)))..., :L)
+            MBL = MyMatrix(BL)
             S = SymTridiagonal(map(MyVector, (rand(n), rand(n-1)))...)
             MS = MyMatrix(S)
             T = Tridiagonal(map(MyVector, (rand(n-1), rand(n), rand(n-1)))...)
             MT = MyMatrix(T)
-            DA, BA, SA, TA = map(Array, (D, B, S, T))
+            DA, BUA, BLA, SA, TA = map(Array, (D, BU, BL, S, T))
             if VERSION >= v"1.11"
-                @test D * B ≈ DA * BA
-                @test B * D ≈ BA * DA
-                @test D * MB ≈ DA * BA
-                @test MB * D ≈ BA * DA
+                @test D * BU ≈ DA * BUA
+                @test BU * D ≈ BUA * DA
+                @test D * MBU ≈ DA * BUA
+                @test MBU * D ≈ BUA * DA
+                @test D * BL ≈ DA * BLA
+                @test BL * D ≈ BLA * DA
+                @test D * MBL ≈ DA * BLA
+                @test MBL * D ≈ BLA * DA
             end
             if VERSION >= v"1.12.0-DEV.824"
                 @test D * S ≈ DA * SA
