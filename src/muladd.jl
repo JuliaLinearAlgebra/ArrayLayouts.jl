@@ -221,7 +221,6 @@ function _default_blasmul!(::IndexLinear, α, A::AbstractMatrix, B::AbstractVect
     rmul!(C, β)
     (nA == 0 || mB == 0)  && return C
 
-    z = zero(A[1]*B[1] + A[1]*B[1])
     Astride = size(A, 1) # use size, not stride, since its not pointer arithmetic
 
     @inbounds for k in colsupport(B,1)
@@ -243,8 +242,6 @@ function _default_blasmul!(::IndexCartesian, α, A::AbstractMatrix, B::AbstractV
 
     rmul!(C, β)
     (nA == 0 || mB == 0)  && return C
-
-    z = zero(A[1,1]*B[1] + A[1,1]*B[1])
 
     @inbounds for k in colsupport(B,1)
         b = B[k] * α
