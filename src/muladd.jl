@@ -221,13 +221,10 @@ function _default_blasmul!(::IndexLinear, α, A::AbstractMatrix, B::AbstractVect
     rmul!(C, β)
     (nA == 0 || mB == 0)  && return C
 
-    Astride = size(A, 1) # use size, not stride, since its not pointer arithmetic
-
     @inbounds for k in colsupport(B,1)
-        aoffs = (k-1)*Astride
-        b = B[k]
-        for i = 1:mA
-            C[i] += A[aoffs + i] * b * α
+        b = B[k] * α
+        for i in colsupport(A,k)
+            C[i] += A[i,k] * b
         end
     end
 
@@ -245,7 +242,7 @@ function _default_blasmul!(::IndexCartesian, α, A::AbstractMatrix, B::AbstractV
 
     @inbounds for k in colsupport(B,1)
         b = B[k] * α
-        for i = colsupport(A,k)
+        for i in colsupport(A,k)
             C[i] += A[i,k] * b
         end
     end
