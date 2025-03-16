@@ -177,8 +177,7 @@ function default_blasmul!(α, A::AbstractMatrix, B::AbstractMatrix, β, C::Abstr
 
     rmul!(C, β)
 
-    (iszero(mA) || iszero(nB)) && return C
-    iszero(nA) && return C
+    (isempty(C) || iszero(nA)) && return C
 
     r = rowsupport(B,rowsupport(A,first(colsupport(A))))
     jindsid = all(k -> rowsupport(B,rowsupport(A,k)) == r, colsupport(A))
@@ -203,7 +202,7 @@ function default_blasmul!(α, A::AbstractVector, B::AbstractMatrix, β, C::Abstr
 
     rmul!(C, β)
 
-    (iszero(mA) || iszero(nB)) && return C
+    isempty(C) && return C
 
     for k in colsupport(A), j in rowsupport(B)
         _default_blasmul_loop!(α, A, B, β, C, k, j)
@@ -219,12 +218,15 @@ function _default_blasmul!(::IndexLinear, α, A::AbstractMatrix, B::AbstractVect
     length(C) == mA || throw(DimensionMismatch("Dimensions must match"))
 
     rmul!(C, β)
-    (nA == 0 || mB == 0)  && return C
+    (isempty(C) || isempty(A))  && return C
+
+    Astride = size(A, 1) # use size, not stride, since its not pointer arithmetic
 
     @inbounds for k in colsupport(B,1)
+        aoffs = (k-1)*Astride
         b = B[k] * α
         for i in colsupport(A,k)
-            C[i] += A[i,k] * b
+            C[i] += A[aoffs + i] * b
         end
     end
 
@@ -238,7 +240,7 @@ function _default_blasmul!(::IndexCartesian, α, A::AbstractMatrix, B::AbstractV
     length(C) == mA || throw(DimensionMismatch("Dimensions must match"))
 
     rmul!(C, β)
-    (nA == 0 || mB == 0)  && return C
+    (isempty(C) || isempty(A))  && return C
 
     @inbounds for k in colsupport(B,1)
         b = B[k] * α
