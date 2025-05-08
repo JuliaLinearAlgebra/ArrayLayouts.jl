@@ -346,6 +346,14 @@ end
 *(A::Adjoint{<:Any,<:LayoutVector}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A,B)
 *(A::Transpose{<:Any,<:LayoutVector}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A,B)
 *(A::Transpose{<:Any,<:LayoutVector}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Adjoint{<:Any,<:LayoutMatrix}, B::Symmetric{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Adjoint{<:Any,<:LayoutMatrix}, B::Hermitian{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Transpose{<:Any,<:LayoutMatrix}, B::Symmetric{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Transpose{<:Any,<:LayoutMatrix}, B::Hermitian{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Symmetric{<:Any,<:LayoutMatrix}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Hermitian{<:Any,<:LayoutMatrix}, B::Adjoint{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Symmetric{<:Any,<:LayoutMatrix}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A,B)
+*(A::Hermitian{<:Any,<:LayoutMatrix}, B::Transpose{<:Any,<:LayoutMatrix}) = mul(A,B)
 
 # Disambiguation with FillArrays
 *(A::AbstractFill{<:Any,2}, B::LayoutVector) = invoke(*, Tuple{AbstractFill{<:Any,2}, AbstractVector}, A, B)
