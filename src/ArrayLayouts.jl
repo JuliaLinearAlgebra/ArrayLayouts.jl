@@ -126,7 +126,7 @@ include("triangular.jl")
 include("factorizations.jl")
 
 # Extend this function if you're only looking to dispatch on the axes
-@inline sub_materialize_axes(V, _) = copyto!(similar(V), V)
+@inline sub_materialize_axes(V, ax) = copyto!(similar(V, ax), V)
 @inline sub_materialize(_, V, ax) = sub_materialize_axes(V, ax)
 @inline sub_materialize(L, V) = sub_materialize(L, V, axes(V))
 @inline sub_materialize(V::SubArray) = sub_materialize(MemoryLayout(V), V)
