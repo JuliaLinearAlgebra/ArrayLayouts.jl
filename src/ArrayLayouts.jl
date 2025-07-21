@@ -24,6 +24,7 @@ using LinearAlgebra.BLAS: BlasComplex, BlasFloat, BlasReal
 const AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
 
 using FillArrays: AbstractFill, axes_print_matrix_row, getindex_value
+using StaticArrays
 
 using Base: require_one_based_indexing
 
@@ -305,6 +306,8 @@ function zero!(_, A::AbstractArray{<:AbstractArray})
     end
     A
 end
+
+zero!(_, A::AbstractArray{<:SArray}) = fill!(A,zero(eltype(A)))
 
 _norm(_, A, p) = invoke(norm, Tuple{Any,Real}, A, p)
 LinearAlgebra.norm(A::LayoutArray, p::Real=2) = _norm(MemoryLayout(A), A, p)
