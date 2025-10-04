@@ -134,6 +134,8 @@ mulreduce(M::Mul{<:AbstractQLayout}) = Lmul(M)
 mulreduce(M::Mul{<:Any,<:AbstractQLayout}) = Rmul(M)
 mulreduce(M::Mul{<:TriangularLayout,<:AbstractQLayout}) = Rmul(M)
 mulreduce(M::Mul{<:AbstractQLayout,<:TriangularLayout}) = Lmul(M)
+mulreduce(M::Mul{<:DiagonalLayout, <:AbstractQLayout}) = Lmul(M)
+mulreduce(M::Mul{<:AbstractQLayout, <:DiagonalLayout}) = Rmul(M)
 
 function copyto!(dest::AbstractArray{T}, M::Lmul{<:AbstractQLayout}) where T
     A,B = M.A,M.B

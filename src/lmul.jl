@@ -155,8 +155,8 @@ macro layoutrmul(Typ)
 end
 
 
-LinearAlgebra.lmul!(Q::AbstractQ, v::LayoutVecOrMat) = lmul!(Q, v)
-LinearAlgebra.lmul!(Q::Adjoint{<:Any,<:AbstractQ}, v::LayoutVecOrMat) = lmul!(Q, v)
+LinearAlgebra.lmul!(Q::AbstractQ, v::LayoutVecOrMats) = lmul!(Q, v)
+LinearAlgebra.lmul!(Q::Adjoint{<:Any,<:AbstractQ}, v::LayoutVecOrMats) = lmul!(Q, v)
 
-LinearAlgebra.rmul!(A::LayoutMatrix, Q::AbstractQ) = rmul!(A, Q)
-LinearAlgebra.rmul!(A::LayoutMatrix, Q::Adjoint{<:Any,<:AbstractQ}) = rmul!(A, Q)
+LinearAlgebra.rmul!(A::LayoutMatrices, Q::AbstractQ) = rmul!(A, Q)
+LinearAlgebra.rmul!(A::LayoutMatrices, Q::Adjoint{<:Any,<:AbstractQ}) = rmul!(A, Q)

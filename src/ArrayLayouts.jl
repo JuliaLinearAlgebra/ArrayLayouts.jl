@@ -82,7 +82,8 @@ abstract type LayoutArray{T,N} <: AbstractArray{T,N} end
 const LayoutMatrix{T} = LayoutArray{T,2}
 const LayoutVector{T} = LayoutArray{T,1}
 const LayoutVecOrMat{T} = Union{LayoutVector{T},LayoutMatrix{T}}
-const LayoutVecOrMats{T} = Union{LayoutVecOrMat{T},SubArray{T,1,<:LayoutVecOrMat},SubArray{T,2,<:LayoutVecOrMat}}
+const LayoutMatrices{T} = Union{LayoutMatrix{T}, SubArray{T,2,<:LayoutVecOrMat}}
+const LayoutVecOrMats{T} = Union{LayoutVecOrMat{T}, SubArray{T,1,<:LayoutVecOrMat}, SubArray{T,2,<:LayoutVecOrMat}}
 
 
 ## TODO: Following are type piracy which may be removed in Julia v1.5
