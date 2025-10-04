@@ -28,13 +28,13 @@ end
 
 
 const MatLmulVec{StyleA,StyleB} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix,AbstractQ},<:AbstractVector}
-const MatLmulMat{StyleA,StyleB} = Lmul{StyleA,StyleB,<:AbstractMatrix,<:AbstractMatrix}
+const MatLmulMat{StyleA,StyleB} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix,AbstractQ},<:Union{AbstractMatrix,AbstractQ}}
 
 const BlasMatLmulVec{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix{T},AbstractQ{T}},<:AbstractVector{T}}
-const BlasMatLmulMat{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:AbstractMatrix{T},<:AbstractMatrix{T}}
+const BlasMatLmulMat{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix{T},AbstractQ{T}},<:Union{AbstractMatrix{T},AbstractQ{T}}}
 
 const MatRmulMat{StyleA,StyleB} = Rmul{StyleA,StyleB,<:AbstractMatrix,<:AbstractMatrix}
-const BlasMatRmulMat{StyleA,StyleB,T<:BlasFloat} = Rmul{StyleA,StyleB,<:AbstractMatrix{T},<:AbstractMatrix{T}}
+const BlasMatRmulMat{StyleA,StyleB,T<:BlasFloat} = Rmul{StyleA,StyleB,<:Union{AbstractMatrix{T},AbstractQ{T}},<:Union{AbstractMatrix{T},AbstractQ{T}}}
 
 
 ####
@@ -153,3 +153,10 @@ macro layoutrmul(Typ)
         ArrayLayouts.@_layoutrmul UnitLowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T        
     end)
 end
+
+
+LinearAlgebra.lmul!(Q::AbstractQ, v::LayoutVecOrMat) = lmul!(Q, v)
+LinearAlgebra.lmul!(Q::Adjoint{<:Any,<:AbstractQ}, v::LayoutVecOrMat) = lmul!(Q, v)
+
+LinearAlgebra.rmul!(A::LayoutMatrix, Q::AbstractQ) = rmul!(A, Q)
+LinearAlgebra.rmul!(A::LayoutMatrix, Q::Adjoint{<:Any,<:AbstractQ}) = rmul!(A, Q)
