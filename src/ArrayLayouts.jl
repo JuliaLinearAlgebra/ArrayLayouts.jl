@@ -81,6 +81,9 @@ end
 abstract type LayoutArray{T,N} <: AbstractArray{T,N} end
 const LayoutMatrix{T} = LayoutArray{T,2}
 const LayoutVector{T} = LayoutArray{T,1}
+const LayoutVecOrMat{T} = Union{LayoutVector{T},LayoutMatrix{T}}
+const LayoutVecOrMats{T} = Union{LayoutVecOrMat{T},SubArray{T,1,<:LayoutVecOrMat},SubArray{T,2,<:LayoutVecOrMat}}
+
 
 ## TODO: Following are type piracy which may be removed in Julia v1.5
 ## No, it can't, because strides(::AdjointAbsMat) is defined only for real eltype!
@@ -373,9 +376,6 @@ end
 ###
 # printing
 ###
-
-const LayoutVecOrMat{T} = Union{LayoutVector{T},LayoutMatrix{T}}
-const LayoutVecOrMats{T} = Union{LayoutVecOrMat{T},SubArray{T,1,<:LayoutVecOrMat},SubArray{T,2,<:LayoutVecOrMat}}
 
 layout_replace_in_print_matrix(_, A, i, j, s) =
     i in colsupport(A,j) ? s : Base.replace_with_centered_mark(s)
