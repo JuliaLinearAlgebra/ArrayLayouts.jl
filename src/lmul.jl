@@ -155,7 +155,8 @@ macro layoutrmul(Typ)
 end
 
 
-LinearAlgebra.lmul!(Q::AbstractQ, v::LayoutVecOrMats) = lmul!(Q, v)
+# TODO: uncomment out. commented for now due to ambiguities
+# LinearAlgebra.lmul!(Q::AbstractQ, v::LayoutVecOrMats) = lmul!(Q, v)
 
 for Typ in (:QRCompactWYQ, :QRPackedQ)
     @eval begin
