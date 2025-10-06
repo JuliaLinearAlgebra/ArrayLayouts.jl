@@ -28,13 +28,13 @@ end
 
 
 const MatLmulVec{StyleA,StyleB} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix,AbstractQ},<:AbstractVector}
-const MatLmulMat{StyleA,StyleB} = Lmul{StyleA,StyleB,<:AbstractMatrix,<:AbstractMatrix}
+const MatLmulMat{StyleA,StyleB} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix,AbstractQ},<:Union{AbstractMatrix,AbstractQ}}
 
 const BlasMatLmulVec{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix{T},AbstractQ{T}},<:AbstractVector{T}}
-const BlasMatLmulMat{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:AbstractMatrix{T},<:AbstractMatrix{T}}
+const BlasMatLmulMat{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix{T},AbstractQ{T}},<:Union{AbstractMatrix{T},AbstractQ{T}}}
 
-const MatRmulMat{StyleA,StyleB} = Rmul{StyleA,StyleB,<:AbstractMatrix,<:AbstractMatrix}
-const BlasMatRmulMat{StyleA,StyleB,T<:BlasFloat} = Rmul{StyleA,StyleB,<:AbstractMatrix{T},<:AbstractMatrix{T}}
+const MatRmulMat{StyleA,StyleB} = Rmul{StyleA,StyleB,<:Union{AbstractMatrix,AbstractQ},<:Union{AbstractMatrix,AbstractQ}}
+const BlasMatRmulMat{StyleA,StyleB,T<:BlasFloat} = Rmul{StyleA,StyleB,<:Union{AbstractMatrix{T},AbstractQ{T}},<:Union{AbstractMatrix{T},AbstractQ{T}}}
 
 
 ####
@@ -152,4 +152,23 @@ macro layoutrmul(Typ)
         ArrayLayouts.@_layoutrmul LowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T
         ArrayLayouts.@_layoutrmul UnitLowerTriangular{T, <:Transpose{T,<:$Typ{T}}} where T        
     end)
+end
+
+
+# TODO: uncomment out. commented for now due to ambiguities
+# LinearAlgebra.lmul!(Q::AbstractQ, v::LayoutVecOrMats) = lmul!(Q, v)
+# LinearAlgebra.rmul!(A::LayoutMatrices, Q::AbstractQ) = rmul!(A, Q)
+
+for Typ in (:QRCompactWYQ, :QRPackedQ)
+    @eval begin
+        LinearAlgebra.lmul!(Q::$Typ{<:Any,<:LayoutMatrix}, v::LayoutVecOrMats) = lmul!(Q, v)
+        LinearAlgebra.lmul!(Q::$Typ{<:Any,<:LayoutMatrix}, v::AbstractVecOrMat) = lmul!(Q, v)
+        LinearAlgebra.lmul!(Q::AdjointQ{<:Any,<:$Typ{<:Any,<:LayoutMatrix}}, v::LayoutVecOrMats) = lmul!(Q, v)
+        LinearAlgebra.lmul!(Q::AdjointQ{<:Any,<:$Typ{<:Any,<:LayoutMatrix}}, v::AbstractVecOrMat) = lmul!(Q, v)
+        LinearAlgebra.rmul!(V::LayoutMatrices, Q::$Typ{<:Any,<:LayoutMatrix}) = rmul!(V, Q)
+        LinearAlgebra.rmul!(V::AbstractMatrix, Q::$Typ{<:Any,<:LayoutMatrix}) = rmul!(V, Q)
+        LinearAlgebra.rmul!(V::LayoutMatrices, Q::AdjointQ{<:Any,<:$Typ{<:Any,<:LayoutMatrix}}) = rmul!(V, Q)
+        LinearAlgebra.rmul!(V::AbstractMatrix, Q::AdjointQ{<:Any,<:$Typ{<:Any,<:LayoutMatrix}}) = rmul!(V, Q)
+        LinearAlgebra.rmul!(V::StridedVecOrMat{T}, Q::AdjointQ{<:Any,<:$Typ{T,<:LayoutMatrix}}) where T<:BlasReal = rmul!(V, Q)
+    end
 end

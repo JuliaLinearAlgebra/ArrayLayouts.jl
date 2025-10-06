@@ -134,6 +134,8 @@ mulreduce(M::Mul{<:AbstractQLayout}) = Lmul(M)
 mulreduce(M::Mul{<:Any,<:AbstractQLayout}) = Rmul(M)
 mulreduce(M::Mul{<:TriangularLayout,<:AbstractQLayout}) = Rmul(M)
 mulreduce(M::Mul{<:AbstractQLayout,<:TriangularLayout}) = Lmul(M)
+mulreduce(M::Mul{<:DiagonalLayout, <:AbstractQLayout}) = Lmul(M)
+mulreduce(M::Mul{<:AbstractQLayout, <:DiagonalLayout}) = Rmul(M)
 
 function copyto!(dest::AbstractArray{T}, M::Lmul{<:AbstractQLayout}) where T
     A,B = M.A,M.B
@@ -152,8 +154,8 @@ function copyto!(dest::AbstractArray, M::Ldiv{<:AbstractQLayout})
     ldiv!(A,dest)
 end
 
-materialize!(M::Lmul{LAY}) where LAY<:AbstractQLayout = error(LazyString("Overload materialize!(::Lmul{", LAY, "})"))
-materialize!(M::Rmul{LAY}) where LAY<:AbstractQLayout = error(LazyString("Overload materialize!(::Rmul{", LAY, "})"))
+materialize!(M::Lmul{LAY, LAY2}) where {LAY<:AbstractQLayout,LAY2} = error(LazyString("Overload materialize!(::Lmul{", LAY, ", ", LAY2, "})"))
+materialize!(M::Rmul{LAY1, LAY}) where {LAY<:AbstractQLayout,LAY1} = error(LazyString("Overload materialize!(::Rmul{", LAY1, ", ", LAY, "})"))
 
 materialize!(M::Ldiv{<:AbstractQLayout}) = materialize!(Lmul(M.A',M.B))
 
