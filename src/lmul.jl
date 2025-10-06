@@ -156,7 +156,15 @@ end
 
 
 LinearAlgebra.lmul!(Q::AbstractQ, v::LayoutVecOrMats) = lmul!(Q, v)
-LinearAlgebra.lmul!(Q::Adjoint{<:Any,<:AbstractQ}, v::LayoutVecOrMats) = lmul!(Q, v)
+LinearAlgebra.lmul!(Q::AdjointQ, v::LayoutVecOrMats) = lmul!(Q, v)
+
+for Typ in (:QRCompactWYQ, :QRPackedQ)
+    @eval begin
+        LinearAlgebra.lmul!(Q::$Typ{<:Any,<:LayoutMatrix}, v::LayoutVecOrMats) = lmul!(Q, v)
+        LinearAlgebra.lmul!(Q::$Typ{<:Any,<:LayoutMatrix}, v::AbstractVecOrMat) = lmul!(Q, v)
+        LinearAlgebra.lmul!(Q::AdjointQ{<:Any,<:$Typ{<:Any,<:LayoutMatrix}}, v::LayoutVecOrMats) = lmul!(Q, v)
+        LinearAlgebra.lmul!(Q::AdjointQ{<:Any,<:$Typ{<:Any,<:LayoutMatrix}}, v::AbstractVecOrMat) = lmul!(Q, v)
+    end
 
 LinearAlgebra.rmul!(A::LayoutMatrices, Q::AbstractQ) = rmul!(A, Q)
 LinearAlgebra.rmul!(A::LayoutMatrices, Q::Adjoint{<:Any,<:AbstractQ}) = rmul!(A, Q)

@@ -17,7 +17,7 @@ import Base.Broadcast: BroadcastStyle, broadcastable, instantiate, materialize, 
 
 using LinearAlgebra: AbstractQ, AbstractTriangular, AdjOrTrans, AdjointAbsVec, HermOrSym, HessenbergQ, QRCompactWYQ,
                      QRPackedQ, RealHermSymComplexHerm, TransposeAbsVec, _apply_ipiv_rows!, checknonsingular,
-                     checksquare, chkfullrank, cholcopy, ipiv2perm
+                     checksquare, chkfullrank, cholcopy, ipiv2perm, QRCompactWYQ, AdjointQ, QRPackedQ
 
 using LinearAlgebra.BLAS: BlasComplex, BlasFloat, BlasReal
 
