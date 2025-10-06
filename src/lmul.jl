@@ -33,7 +33,7 @@ const MatLmulMat{StyleA,StyleB} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix,Abst
 const BlasMatLmulVec{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix{T},AbstractQ{T}},<:AbstractVector{T}}
 const BlasMatLmulMat{StyleA,StyleB,T<:BlasFloat} = Lmul{StyleA,StyleB,<:Union{AbstractMatrix{T},AbstractQ{T}},<:Union{AbstractMatrix{T},AbstractQ{T}}}
 
-const MatRmulMat{StyleA,StyleB} = Rmul{StyleA,StyleB,<:AbstractMatrix,<:AbstractMatrix}
+const MatRmulMat{StyleA,StyleB} = Rmul{StyleA,StyleB,<:Union{AbstractMatrix,AbstractQ},<:Union{AbstractMatrix,AbstractQ}}
 const BlasMatRmulMat{StyleA,StyleB,T<:BlasFloat} = Rmul{StyleA,StyleB,<:Union{AbstractMatrix{T},AbstractQ{T}},<:Union{AbstractMatrix{T},AbstractQ{T}}}
 
 
@@ -156,7 +156,6 @@ end
 
 
 LinearAlgebra.lmul!(Q::AbstractQ, v::LayoutVecOrMats) = lmul!(Q, v)
-LinearAlgebra.lmul!(Q::AdjointQ, v::LayoutVecOrMats) = lmul!(Q, v)
 
 for Typ in (:QRCompactWYQ, :QRPackedQ)
     @eval begin
@@ -168,4 +167,3 @@ for Typ in (:QRCompactWYQ, :QRPackedQ)
 end
 
 LinearAlgebra.rmul!(A::LayoutMatrices, Q::AbstractQ) = rmul!(A, Q)
-LinearAlgebra.rmul!(A::LayoutMatrices, Q::Adjoint{<:Any,<:AbstractQ}) = rmul!(A, Q)
