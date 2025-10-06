@@ -603,6 +603,15 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
             @test mul!(copy(B), A, D, 2.0, 3.0) ≈ mul!(copy(B), V, D, 2.0, 3.0) ≈ 2A * D + 3B
     end
 
+    @testset "Diagonal * Q" begin
+        A = randn(10,5)
+        Q̃ = qr(A).Q
+        Q = LinearAlgebra.QRCompactWYQ(MyMatrix(Q̃.factors), Q̃.T)
+        D = Diagonal(1:10)
+        @test ArrayLayouts.mul(D, Q) ≈ ArrayLayouts.mul(D, Q̃) ≈ D*Q
+        @test ArrayLayouts.mul(Q, D) ≈ ArrayLayouts.mul(Q̃, D) ≈ Q*D
+    end
+
     @testset "QR" begin
         A = randn(10,5)
         Q̃ = qr(A).Q
@@ -616,7 +625,12 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
 
         @test B'Q ≈ B'Q̃ ≈ rmul!(copy(B'),Q) ≈ rmul!(MyMatrix(copy(B')), Q)
         @test B'Q' ≈ B'Q̃' ≈ rmul!(copy(B'),Q') ≈ rmul!(MyMatrix(copy(B')), Q')
-        
+
+        @test_throws ErrorException lmul!(Q, big.(B))
+        @test_throws ErrorException lmul!(Q', big.(B))
+        @test_throws ErrorException rmul!(big.(B'),Q')
+        @test_throws ErrorException rmul!(big.(B'),Q)
+
         @test_broken Q*b ≈ lmul!(Q̃, MyVector(copy(b))) # broken due to commented out code for ambiguity with MatrixFactorizations.jl
     end
 end
