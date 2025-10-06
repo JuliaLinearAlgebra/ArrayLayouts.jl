@@ -1,6 +1,6 @@
 module TestLayouts
 
-using ArrayLayouts, LinearAlgebra, FillArrays, Test
+using ArrayLayouts, LinearAlgebra, FillArrays, JLArrays, Test
 import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayout,
                         ConjLayout, RowMajor, ColumnMajor, UnitStride,
                         SymmetricLayout, HermitianLayout, UpperTriangularLayout,
@@ -402,6 +402,16 @@ struct FooNumber <: Number end
         @test ArrayLayouts.mul(S, F) isa SymTridiagonal{Int,<:Fill}
 
         @test ArrayLayouts.mul((1:11)', F) isa AbstractMatrix{Int}
+    end
+
+    @testset "GPUArrays/JLArrays" begin
+        A = jl(randn(5,5))
+        @test MemoryLayout(A) == DenseColumnMajor()
+        @test ArrayLayouts.layout_getindex(A,1:3,1:3) == A[1:3,1:3]
+        @test ArrayLayouts.layout_getindex(A,1:3,1:3) isa JLArray{Float64}
+        V = view(A,1:3,1:3)
+        @test ArrayLayouts.sub_materialize(V) == A[1:3,1:3]
+        @test ArrayLayouts.sub_materialize(V) isa JLArray{Float64}
     end
 
     @testset "Triangular col/rowsupport" begin
