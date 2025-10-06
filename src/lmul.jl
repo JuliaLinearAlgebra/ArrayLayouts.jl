@@ -165,6 +165,7 @@ for Typ in (:QRCompactWYQ, :QRPackedQ)
         LinearAlgebra.lmul!(Q::AdjointQ{<:Any,<:$Typ{<:Any,<:LayoutMatrix}}, v::LayoutVecOrMats) = lmul!(Q, v)
         LinearAlgebra.lmul!(Q::AdjointQ{<:Any,<:$Typ{<:Any,<:LayoutMatrix}}, v::AbstractVecOrMat) = lmul!(Q, v)
     end
+end
 
 LinearAlgebra.rmul!(A::LayoutMatrices, Q::AbstractQ) = rmul!(A, Q)
 LinearAlgebra.rmul!(A::LayoutMatrices, Q::Adjoint{<:Any,<:AbstractQ}) = rmul!(A, Q)
