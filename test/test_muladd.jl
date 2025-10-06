@@ -1,12 +1,12 @@
 module TestMulAdd
 
-using ArrayLayouts, FillArrays, Random, StableRNGs, LinearAlgebra, Test, Quaternions
+using ArrayLayouts, FillArrays, Random, StableRNGs, LinearAlgebra, Test, Quaternions, StaticArrays
 using ArrayLayouts: DenseColumnMajor, AbstractStridedLayout, AbstractColumnMajor, DiagonalLayout, mul, Mul, zero!
 
 Random.seed!(0)
 @testset "Multiplication" begin
     @testset "zero!" begin
-        for A in (randn(5,5), [randn(5,5),randn(4,4)])
+        for A in (randn(5,5), [randn(5,5),randn(4,4)], [SVector(2,3), SVector(3,4)])
             zero!(A)
             @test iszero(A)
         end
