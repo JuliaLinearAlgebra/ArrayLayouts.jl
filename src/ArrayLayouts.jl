@@ -204,6 +204,7 @@ getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
 getindex(A::LayoutVector, kr::Colon) = layout_getindex(A, kr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::Colon) = layout_getindex(A, kr, jr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::AbstractVector) = layout_getindex(A, kr, jr)
+getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::AbstractVector, jr::AbstractVector) = layout_getindex(A, kr, jr)
 
 *(a::Zeros{<:Any,2}, b::LayoutMatrix) = FillArrays.mult_zeros(a, b)
 *(a::LayoutMatrix, b::Zeros{<:Any,2}) = FillArrays.mult_zeros(a, b)

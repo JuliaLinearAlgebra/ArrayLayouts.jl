@@ -49,6 +49,8 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
         @test a[1:3] == a.A[1:3]
         @test a[:] == a
         @test (a')[1,:] == (a')[1,1:3] == a
+        @test (a')[1:1, :] == (a')[1:1,1:3] == a'
+        @test (a')[1:1, 2:3] == (a')[1:1,2:3] == a[2:3]'
         @test sprint(show, "text/plain", a) == "$(summary(a)):\n 1.0\n 2.0\n 3.0"
         @test B*a ≈ B*a.A
         @test B'*a ≈ B'*a.A
