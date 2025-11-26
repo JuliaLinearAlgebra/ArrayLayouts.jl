@@ -13,7 +13,7 @@ import Base: axes, size, length, eltype, ndims, first, last, diff, isempty, unio
 
 using Base.Broadcast: Broadcasted
 
-import Base.Broadcast: BroadcastStyle, broadcastable, instantiate, materialize, materialize!
+import Base.Broadcast: BroadcastStyle, broadcastable, instantiate, materialize, materialize!, result_style, DefaultArrayStyle
 
 using LinearAlgebra: AbstractQ, AbstractTriangular, AdjOrTrans, AdjointAbsVec, HermOrSym, HessenbergQ, QRCompactWYQ,
                      QRPackedQ, RealHermSymComplexHerm, TransposeAbsVec, _apply_ipiv_rows!, checknonsingular,
@@ -429,5 +429,10 @@ Base.typed_vcat(::Type{T}, A::LayoutVecOrMats, B::LayoutVecOrMats, C::AbstractVe
 Base.typed_hcat(::Type{T}, A::LayoutVecOrMats, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_hcat(T, A, B, C...)
 Base.typed_vcat(::Type{T}, A::AbstractVecOrMat, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_vcat(T, A, B, C...)
 Base.typed_hcat(::Type{T}, A::AbstractVecOrMat, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_hcat(T, A, B, C...)
+
+###
+# reshapedarray for layoutarrays
+###
+BroadcastStyle(::Type{<:ReshapedArray{<:Any, N, P}}) where {N, P<:LayoutArray} = result_style(DefaultArrayStyle{N}(), BroadcastStyle(P))
 
 end # module

@@ -4,6 +4,7 @@ using ArrayLayouts, LinearAlgebra, FillArrays, Test, SparseArrays, Random
 using ArrayLayouts: sub_materialize, ColumnNorm, RowMaximum, CRowMaximum, @_layoutlmul, Mul
 import ArrayLayouts: triangulardata, MemoryLayout
 import LinearAlgebra: Diagonal, Bidiagonal, Tridiagonal, SymTridiagonal
+import Base.Broadcast: BroadcastStyle, AbstractArrayStyle
 
 struct MyMatrix{T,M<:AbstractMatrix{T}} <: LayoutMatrix{T}
     A::M
@@ -38,6 +39,21 @@ Base.unsafe_convert(::Type{Ptr{T}}, A::MyVector{T}) where T = Base.unsafe_conver
 MemoryLayout(::Type{MyVector{T,V}}) where {T,V} = MemoryLayout(V)
 Base.copy(A::MyVector) = MyVector(copy(A.A))
 
+# These structs are separate since we would need to otherwise implement more Broadcast machinery for MyBroadcastStyle to get the tests below to not error
+struct MyBroadcastStyle{N} <: AbstractArrayStyle{N} end
+MyBroadcastStyle(::Val{N}) where N = MyBroadcastStyle{N}()
+MyBroadcastStyle{M}(::Val{N}) where {N,M} = MyBroadcastStyle{N}()
+struct MyMatrix2{T,M<:AbstractMatrix{T}} <: LayoutMatrix{T}
+    A::M
+end
+Base.size(A::MyMatrix2) = size(A.A)
+BroadcastStyle(::Type{<:MyMatrix2{T}}) where {T} = MyBroadcastStyle{2}()
+struct MyVector2{T,V<:AbstractVector{T}} <: LayoutVector{T}
+    A::V
+end
+Base.size(A::MyVector2) = size(A.A)
+BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
+
 # These need to test dispatch reduces to ArrayLayouts.mul, etc.
 @testset "LayoutArray" begin
     @testset "LayoutVector" begin
@@ -69,6 +85,9 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
 
         s = SparseVector(3, [1], [2])
         @test a's == s'a == dot(a,s) == dot(s,a) == dot(s,a.A)
+
+        a = MyVector2(a.A)
+        @test BroadcastStyle(typeof(reshape(a, (1, 3)))) == MyBroadcastStyle{2}()
     end
 
     @testset "LayoutMatrix" begin
@@ -278,6 +297,12 @@ Base.copy(A::MyVector) = MyVector(copy(A.A))
         @testset "permutedims(::Diagonal)" begin
             D = Diagonal(MyVector(randn(5)))
             @test permutedims(D) ≡ D
+        end
+
+        @testset "BroadcastStyle" begin
+            A = MyMatrix2(randn(3,6))
+            @test BroadcastStyle(typeof(reshape(A, (9, 2)))) == MyBroadcastStyle{2}()
+            @test BroadcastStyle(typeof(vec(A))) == MyBroadcastStyle{2}()
         end
     end
 
