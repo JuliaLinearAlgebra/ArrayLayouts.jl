@@ -1,3 +1,5 @@
+module AquaTests
+
 import Aqua
 import ArrayLayouts
 using Test
@@ -7,4 +9,6 @@ using Test
     	ambiguities = false,
     	piracies = (; broken=true),
     )
+end
+
 end
