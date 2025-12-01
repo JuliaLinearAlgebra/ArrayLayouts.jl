@@ -6,6 +6,9 @@ import ArrayLayouts: triangulardata, MemoryLayout
 import LinearAlgebra: Diagonal, Bidiagonal, Tridiagonal, SymTridiagonal
 import Base.Broadcast: BroadcastStyle, AbstractArrayStyle
 
+include("infinitearrays.jl")
+using .InfiniteArrays
+
 struct MyMatrix{T,M<:AbstractMatrix{T}} <: LayoutMatrix{T}
     A::M
 end
@@ -705,9 +708,6 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     @test MyMatrix(A) / U ≈ A / U
     VERSION >= v"1.9" && @test U / MyMatrix(A) ≈ U / A
 end
-
-# Tests needed for InfiniteRandomArrays.jl (see https://github.com/DanielVandH/InfiniteRandomArrays.jl/issues/5) 
-using ..InfiniteArrays
 
 @testset "* for infinite layouts" begin
     tup = InfSymTridiagonal(), InfTridiagonal(), InfBidiagonal('U'),

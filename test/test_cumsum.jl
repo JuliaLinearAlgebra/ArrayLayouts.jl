@@ -1,7 +1,9 @@
 module TestCumsum
 
 using ArrayLayouts, Test, Infinities
-using ..InfiniteArrays
+
+include("infinitearrays.jl")
+using .InfiniteArrays
 
 cmpop(p) = isinteger(real(first(p))) && isinteger(real(step(p))) ? (==) : (≈)
 
