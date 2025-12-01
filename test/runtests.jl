@@ -1,27 +1,28 @@
 module ArrayLayoutsTests
 
 import ArrayLayouts
-import Aqua
-import Random
-using Test
+using ParallelTestRunner
 
-downstream_test = "--downstream_integration_test" in ARGS
-@testset "Project quality" begin
-    Aqua.test_all(ArrayLayouts,
-    	ambiguities = false,
-    	piracies = (; broken=true),
-        stale_deps = !downstream_test,
-    )
+const init_code = quote
+    import Random
+    Random.seed!(0)
 end
 
-Random.seed!(0)
+# Start with autodiscovered tests
+testsuite = find_tests(pwd())
 
-include("infinitearrays.jl")
-include("test_utils.jl")
-include("test_layouts.jl")
-include("test_muladd.jl")
-include("test_ldiv.jl")
-include("test_layoutarray.jl")
-include("test_cumsum.jl")
+if "--downstream_integration_test" in ARGS
+    delete!(testsuite, "test_aqua")
+end
+
+filtered_args = filter(!=("--downstream_integration_test"), ARGS)
+# Parse arguments
+args = parse_args(filtered_args)
+
+if filter_tests!(testsuite, args)
+    delete!(testsuite, "infinitearrays")
+end
+
+runtests(ArrayLayouts, args; testsuite, init_code)
 
 end
