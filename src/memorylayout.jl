@@ -650,6 +650,7 @@ rowsupport(A, k) = rowsupport(MemoryLayout(A), A, k)
 Return an iterator containing the column indices of the possible non-zero entries in `A`.
 """
 rowsupport(A) = rowsupport(A, axes(A,1))
+rowsupport(A, k::CartesianIndex{2}) = rowsupport(A, k[1])
 
 colsupport(_, A, j) = axes(A,1)
 
@@ -666,6 +667,7 @@ colsupport(A, j) = colsupport(MemoryLayout(A), A, j)
 Return an iterator containing the row indices of the possible non-zero entries in `A`.
 """
 colsupport(A) = colsupport(A, axes(A,2))
+colsupport(A, k::CartesianIndex{2}) = rowsupport(A, k[2])
 
 # TODO: generalise to other subarrays
 function colsupport(A::SubArray{<:Any,N,<:Any,<:Tuple{Slice,AbstractVector}}, j) where N
