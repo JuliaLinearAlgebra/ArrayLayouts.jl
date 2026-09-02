@@ -411,6 +411,7 @@ Base.print_matrix_row(io::IO,
 
 
 include("cumsum.jl")
+include("hash.jl")
 
 ###
 # support overloading hcat/vcat for ∞-arrays
