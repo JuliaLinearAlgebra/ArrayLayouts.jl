@@ -104,10 +104,8 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
         for Tri in (UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriangular)
             @test ldiv!(Tri(A), copy(b)) ≈ ldiv!(Tri(A.A), copy(b)) ≈ Tri(A.A) \ MyVector(b)
             @test ldiv!(Tri(A), copy(B)) ≈ ldiv!(Tri(A.A), copy(B)) ≈ Tri(A.A) \ MyMatrix(B)
-            if VERSION ≥ v"1.9"
-                @test rdiv!(copy(b)', Tri(A)) ≈ rdiv!(copy(b)', Tri(A.A)) ≈ MyVector(b)' / Tri(A.A)
-                @test rdiv!(copy(B), Tri(A)) ≈ rdiv!(copy(B), Tri(A.A)) ≈ B / Tri(A.A)
-            end
+            @test rdiv!(copy(b)', Tri(A)) ≈ rdiv!(copy(b)', Tri(A.A)) ≈ MyVector(b)' / Tri(A.A)
+            @test rdiv!(copy(B), Tri(A)) ≈ rdiv!(copy(B), Tri(A.A)) ≈ B / Tri(A.A)
             @test lmul!(Tri(A), copy(b)) ≈ lmul!(Tri(A.A), copy(b)) ≈ Tri(A.A) * MyVector(b)
         end
 
@@ -154,29 +152,23 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
             @test cholesky(S, CRowMaximum()) \ b ≈ ldiv!(cholesky(Matrix(S), CRowMaximum()), copy(b))
             @test cholesky(S) \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
             @test cholesky(S) \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
-            if VERSION >= v"1.9"
-                @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
-                @test S \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
-            end
+            @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S)) \ b
+            @test S \ b ≈ Symmetric(Matrix(S)) \ MyVector(b)
 
             S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I), :L)
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U
             @test cholesky(S,CRowMaximum()).U ≈ cholesky(Matrix(S),CRowMaximum()).U
             @test cholesky(S) \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
             @test cholesky(S) \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
-            if VERSION >= v"1.9"
-                @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
-                @test S \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
-            end
+            @test S \ b ≈ Matrix(S) \ b ≈ Symmetric(Matrix(S), :L) \ b
+            @test S \ b ≈ Symmetric(Matrix(S), :L) \ MyVector(b)
 
             @testset "ldiv!" begin
                 c = MyVector(randn(5))
                 @test ldiv!(lu(A), MyVector(copy(c))) ≈ A \ c
                 @test_throws ErrorException ldiv!(eigen(randn(5,5)), c)
                 @test ArrayLayouts.ldiv!(svd(A.A), Vector(c)) ≈ ArrayLayouts.ldiv!(similar(c), svd(A.A), c) ≈ A \ c
-                if VERSION ≥ v"1.8"
-                    @test ArrayLayouts.ldiv!(similar(c), transpose(lu(A.A)), copy(c)) ≈ A'\c
-                end
+                @test ArrayLayouts.ldiv!(similar(c), transpose(lu(A.A)), copy(c)) ≈ A'\c
 
                 B = Bidiagonal(randn(5), randn(4), :U)
                 @test ldiv!(B, MyVector(copy(c))) ≈ B \ c
@@ -254,24 +246,22 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
             @test_broken ldiv!(A, t) ≈ A\t
             @test ldiv!(A, copy(X)) ≈ A\X
             @test A\T ≈ A\T̃
-            VERSION >= v"1.9" && @test A/T ≈ A/T̃
+            @test A/T ≈ A/T̃
             @test_broken ldiv!(A, T) ≈ A\T
             @test B\A ≈ B\Matrix(A)
             @test D \ A ≈ D \ Matrix(A)
             @test transpose(B)\A ≈ transpose(B)\Matrix(A) ≈ Transpose(B)\A ≈ Adjoint(B)\A
             @test B'\A ≈ B'\Matrix(A)
             @test A\A ≈ I
-            VERSION >= v"1.9" && @test A/A ≈ I
+            @test A/A ≈ I
             @test A\MyVector(x) ≈ A\x
             @test A\MyMatrix(X) ≈ A\X
 
-            if VERSION >= v"1.9"
-                @test A/A ≈ A.A / A.A
-                @test x' / A ≈ x' / A.A
-                @test transpose(x) / A ≈ transpose(x) / A.A 
-                @test transpose(x) / A isa Transpose
-                @test x' / A isa Adjoint
-            end
+            @test A/A ≈ A.A / A.A
+            @test x' / A ≈ x' / A.A
+            @test transpose(x) / A ≈ transpose(x) / A.A
+            @test transpose(x) / A isa Transpose
+            @test x' / A isa Adjoint
 
             @test D \ UpperTriangular(A) ≈ D \ UpperTriangular(A.A)
             @test UpperTriangular(A) \ D ≈ UpperTriangular(A.A) \ D
@@ -349,9 +339,7 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
         B = randn(5,5)
         B̃ = MyMatrix(B)
         @test D*D ≈ Matrix(D)^2
-        if VERSION ≥ v"1.7-"
-            @test D^2 ≈ D*D
-        end
+        @test D^2 ≈ D*D
         @test D*B ≈ Matrix(D)*B
         @test B*D ≈ B*Matrix(D)
         @test D*B̃ ≈ Matrix(D)*B̃
@@ -706,7 +694,7 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
     @test_skip lmul!(U,view(copy(B),collect(1:5),1:5)) ≈ U * B
 
     @test MyMatrix(A) / U ≈ A / U
-    VERSION >= v"1.9" && @test U / MyMatrix(A) ≈ U / A
+    @test U / MyMatrix(A) ≈ U / A
 end
 
 @testset "* for infinite layouts" begin

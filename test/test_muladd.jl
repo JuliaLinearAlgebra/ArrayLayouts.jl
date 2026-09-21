@@ -104,9 +104,9 @@ Random.seed!(0)
             A, B = [1:4;], reshape([3:6;], 4, 1)
             D = Diagonal(Fill(3, 1))
             M = MulAdd(2, A, D, 3, B)
-            @test copy(M) == (VERSION >= v"1.9" ? mul!(B, A, D, 2, 3) : 2 * A * D + 3 * B)
+            @test copy(M) == mul!(B, A, D, 2, 3)
             M = MulAdd(1, A, D, 0, B)
-            @test copy(M) == (VERSION >= v"1.9" ? mul!(B, A, D) : A * D)
+            @test copy(M) == mul!(B, A, D)
         end
     end
 
@@ -674,7 +674,7 @@ Random.seed!(0)
         @test Q*Q' ≈ mul(Q,Q')
         @test Q'*Q' ≈ mul(Q',Q')
         @test Q'*Q ≈ mul(Q',Q)
-        VERSION >= v"1.8-" && @test Q*UpperTriangular(B) ≈ mul(Q, UpperTriangular(B))
+        @test Q*UpperTriangular(B) ≈ mul(Q, UpperTriangular(B))
         @test UpperTriangular(B)*Q' ≈ mul(UpperTriangular(B), Q')
     end
 
@@ -838,19 +838,11 @@ Random.seed!(0)
         b = [quat(rand(4)...) for i in 1:4]
         c = [quat(rand(4)...) for i in 1:4, j in 1:1]
         M = MulAdd(α, b, D, β, c)
-        if VERSION >= v"1.9"
-            @test copy(M) ≈ mul!(copy(c), b, D, α, β) ≈ b * D * α + c * β
-        else
-            @test copy(M) ≈ b * D * α + c * β
-        end
+        @test copy(M) ≈ mul!(copy(c), b, D, α, β) ≈ b * D * α + c * β
     end
 
     @testset "Error paths" begin
-        if VERSION >= v"1.10.0"
-            Q = qr(rand(2,2), ColumnNorm()).Q
-        else
-            Q = qr(rand(2,2), Val(true)).Q
-        end
+        Q = qr(rand(2,2), ColumnNorm()).Q
         v = rand(Float32, 3)
         @test_throws DimensionMismatch ArrayLayouts.materialize!(ArrayLayouts.Rmul(v, Q))
         @test_throws DimensionMismatch ArrayLayouts.materialize!(ArrayLayouts.Rmul(v, Q'))

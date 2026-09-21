@@ -325,26 +325,14 @@ factorize_layout(layout, axes, A) = qr(A) # Default to QR
 
 
 factorize_layout(::AbstractStridedLayout, axes, A) = lu(A)
-if VERSION < v"1.8-"
-    function lu!_layout(::AbstractColumnMajor, axes, A::AbstractMatrix{T}, pivot::Union{NoPivot, RowMaximum} = RowMaximum();
-                check::Bool = true) where T<:BlasFloat
-        if pivot === NoPivot()
-            return generic_lufact!(A, pivot; check = check)
-        end
-        lpt = LAPACK.getrf!(A)
-        check && checknonsingular(lpt[3])
-        return LU{T,typeof(A)}(lpt[1], lpt[2], lpt[3])
+function lu!_layout(::AbstractColumnMajor, axes, A::AbstractMatrix{T}, pivot::Union{NoPivot, RowMaximum} = RowMaximum();
+            check::Bool = true) where T<:BlasFloat
+    if pivot === NoPivot()
+        return generic_lufact!(A, pivot; check = check)
     end
-else
-    function lu!_layout(::AbstractColumnMajor, axes, A::AbstractMatrix{T}, pivot::Union{NoPivot, RowMaximum} = RowMaximum();
-                check::Bool = true) where T<:BlasFloat
-        if pivot === NoPivot()
-            return generic_lufact!(A, pivot; check = check)
-        end
-        lpt = LAPACK.getrf!(A)
-        check && checknonsingular(lpt[3])
-        return LU{T,typeof(A),typeof(lpt[2])}(lpt[1], lpt[2], lpt[3])
-    end
+    lpt = LAPACK.getrf!(A)
+    check && checknonsingular(lpt[3])
+    return LU{T,typeof(A),typeof(lpt[2])}(lpt[1], lpt[2], lpt[3])
 end
 
 # for some reason only defined for StridedMatrix in LinearAlgebra
@@ -390,11 +378,7 @@ end
 function cholesky!_layout(::SymmetricLayout{<:AbstractColumnMajor}, axes, A::AbstractMatrix{<:BlasReal},
     ::CRowMaximum; tol = 0.0, check::Bool = true)
     AA, piv, rank, info = LAPACK.pstrf!(A.uplo, A.data, tol)
-    if VERSION < v"1.8"
-        C = CholeskyPivoted{eltype(AA),typeof(AA)}(AA, A.uplo, piv, rank, tol, info)
-    else
-        C = CholeskyPivoted{eltype(AA),typeof(AA),typeof(piv)}(AA, A.uplo, piv, rank, tol, info)
-    end
+    C = CholeskyPivoted{eltype(AA),typeof(AA),typeof(piv)}(AA, A.uplo, piv, rank, tol, info)
     check && chkfullrank(C)
     return C
 end
