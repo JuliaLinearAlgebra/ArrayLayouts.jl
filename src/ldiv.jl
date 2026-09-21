@@ -83,13 +83,7 @@ __ldiv!(_, F, B) = LinearAlgebra.ldiv!(F, B)
 @inline _ldiv!(dest, A, B; kwds...) = ldiv!(dest, factorize(A), B; kwds...)
 @inline _ldiv!(dest, A::Factorization, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
 
-if VERSION ≥ v"1.10-"
-    using LinearAlgebra: TransposeFactorization, AdjointFactorization
-else
-    const TransposeFactorization = Transpose
-    const AdjointFactorization = Adjoint
-
-end
+using LinearAlgebra: TransposeFactorization, AdjointFactorization
 @inline _ldiv!(dest, A::TransposeFactorization{<:Any,<:Factorization}, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
 @inline _ldiv!(dest, A::AdjointFactorization{<:Any,<:Factorization}, B; kwds...) = LinearAlgebra.ldiv!(dest, A, B; kwds...)
 
@@ -164,9 +158,6 @@ macro _layoutldiv(Typ)
 
         (\)(x::AbstractMatrix, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)
         (\)(x::LinearAlgebra.HermOrSym, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)
-        if VERSION < v"1.9-" # disambiguation
-            \(x::LinearAlgebra.HermOrSym{<:Any,<:StridedMatrix}, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)
-        end
         (\)(x::UpperTriangular, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)
         (\)(x::UnitUpperTriangular, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)
         (\)(x::LowerTriangular, A::$Typ; kwds...) = ArrayLayouts.ldiv(x,A; kwds...)

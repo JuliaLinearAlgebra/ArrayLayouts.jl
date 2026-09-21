@@ -3,7 +3,7 @@ using Base: _typed_hcat
 using Base.Broadcast, LinearAlgebra, FillArrays
 using LinearAlgebra.BLAS
 
-using Base: AbstractCartesianIndex, OneTo, oneto, RangeIndex, ReinterpretArray, ReshapedArray,
+using Base: AbstractCartesianIndex, LazyString, OneTo, oneto, RangeIndex, ReinterpretArray, ReshapedArray,
             Slice, tuple_type_tail, unalias,
             @propagate_inbounds
 
@@ -21,7 +21,7 @@ using LinearAlgebra: AbstractQ, AbstractTriangular, AdjOrTrans, AdjointAbsVec, H
 
 using LinearAlgebra.BLAS: BlasComplex, BlasFloat, BlasReal
 
-const AdjointQtype{T} = isdefined(LinearAlgebra, :AdjointQ) ? LinearAlgebra.AdjointQ{T} : Adjoint{T,<:AbstractQ}
+const AdjointQtype{T} = LinearAlgebra.AdjointQ{T}
 
 using FillArrays: AbstractFill, axes_print_matrix_row, getindex_value
 using StaticArrays
@@ -37,19 +37,9 @@ export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, Dot,
         colsupport, rowsupport, layout_getindex, AbstractQLayout, LayoutArray, LayoutMatrix, LayoutVector,
         RangeCumsum
 
-if VERSION < v"1.7-"
-    const ColumnNorm = Val{true}
-    const RowMaximum = Val{true}
-    const NoPivot = Val{false}
-end
-
-if VERSION < v"1.8-"
-    const CRowMaximum = Val{true}
-    const CNoPivot = Val{false}
-else
-    const CRowMaximum = RowMaximum
-    const CNoPivot = NoPivot
-end
+# retained for backwards compatibility with downstream packages
+const CRowMaximum = RowMaximum
+const CNoPivot = NoPivot
 
 if VERSION ≥ v"1.11.0-DEV.21"
     using LinearAlgebra: UpperOrLowerTriangular
@@ -58,12 +48,6 @@ else
                                               LinearAlgebra.UnitUpperTriangular{T,S},
                                               LinearAlgebra.LowerTriangular{T,S},
                                               LinearAlgebra.UnitLowerTriangular{T,S}}
-end
-
-@static if VERSION ≥ v"1.8.0"
-    import Base: LazyString
-else
-    const LazyString = string
 end
 
 # Originally defined in FillArrays
@@ -200,6 +184,11 @@ for Typ in (:LayoutArray, :(Transpose{<:Any,<:LayoutMatrix}), :(Adjoint{<:Any,<:
     end
 end
 
+# disambiguation with the LinearAlgebra methods for transposes of real/complex
+# matrices, which were narrowed to `Transpose{<:Union{Real,Complex}}` in Julia v1.13
+LinearAlgebra.lmul!(α::Union{Real,Complex}, A::Transpose{<:Union{Real,Complex},<:LayoutMatrix}) = lmul!(α, A)
+LinearAlgebra.rmul!(A::Transpose{<:Union{Real,Complex},<:LayoutMatrix}, α::Union{Real,Complex}) = rmul!(A, α)
+
 getindex(A::LayoutVector, kr::AbstractVector) = layout_getindex(A, kr)
 getindex(A::LayoutVector, kr::Colon) = layout_getindex(A, kr)
 getindex(A::AdjOrTrans{<:Any,<:LayoutVector}, kr::Integer, jr::Colon) = layout_getindex(A, kr, jr)
@@ -287,11 +276,9 @@ copyto!(dest::AbstractMatrix, src::AdjOrTrans{<:Any,<:LayoutArray}) = copyto!_la
 copyto!(dest::SubArray{<:Any,2,<:LayoutArray}, src::AdjOrTrans{<:Any,<:LayoutArray}) = copyto!_layout(dest, src)
 copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = copyto!_layout(dest, src)
 copyto!(dest::AbstractMatrix, src::SubArray{<:Any,2,<:AdjOrTrans{<:Any,<:LayoutArray}}) = copyto!_layout(dest, src)
-if isdefined(LinearAlgebra, :copymutable_oftype)
-    LinearAlgebra.copymutable_oftype(A::Union{LayoutArray,Symmetric{<:Any,<:LayoutMatrix},Hermitian{<:Any,<:LayoutMatrix},
-                                                                UpperOrLowerTriangular{<:Any,<:LayoutMatrix},
-                                                                AdjOrTrans{<:Any,<:LayoutMatrix}}, ::Type{T}) where T = copymutable_oftype_layout(MemoryLayout(A), A, T)
-end
+LinearAlgebra.copymutable_oftype(A::Union{LayoutArray,Symmetric{<:Any,<:LayoutMatrix},Hermitian{<:Any,<:LayoutMatrix},
+                                            UpperOrLowerTriangular{<:Any,<:LayoutMatrix},
+                                            AdjOrTrans{<:Any,<:LayoutMatrix}}, ::Type{T}) where T = copymutable_oftype_layout(MemoryLayout(A), A, T)
 copymutable_oftype_layout(_, A, ::Type{S}) where S = copyto!(similar(A, S), A)
 
 # avoid bad copy in Base
