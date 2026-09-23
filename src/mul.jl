@@ -31,7 +31,10 @@ axes(M::Mul) = _mul_axes(axes(M.A), axes(M.B))
 # The following design is to support QuasiArrays.jl where indices
 # may not be `Int`
 
-zeroeltype(M) = zero(eltype(M)) # allow special casing where we know more about zero
+zeroeltype(M) = _zeroeltype(eltype(M), M) # allow special casing where we know more about zero
+_zeroeltype(::Type{T}, M) where T = zero(T)
+# zero(T) is not defined for arrays like Vector{Float64} so use the entries to determine the size
+_zeroeltype(::Type{T}, M::Mul) where T<:AbstractArray = convert(T, zero(first(M.A) * first(M.B)))
 zeroeltype(M::Mul{<:Any,<:Any,<:SubArray}) = zeroeltype(Mul(parent(M.A), M.B))
 
 function _getindex(::Type{Tuple{AA}}, M::Mul, (k,)::Tuple{AA}) where AA
