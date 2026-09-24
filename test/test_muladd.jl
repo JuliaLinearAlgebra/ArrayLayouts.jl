@@ -92,6 +92,15 @@ Random.seed!(0)
             @test mul(X,A) == X*A
         end
 
+        @testset "Mul getindex with array eltype" begin
+            X = reshape([[1 2; 3 4], [5 6; 7 8]], 1, 2)
+            c = [1, 2]
+            @test ArrayLayouts.Mul(X, c)[1] == X[1] + 2X[2]
+            @test ArrayLayouts.Mul(X, reshape(c,2,1))[1,1] == X[1] + 2X[2]
+            v = reshape([[1.0, 2.0], [3.0, 4.0]], 1, 2)
+            @test ArrayLayouts.Mul(v, c)[1] == [7.0, 10.0]
+        end
+
         @testset "Diagonal Fill" begin
             for (A, B) in (([1:4;], [3:6;]), (reshape([1:16;],4,4), reshape(2 .* [1:16;],4,4)))
                 D = Diagonal(Fill(3, 4))
