@@ -305,6 +305,10 @@ _norm(_, A, p) = invoke(norm, Tuple{Any,Real}, A, p)
 LinearAlgebra.norm(A::LayoutArray, p::Real=2) = _norm(MemoryLayout(A), A, p)
 LinearAlgebra.norm(A::SubArray{<:Any,N,<:LayoutArray}, p::Real=2) where N = _norm(MemoryLayout(A), A, p)
 
+mapreduce_layout(::Any, f, op, A, dims; kw...) = invoke(mapreduce, Tuple{Any,Any,AbstractArray}, f, op, A; dims, kw...)
+Base.mapreduce(f, op, A::LayoutArray; dims=:, kw...) = mapreduce_layout(MemoryLayout(A), f, op, A, dims; kw...)
+Base.mapreduce(f, op, A::SubArray{<:Any,N,<:LayoutArray}; dims=:, kw...) where N = mapreduce_layout(MemoryLayout(A), f, op, A, dims; kw...)
+
 
 _fill_lmul!(β, A::AbstractArray) = iszero(β) ? zero!(A) : lmul!(β, A)
 
