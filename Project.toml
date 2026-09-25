@@ -1,6 +1,6 @@
 name = "ArrayLayouts"
 uuid = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
-version = "1.12.4"
+version = "1.13.0"
 authors = ["Sheehan Olver <solver@mac.com>"]
 
 [deps]

@@ -82,6 +82,9 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
         @test copy(v) == sub_materialize(v) == a[1:3]
         @test dot(v,a) == dot(v,a.A) == dot(a,v) == dot(a.A,v) == dot(v,v) == 14
         @test norm(v) == norm(a) == norm([1,2,3])
+        @test sum(v) == sum(a) == 6
+        @test sum(a; init=1) == 7
+        @test sum(a; dims=1) == [6]
 
         V = view(a',:,1:3)
         @test copy(V) == sub_materialize(V) == (a')[:,1:3]
@@ -695,6 +698,32 @@ triangulardata(A::MyUpperTriangular) = triangulardata(A.A)
 
     @test MyMatrix(A) / U ≈ A / U
     @test U / MyMatrix(A) ≈ U / A
+end
+
+struct MyReduceLayout <: MemoryLayout end
+struct MyReduceVector <: LayoutVector{Float64} end
+Base.size(::MyReduceVector) = (3,)
+Base.getindex(::MyReduceVector, k::Int) = Float64(k)
+MemoryLayout(::Type{MyReduceVector}) = MyReduceLayout()
+ArrayLayouts.mapreduce_layout(::MyReduceLayout, f, op, A, ::Colon; kw...) = -1.0
+
+@testset "mapreduce" begin
+    A = randn(5,4)
+    M = MyMatrix(A)
+    @test sum(M) ≈ sum(A)
+    @test sum(M; dims=1) ≈ sum(A; dims=1)
+    @test sum(M; dims=2) ≈ sum(A; dims=2)
+    @test sum(abs2, M) ≈ sum(abs2, A)
+    @test sum(M; init=1.0) ≈ sum(A; init=1.0)
+    @test maximum(M) == maximum(A)
+    @test extrema(M) == extrema(A)
+    @test prod(M) ≈ prod(A)
+    @test mapreduce(abs, max, M; dims=1) == mapreduce(abs, max, A; dims=1)
+    @test sum(view(M, 1:3, 2:4)) ≈ sum(A[1:3, 2:4])
+
+    v = MyReduceVector()
+    @test sum(v) == maximum(v) == reduce(+, v) == -1.0
+    @test sum(v; dims=1) == [6.0]
 end
 
 @testset "* for infinite layouts" begin
