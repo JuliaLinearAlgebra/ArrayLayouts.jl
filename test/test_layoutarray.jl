@@ -145,6 +145,10 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
 
             @test qr(A) isa LinearAlgebra.QRCompactWY
             @test inv(A) ≈ inv(A.A)
+            for Tri in (UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriangular), adj in (adjoint, transpose)
+                @test which(inv, Tuple{typeof(Tri(adj(A)))}).module == ArrayLayouts
+                @test inv(Tri(adj(A))) ≈ inv(Tri(adj(A.A)))
+            end
 
             S = Symmetric(MyMatrix(reshape(inv.(1:25),5,5) + 10I))
             @test cholesky(S).U ≈ @inferred(cholesky!(deepcopy(S))).U

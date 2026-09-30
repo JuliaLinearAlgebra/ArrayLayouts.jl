@@ -434,6 +434,11 @@ macro layoutfactorizations(Typ)
         ArrayLayouts.@_layoutfactorizations ArrayLayouts.UnitLowerTriangular{<:Any,<:SubArray{<:Any,2,<:$Typ}}
         ArrayLayouts.@_layoutfactorizations ArrayLayouts.UnitUpperTriangular{<:Any,<:$Typ}
         ArrayLayouts.@_layoutfactorizations ArrayLayouts.UnitUpperTriangular{<:Any,<:SubArray{<:Any,2,<:$Typ}}
+        # triangular wrappers of adjoints, e.g. from taking the adjoint of an UpperTriangular
+        Base.inv(A::ArrayLayouts.LowerTriangular{<:Any,<:ArrayLayouts.AdjOrTrans{<:Any,<:$Typ}}) = ArrayLayouts.inv_layout(ArrayLayouts.MemoryLayout(A), axes(A), A)
+        Base.inv(A::ArrayLayouts.UpperTriangular{<:Any,<:ArrayLayouts.AdjOrTrans{<:Any,<:$Typ}}) = ArrayLayouts.inv_layout(ArrayLayouts.MemoryLayout(A), axes(A), A)
+        Base.inv(A::ArrayLayouts.UnitLowerTriangular{<:Any,<:ArrayLayouts.AdjOrTrans{<:Any,<:$Typ}}) = ArrayLayouts.inv_layout(ArrayLayouts.MemoryLayout(A), axes(A), A)
+        Base.inv(A::ArrayLayouts.UnitUpperTriangular{<:Any,<:ArrayLayouts.AdjOrTrans{<:Any,<:$Typ}}) = ArrayLayouts.inv_layout(ArrayLayouts.MemoryLayout(A), axes(A), A)
     end)
 end
 
