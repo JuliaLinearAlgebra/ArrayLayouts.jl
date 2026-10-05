@@ -730,6 +730,36 @@ ArrayLayouts.mapreduce_layout(::MyReduceLayout, f, op, A, ::Colon; kw...) = -1.0
     @test sum(v; dims=1) == [6.0]
 end
 
+struct MyEqualsLayout <: MemoryLayout end
+struct MyEqualsVector <: LayoutVector{Float64} end
+Base.size(::MyEqualsVector) = (3,)
+Base.getindex(::MyEqualsVector, k::Int) = Float64(k)
+MemoryLayout(::Type{MyEqualsVector}) = MyEqualsLayout()
+ArrayLayouts.equals_layout(::MyEqualsLayout, ::MyEqualsLayout, A, B) = true
+ArrayLayouts.equals_layout(::MyEqualsLayout, _, A, B) = false
+
+@testset "==" begin
+    A = randn(5,4)
+    M = MyMatrix(A)
+    @test M == A
+    @test A == M
+    @test M == MyMatrix(copy(A))
+    @test M != MyMatrix(A .+ 1)
+    @test M != A[:,1:3]
+    @test view(M, 1:3, 2:4) == A[1:3, 2:4]
+    @test A[1:3, 2:4] == view(M, 1:3, 2:4)
+    @test view(M, 1:3, 2:4) == view(MyMatrix(copy(A)), 1:3, 2:4)
+    @test view(M, 1:3, 2:4) == MyMatrix(A[1:3, 2:4])
+    @test MyMatrix(A[1:3, 2:4]) == view(M, 1:3, 2:4)
+    @test view(M, :, 1) != view(M, 1:5, 1:1)
+    @test MyVector([1.,2,3]) == [1,2,3]
+
+    v = MyEqualsVector()
+    @test v == MyEqualsVector()
+    @test v != [1.,2,3]
+    @test [1.,2,3] == v # falls back to generic implementation
+end
+
 @testset "* for infinite layouts" begin
     tup = InfSymTridiagonal(), InfTridiagonal(), InfBidiagonal('U'),
         InfBidiagonal('L'),

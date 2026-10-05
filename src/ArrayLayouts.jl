@@ -309,6 +309,24 @@ mapreduce_layout(::Any, f, op, A, dims; kw...) = invoke(mapreduce, Tuple{Any,Any
 Base.mapreduce(f, op, A::LayoutArray; dims=:, kw...) = mapreduce_layout(MemoryLayout(A), f, op, A, dims; kw...)
 Base.mapreduce(f, op, A::SubArray{<:Any,N,<:LayoutArray}; dims=:, kw...) where N = mapreduce_layout(MemoryLayout(A), f, op, A, dims; kw...)
 
+"""
+    equals_layout(layA, layB, A, B)
+
+Layout-aware hook for `A == B`, called with `layA = MemoryLayout(A)` and `layB = MemoryLayout(B)`.
+Overload this to specialise equality on memory layouts. The default falls back to the
+generic `AbstractArray` implementation in Base.
+"""
+equals_layout(_, _, A, B) = invoke(==, Tuple{AbstractArray,AbstractArray}, A, B)
+equals_layout(A, B) = equals_layout(MemoryLayout(A), MemoryLayout(B), A, B)
+==(A::LayoutArray, B::LayoutArray) = equals_layout(A, B)
+==(A::LayoutArray, B::AbstractArray) = equals_layout(A, B)
+==(A::AbstractArray, B::LayoutArray) = equals_layout(A, B)
+==(A::SubArray{<:Any,<:Any,<:LayoutArray}, B::SubArray{<:Any,<:Any,<:LayoutArray}) = equals_layout(A, B)
+==(A::SubArray{<:Any,<:Any,<:LayoutArray}, B::LayoutArray) = equals_layout(A, B)
+==(A::LayoutArray, B::SubArray{<:Any,<:Any,<:LayoutArray}) = equals_layout(A, B)
+==(A::SubArray{<:Any,<:Any,<:LayoutArray}, B::AbstractArray) = equals_layout(A, B)
+==(A::AbstractArray, B::SubArray{<:Any,<:Any,<:LayoutArray}) = equals_layout(A, B)
+
 
 _fill_lmul!(β, A::AbstractArray) = iszero(β) ? zero!(A) : lmul!(β, A)
 
