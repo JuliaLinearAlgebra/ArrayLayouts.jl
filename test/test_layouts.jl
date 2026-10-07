@@ -136,7 +136,7 @@ struct FooNumber <: Number end
                 subdiagonaldata(Bl) == supdiagonaldata(Adjoint(Bl)) == supdiagonaldata(Transpose(Bl)) ==
                 T.dl
 
-        @test colsupport(T,3) == rowsupport(T,3) == colsupport(S,3) == rowsupport(S,3) == 2:4
+        @test colsupport(T,3) == rowsupport(T,3) == colsupport(S,3) == rowsupport(S,3) == rowsupport(T,CartesianIndex(3,2)) == colsupport(T,CartesianIndex(2,3)) == 2:4
         @test colsupport(T,3:6) == rowsupport(T,3:6) == colsupport(S,3:6) == rowsupport(S,3:6) == 2:6
         @test colsupport(Bl,3) == rowsupport(Bu,3) == rowsupport(Adjoint(Bl),3) == 3:4
         @test rowsupport(Bl,3) == colsupport(Bu,3) == colsupport(Adjoint(Bl),3) == 2:3
