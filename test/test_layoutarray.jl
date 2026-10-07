@@ -758,6 +758,15 @@ ArrayLayouts.equals_layout(::MyEqualsLayout, _, A, B) = false
     @test v == MyEqualsVector()
     @test v != [1.,2,3]
     @test [1.,2,3] == v # falls back to generic implementation
+
+    if isdefined(SparseArrays, :ReadOnly)
+        r = SparseArrays.ReadOnly([1.,2,3])
+        w = MyVector([1.,2,3])
+        @test r == w
+        @test w == r
+        @test r == view(w, :)
+        @test view(w, :) == r
+    end
 end
 
 @testset "* for infinite layouts" begin
