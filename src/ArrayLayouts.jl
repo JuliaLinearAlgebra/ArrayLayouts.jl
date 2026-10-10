@@ -285,6 +285,13 @@ copymutable_oftype_layout(_, A, ::Type{S}) where S = copyto!(similar(A, S), A)
 Base.map(::typeof(copy), D::Diagonal{<:LayoutArray}) = Diagonal(map(copy, D.diag))
 Base.permutedims(D::Diagonal{<:Any,<:LayoutVector}) = D
 
+# slicing by unit ranges returns an OffDiagonal, as FillArrays does for a Diagonal of an AbstractFill
+Base.@propagate_inbounds function getindex(D::Diagonal{<:Any,<:Union{LayoutVector,SubArray{<:Any,1,<:LayoutVecOrMat}}},
+                                           kr::Union{AbstractUnitRange{<:Integer},Colon}, jr::Union{AbstractUnitRange{<:Integer},Colon})
+    I = (FillArrays._onebased_index(D, 1, kr), FillArrays._onebased_index(D, 2, jr))
+    FillArrays._singleband_getindex(Base.index_shape(I...), D, I...)
+end
+
 
 zero!(A) = zero!(MemoryLayout(A), A)
 zero!(_, A) = fill!(A,zero(eltype(A)))

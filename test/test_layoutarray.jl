@@ -299,6 +299,20 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
             @test permutedims(D) ≡ D
         end
 
+        @testset "Diagonal getindex returns OffDiagonal" begin
+            x = randn(5)
+            for D in (Diagonal(MyVector(x)), Diagonal(view(MyVector(x), :)), Diagonal(view(MyMatrix(reshape(x,5,1)), :, 1)))
+                for (kr,jr) in ((2:4,1:5), (1:5,2:4), (2:3,3:5), (:,2:3), (2:3,:), (:,:), (3:2,1:5))
+                    @test D[kr,jr] isa FillArrays.OffDiagonal
+                    @test D[kr,jr] == Diagonal(x)[kr,jr]
+                end
+                @test_throws BoundsError D[0:2,1:3]
+                @test_throws BoundsError D[1:3,2:6]
+            end
+            @test Diagonal(view(MyVector(x), 2:4))[1:2,2:3] isa FillArrays.OffDiagonal
+            @test Diagonal(view(MyVector(x), 2:4))[1:2,2:3] == Diagonal(x[2:4])[1:2,2:3]
+        end
+
         @testset "BroadcastStyle" begin
             A = MyMatrix2(randn(3,6))
             @test BroadcastStyle(typeof(reshape(A, (9, 2)))) == MyBroadcastStyle{2}()
