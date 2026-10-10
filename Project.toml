@@ -1,6 +1,6 @@
 name = "ArrayLayouts"
 uuid = "4c555306-a7a7-4459-81d9-ec55ddd5c99a"
-version = "1.14"
+version = "1.15"
 authors = ["Sheehan Olver <solver@mac.com>"]
 
 [deps]
@@ -16,7 +16,7 @@ ArrayLayoutsSparseArraysExt = "SparseArrays"
 
 [compat]
 Aqua = "0.8"
-FillArrays = "1.2.1"
+FillArrays = "1.18"
 Infinities = "0.1"
 JLArrays = "0.2, 0.3"
 LinearAlgebra = "1"
