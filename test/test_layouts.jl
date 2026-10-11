@@ -7,7 +7,7 @@ import ArrayLayouts: MemoryLayout, DenseRowMajor, DenseColumnMajor, StridedLayou
                         UnitUpperTriangularLayout, LowerTriangularLayout,
                         UnitLowerTriangularLayout, ScalarLayout, UnknownLayout,
                         hermitiandata, symmetricdata, FillLayout, ZerosLayout, OnesLayout,
-                        DiagonalLayout, TridiagonalLayout, SymTridiagonalLayout, colsupport, rowsupport,
+                        DiagonalLayout, OffDiagonalLayout, TridiagonalLayout, SymTridiagonalLayout, colsupport, rowsupport,
                         diagonaldata, subdiagonaldata, supdiagonaldata, BidiagonalLayout, bidiagonaluplo
 
 struct FooBar end
@@ -264,6 +264,48 @@ struct FooNumber <: Number end
 
         @test colsupport(S,3) == colsupport(H,3) == colsupport(Sc,3) == colsupport(Hc,3) == 2:4
         @test rowsupport(S,3) == rowsupport(H,3) == rowsupport(Sc,3) == rowsupport(Hc,3) == 2:4
+    end
+
+    @testset "OffDiagonal" begin
+        A = FillArrays.OffDiagonal(randn(4), 1)
+        @test MemoryLayout(A) == MemoryLayout(A') == MemoryLayout(transpose(A)) == OffDiagonalLayout{DenseColumnMajor}()
+        @test MemoryLayout(FillArrays.OffDiagonal(Fill(1.0, 4), -1)) == OffDiagonalLayout{FillLayout}()
+        @test MemoryLayout(FillArrays.OffDiagonal(1:4, -1)) == OffDiagonalLayout{UnknownLayout}()
+        @test MemoryLayout(FillArrays.OffDiagonal(randn(4) .+ im, 1)') isa UnknownLayout
+
+        @test ArrayLayouts.offdiagonaldata(A) ≡ ArrayLayouts.offdiagonaldata(A') ≡ A.band
+        @test ArrayLayouts.offdiagonalindex(A) == 1
+        @test ArrayLayouts.offdiagonalindex(A') == ArrayLayouts.offdiagonalindex(transpose(A)) == -1
+
+        @test colsupport(A, 1) == 1:0
+        @test colsupport(A, 3) == 2:2
+        @test colsupport(A, 2:4) == 1:3
+        @test rowsupport(A, 1) == 2:2
+        @test rowsupport(A, 5) == 6:5
+        @test colsupport(A', 2) == rowsupport(A, 2) == 3:3
+
+        @testset "views" begin
+            D = Diagonal(randn(5))
+            for P in (A, A', transpose(A), FillArrays.OffDiagonal(Fill(2.0, 3), -2), D, Diagonal(Fill(2.0, 5)))
+                for (kr,jr) in ((1:3,2:4), (2:5,1:2), (:,:), (:,2:3), (2:3,:), (3:2,1:4), (2:3,2:2))
+                    V = view(P, kr, jr)
+                    @test MemoryLayout(V) isa OffDiagonalLayout
+                    @test ArrayLayouts.sub_materialize(V) isa FillArrays.OffDiagonal
+                    @test ArrayLayouts.sub_materialize(V) == Matrix(P)[kr,jr]
+                    @test ArrayLayouts.offdiagonaldata(V) == ArrayLayouts.sub_materialize(V).band
+                    @test ArrayLayouts.offdiagonalindex(V) == ArrayLayouts.sub_materialize(V).k
+                    for j in axes(V,2)
+                        @test all(iszero, Matrix(V)[setdiff(axes(V,1), colsupport(V,j)), j])
+                    end
+                    for k in axes(V,1)
+                        @test all(iszero, Matrix(V)[k, setdiff(axes(V,2), rowsupport(V,k))])
+                    end
+                end
+            end
+            @test MemoryLayout(view(D, 1:3, 2:4)) == OffDiagonalLayout{DenseColumnMajor}()
+            @test MemoryLayout(view(Diagonal(Fill(2.0, 5)), 1:3, 2:4)) == OffDiagonalLayout{FillLayout}()
+            @test MemoryLayout(view(A, [1,2], 2:3)) isa UnknownLayout
+        end
     end
 
     @testset "triangular MemoryLayout" begin
