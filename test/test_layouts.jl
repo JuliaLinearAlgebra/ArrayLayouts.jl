@@ -292,6 +292,8 @@ struct FooNumber <: Number end
                     @test MemoryLayout(V) isa OffDiagonalLayout
                     @test ArrayLayouts.sub_materialize(V) isa FillArrays.OffDiagonal
                     @test ArrayLayouts.sub_materialize(V) == Matrix(P)[kr,jr]
+                    @test ArrayLayouts.offdiagonaldata(V) == ArrayLayouts.sub_materialize(V).band
+                    @test ArrayLayouts.offdiagonalindex(V) == ArrayLayouts.sub_materialize(V).k
                     for j in axes(V,2)
                         @test all(iszero, Matrix(V)[setdiff(axes(V,1), colsupport(V,j)), j])
                     end

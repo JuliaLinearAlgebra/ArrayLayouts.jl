@@ -663,14 +663,24 @@ function offdiagonalindex(V::SubArray{<:Any,2})
     _singlebandindex(MemoryLayout(P), P) + first(kr) - first(jr)
 end
 
-function sub_materialize(::OffDiagonalLayout, V::SubArray{<:Any,2}, ax::Tuple{OneTo{Int},OneTo{Int}})
+# the indices of the band of the parent that lie in V
+function _offdiagonalband_indices(V::SubArray{<:Any,2})
     kr, jr = parentindices(V)
     k = offdiagonalindex(V)
     len = max(0, k ≥ 0 ? min(length(kr), length(jr) - k) : min(length(kr) + k, length(jr)))
     # the band of the parent is indexed by min(row, col), so start from the first entry of the k-th diagonal of V
     st = min(first(kr) + max(0, -k), first(jr) + max(0, k))
+    st:st+len-1
+end
+
+function offdiagonaldata(V::SubArray{<:Any,2})
     P = parent(V)
-    OffDiagonal(_singlebanddata(MemoryLayout(P), P)[st:st+len-1], k, ax)
+    view(_singlebanddata(MemoryLayout(P), P), _offdiagonalband_indices(V))
+end
+
+function sub_materialize(::OffDiagonalLayout, V::SubArray{<:Any,2}, ax::Tuple{OneTo{Int},OneTo{Int}})
+    P = parent(V)
+    OffDiagonal(_singlebanddata(MemoryLayout(P), P)[_offdiagonalband_indices(V)], offdiagonalindex(V), ax)
 end
 
 diagonaldata(S::HermOrSym) = diagonaldata(parent(S))
