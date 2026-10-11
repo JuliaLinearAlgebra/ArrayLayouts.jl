@@ -23,7 +23,7 @@ using LinearAlgebra.BLAS: BlasComplex, BlasFloat, BlasReal
 
 const AdjointQtype{T} = LinearAlgebra.AdjointQ{T}
 
-using FillArrays: AbstractFill, axes_print_matrix_row, getindex_value
+using FillArrays: AbstractFill, OffDiagonal, axes_print_matrix_row, getindex_value
 using StaticArrays
 
 using Base: require_one_based_indexing
@@ -31,7 +31,7 @@ using Base: require_one_based_indexing
 export materialize, materialize!, MulAdd, muladd!, Ldiv, Rdiv, Lmul, Rmul, Dot,
         lmul, mul, ldiv, rdiv, mul, MemoryLayout, AbstractStridedLayout,
         DenseColumnMajor, ColumnMajor, ZerosLayout, FillLayout, AbstractColumnMajor, RowMajor, AbstractRowMajor, UnitStride,
-        DiagonalLayout, ScalarLayout, SymTridiagonalLayout, TridiagonalLayout, BidiagonalLayout,
+        DiagonalLayout, OffDiagonalLayout, ScalarLayout, SymTridiagonalLayout, TridiagonalLayout, BidiagonalLayout,
         HermitianLayout, SymmetricLayout, TriangularLayout,
         UnknownLayout, AbstractBandedLayout, ApplyBroadcastStyle, ConjLayout, AbstractFillLayout, DualLayout,
         colsupport, rowsupport, layout_getindex, AbstractQLayout, LayoutArray, LayoutMatrix, LayoutVector,
@@ -285,12 +285,7 @@ copymutable_oftype_layout(_, A, ::Type{S}) where S = copyto!(similar(A, S), A)
 Base.map(::typeof(copy), D::Diagonal{<:LayoutArray}) = Diagonal(map(copy, D.diag))
 Base.permutedims(D::Diagonal{<:Any,<:LayoutVector}) = D
 
-# slicing by unit ranges returns an OffDiagonal, as FillArrays does for a Diagonal of an AbstractFill
-Base.@propagate_inbounds function getindex(D::Diagonal{<:Any,<:Union{LayoutVector,SubArray{<:Any,1,<:LayoutVecOrMat}}},
-                                           kr::Union{AbstractUnitRange{<:Integer},Colon}, jr::Union{AbstractUnitRange{<:Integer},Colon})
-    I = (FillArrays._onebased_index(D, 1, kr), FillArrays._onebased_index(D, 2, jr))
-    FillArrays._singleband_getindex(Base.index_shape(I...), D, I...)
-end
+getindex(D::Diagonal{<:Any,<:Union{LayoutVector,SubArray{<:Any,1,<:LayoutVecOrMat}}}, kr::Union{AbstractUnitRange{<:Integer},Colon}, jr::Union{AbstractUnitRange{<:Integer},Colon}) = layout_getindex(D, kr, jr)
 
 
 zero!(A) = zero!(MemoryLayout(A), A)
