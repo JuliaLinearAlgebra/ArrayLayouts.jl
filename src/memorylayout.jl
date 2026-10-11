@@ -550,6 +550,14 @@ abstract type AbstractBandedLayout <: MemoryLayout end
 abstract type AbstractTridiagonalLayout <: AbstractBandedLayout end
 
 struct DiagonalLayout{ML} <: AbstractBandedLayout end
+"""
+    OffDiagonalLayout{ML}()
+
+is returned by `MemoryLayout(A)` if a matrix `A` is supported on a single (possibly off-) diagonal,
+as with a `FillArrays.OffDiagonal`, whose entries have layout `ML`. The entries and the index of
+the diagonal are given by `offdiagonaldata(A)` and `offdiagonalindex(A)`.
+"""
+struct OffDiagonalLayout{ML} <: AbstractBandedLayout end
 struct BidiagonalLayout{DV,EV} <: AbstractBandedLayout end
 struct SymTridiagonalLayout{DV,EV} <: AbstractTridiagonalLayout end
 struct TridiagonalLayout{DL,D,DU} <: AbstractTridiagonalLayout end
@@ -562,9 +570,11 @@ bidiagonallayout(d) = bidiagonallayout(d, d)
 tridiagonallayout(d) = tridiagonallayout(d,d,d)
 symtridiagonallayout(d) = symtridiagonallayout(d,d)
 diagonallayout(_) = DiagonalLayout{UnknownLayout}()
+offdiagonallayout(_) = OffDiagonalLayout{UnknownLayout}()
 diagonal(d::AbstractVector) = Diagonal(d) # support non-array diagonal objects like QuasiDiagonal
 
 diagonallayout(::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = DiagonalLayout{Lay}()
+offdiagonallayout(::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = OffDiagonalLayout{Lay}()
 bidiagonallayout(::Lay, ::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = BidiagonalLayout{Lay,Lay}()
 tridiagonallayout(::Lay, ::Lay, ::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = TridiagonalLayout{Lay,Lay,Lay}()
 symtridiagonallayout(::Lay, ::Lay) where Lay<:Union{AbstractStridedLayout, AbstractFillLayout} = SymTridiagonalLayout{Lay,Lay}()
@@ -574,6 +584,7 @@ MemoryLayout(D::Type{Diagonal{T,P}}) where {T,P} = diagonallayout(MemoryLayout(P
 MemoryLayout(::Type{Bidiagonal{T,V}}) where {T,V} = bidiagonallayout(MemoryLayout(V))
 MemoryLayout(::Type{SymTridiagonal{T,P}}) where {T,P} = symtridiagonallayout(MemoryLayout(P))
 MemoryLayout(::Type{Tridiagonal{T,P}}) where {T,P} = tridiagonallayout(MemoryLayout(P))
+MemoryLayout(::Type{<:OffDiagonal{T,V}}) where {T,V} = offdiagonallayout(MemoryLayout(V))
 
 bidiagonaluplo(A::Bidiagonal) = A.uplo
 bidiagonaluplo(A::AdjOrTrans) = bidiagonaluplo(parent(A)) == 'L' ? 'U' : 'L'
@@ -592,7 +603,11 @@ subdiagonaldata(D::SymTridiagonal) = D.ev
 subdiagonaldata(D::Tridiagonal) = D.dl
 supdiagonaldata(D::Tridiagonal) = D.du
 
+offdiagonaldata(A::OffDiagonal) = A.band
+offdiagonalindex(A::OffDiagonal) = A.k
+
 transposelayout(ml::DiagonalLayout) = ml
+transposelayout(ml::OffDiagonalLayout) = ml
 transposelayout(ml::BidiagonalLayout) = ml
 transposelayout(ml::SymTridiagonalLayout) = ml
 transposelayout(ml::TridiagonalLayout) = ml
@@ -614,6 +629,7 @@ subdiagonaldata(U::Union{UnitLowerTriangular,LowerTriangular}) = subdiagonaldata
 adjointlayout(::Type{<:Real}, ml::SymTridiagonalLayout) = ml
 adjointlayout(::Type{<:Real}, ::TridiagonalLayout{DL,D,DU}) where {DL,D,DU} = TridiagonalLayout{DU,D,DL}()
 adjointlayout(::Type{<:Real}, ml::BidiagonalLayout) = ml
+adjointlayout(::Type{<:Real}, ml::OffDiagonalLayout) = ml
 
 symmetriclayout(B::BidiagonalLayout{DV,EV}) where {DV,EV} = SymTridiagonalLayout{DV,EV}()
 hermitianlayout(::Type{<:Real}, B::BidiagonalLayout{DV,EV}) where {DV,EV} = SymTridiagonalLayout{DV,EV}()
@@ -626,6 +642,46 @@ supdiagonaldata(D::Transpose) = subdiagonaldata(parent(D))
 diagonaldata(D::Adjoint{<:Real}) = diagonaldata(parent(D))
 subdiagonaldata(D::Adjoint{<:Real}) = supdiagonaldata(parent(D))
 supdiagonaldata(D::Adjoint{<:Real}) = subdiagonaldata(parent(D))
+
+offdiagonaldata(D::Union{Transpose,Adjoint{<:Real}}) = offdiagonaldata(parent(D))
+offdiagonalindex(D::Union{Transpose,Adjoint{<:Real}}) = -offdiagonalindex(parent(D))
+
+# a matrix with DiagonalLayout is supported on its 0-th diagonal
+_singlebanddata(::DiagonalLayout, A) = diagonaldata(A)
+_singlebanddata(::OffDiagonalLayout, A) = offdiagonaldata(A)
+_singlebandindex(::DiagonalLayout, _) = 0
+_singlebandindex(::OffDiagonalLayout, A) = offdiagonalindex(A)
+
+# slicing by unit ranges keeps a single diagonal.
+# The index type is wider than AbstractUnitRange{Int} to avoid overwriting the sublayout(::DiagonalLayout, ...) in BandedMatrices.jl
+sublayout(::DiagonalLayout{ML}, ::Type{<:Tuple{AbstractUnitRange{<:Integer},AbstractUnitRange{<:Integer}}}) where ML = OffDiagonalLayout{ML}()
+sublayout(::OffDiagonalLayout{ML}, ::Type{<:Tuple{AbstractUnitRange{<:Integer},AbstractUnitRange{<:Integer}}}) where ML = OffDiagonalLayout{ML}()
+
+function offdiagonalindex(V::SubArray{<:Any,2})
+    kr, jr = parentindices(V)
+    P = parent(V)
+    _singlebandindex(MemoryLayout(P), P) + first(kr) - first(jr)
+end
+
+# the indices of the band of the parent that lie in V
+function _offdiagonalband_indices(V::SubArray{<:Any,2})
+    kr, jr = parentindices(V)
+    k = offdiagonalindex(V)
+    len = max(0, k ≥ 0 ? min(length(kr), length(jr) - k) : min(length(kr) + k, length(jr)))
+    # the band of the parent is indexed by min(row, col), so start from the first entry of the k-th diagonal of V
+    st = min(first(kr) + max(0, -k), first(jr) + max(0, k))
+    st:st+len-1
+end
+
+function offdiagonaldata(V::SubArray{<:Any,2})
+    P = parent(V)
+    view(_singlebanddata(MemoryLayout(P), P), _offdiagonalband_indices(V))
+end
+
+function sub_materialize(::OffDiagonalLayout, V::SubArray{<:Any,2}, ax::Tuple{OneTo{Int},OneTo{Int}})
+    P = parent(V)
+    OffDiagonal(_singlebanddata(MemoryLayout(P), P)[_offdiagonalband_indices(V)], offdiagonalindex(V), ax)
+end
 
 diagonaldata(S::HermOrSym) = diagonaldata(parent(S))
 subdiagonaldata(S::HermOrSym) = symmetricuplo(S) == 'L' ? subdiagonaldata(parent(S)) : supdiagonaldata(parent(S))
@@ -685,6 +741,17 @@ end
 
 rowsupport(::DiagonalLayout, _, k) = k
 colsupport(::DiagonalLayout, _, j) = j
+
+function colsupport(::OffDiagonalLayout, A, j)
+    isempty(j) && return 1:0
+    k = offdiagonalindex(A)
+    max(minimum(j)-k,1):min(size(A,1),maximum(j)-k)
+end
+function rowsupport(::OffDiagonalLayout, A, j)
+    isempty(j) && return 1:0
+    k = offdiagonalindex(A)
+    max(minimum(j)+k,1):min(size(A,2),maximum(j)+k)
+end
 
 function colsupport(::BidiagonalLayout, A, j)
     isempty(j) && return 1:0
