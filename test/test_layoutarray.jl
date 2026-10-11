@@ -466,6 +466,14 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
         @test [Array(a) A A] == [Array(a) Array(A) Array(A)]
         @test [a A A] == [Array(a) Array(A) Array(A)]
         @test [a Array(A) A] == [Array(a) Array(A) Array(A)]
+
+        @test [2; a] == [2; Array(a)]
+        @test [2; 3; a] == [2; 3; Array(a)]
+        @test [2; a; a] == [2; Array(a); Array(a)]
+        @test [2.0; view(A,:,1)] == [2.0; A[:,1]]
+        r = MyMatrix(randn(1,5))
+        @test [2 r] == [2 Array(r)]
+        @test [2 3 r] == [2 3 Array(r)]
     end
 
     @testset "dot" begin

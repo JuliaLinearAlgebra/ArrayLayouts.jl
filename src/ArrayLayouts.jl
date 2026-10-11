@@ -430,10 +430,16 @@ include("hash.jl")
 
 
 
-typed_hcat(::Type{T}, ::Tuple, A...) where T = Base._typed_hcat(T, A)
-typed_vcat(::Type{T}, ::Tuple, A...) where T = Base._typed_vcat(T, A)
+typed_hcat(::Type{T}, ::Tuple, A...) where T = _default_typed_hcat(T, A)
+typed_vcat(::Type{T}, ::Tuple, A...) where T = _default_typed_vcat(T, A)
 typed_hcat(::Type{T}, A...) where T = typed_hcat(T, (size(A[1],1), sum(size.(A,2))), A...)
 typed_vcat(::Type{T}, A...) where T = typed_vcat(T, (sum(size.(A,1)),size(A[1],2)), A...)
+
+# Base._typed_hcat/_typed_vcat only support arrays so fall back to generic concatenation when scalars are present
+_default_typed_hcat(::Type{T}, A::Tuple{Vararg{AbstractVecOrMat}}) where T = Base._typed_hcat(T, A)
+_default_typed_vcat(::Type{T}, A::Tuple{Vararg{AbstractVecOrMat}}) where T = Base._typed_vcat(T, A)
+_default_typed_hcat(::Type{T}, A::Tuple) where T = Base._cat_t(Val(2), T, A...)
+_default_typed_vcat(::Type{T}, A::Tuple) where T = Base._cat_t(Val(1), T, A...)
 
 Base.typed_vcat(::Type{T}, A::LayoutVecOrMats, B::AbstractVecOrMat...) where T = typed_vcat(T, A, B...)
 Base.typed_hcat(::Type{T}, A::LayoutVecOrMats, B::AbstractVecOrMat...) where T = typed_hcat(T, A, B...)
@@ -441,6 +447,10 @@ Base.typed_vcat(::Type{T}, A::LayoutVecOrMats, B::LayoutVecOrMats, C::AbstractVe
 Base.typed_hcat(::Type{T}, A::LayoutVecOrMats, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_hcat(T, A, B, C...)
 Base.typed_vcat(::Type{T}, A::AbstractVecOrMat, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_vcat(T, A, B, C...)
 Base.typed_hcat(::Type{T}, A::AbstractVecOrMat, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_hcat(T, A, B, C...)
+Base.typed_vcat(::Type{T}, A::Number, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_vcat(T, A, B, C...)
+Base.typed_hcat(::Type{T}, A::Number, B::LayoutVecOrMats, C::AbstractVecOrMat...) where T = typed_hcat(T, A, B, C...)
+Base.typed_vcat(::Type{T}, A::Number, B::Number, C::LayoutVecOrMats, D::AbstractVecOrMat...) where T = typed_vcat(T, A, B, C, D...)
+Base.typed_hcat(::Type{T}, A::Number, B::Number, C::LayoutVecOrMats, D::AbstractVecOrMat...) where T = typed_hcat(T, A, B, C, D...)
 
 ###
 # reshapedarray for layoutarrays
