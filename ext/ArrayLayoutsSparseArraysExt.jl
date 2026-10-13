@@ -6,6 +6,7 @@ using SparseArrays
 # Specifying the full namespace is necessary because of https://github.com/JuliaLang/julia/issues/48533
 # See https://github.com/JuliaStats/LogExpFunctions.jl/pull/63
 import ArrayLayouts.LinearAlgebra
+using ArrayLayouts.LinearAlgebra: Adjoint, Transpose, Symmetric, Hermitian, Diagonal, UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriangular
 
 import Base: copyto!, ==
 
@@ -22,6 +23,22 @@ copyto!(dest::SubArray{<:Any,2,<:LayoutMatrix}, src::SparseArrays.AbstractSparse
 @inline LinearAlgebra.dot(a::SparseArrays.SparseVectorUnion{<:Number}, b::LayoutArray{<:Number}) =
 	ArrayLayouts.dot(a,b)
 
+
+# ambiguity between \ for sparse matrices and the layout overloads of \ (see @layoutldiv).
+# SparseArrays' solvers need strided right-hand sides, so convert to Array.
+# Symmetric/Hermitian are included since CHOLMOD does not support ldiv! with other arrays.
+const LayoutLdivRHS = Any[:LayoutVector, :LayoutMatrix]
+for Tri in (:UpperTriangular, :UnitUpperTriangular, :LowerTriangular, :UnitLowerTriangular),
+		Par in (:(LayoutMatrix{T}), :(SubArray{T,2,<:LayoutMatrix{T}}), :(Adjoint{T,<:LayoutMatrix{T}}), :(Transpose{T,<:LayoutMatrix{T}}))
+	push!(LayoutLdivRHS, :($Tri{T,<:$Par} where T))
+end
+for Sp in (:(SparseArrays.AbstractSparseMatrixCSC),
+			:(Adjoint{<:Any,<:SparseArrays.AbstractSparseMatrixCSC}), :(Transpose{<:Any,<:SparseArrays.AbstractSparseMatrixCSC}),
+			:(Symmetric{<:Any,<:SparseArrays.AbstractSparseMatrixCSC}), :(Hermitian{<:Any,<:SparseArrays.AbstractSparseMatrixCSC})),
+		Typ in LayoutLdivRHS
+	@eval Base.:\(A::$Sp, B::$Typ) = A \ convert(Array, B)
+	Typ === :LayoutVector && @eval Base.:\(A::$Sp, B::Diagonal{<:Any,<:LayoutVector}) = A \ Diagonal(convert(Array, B.diag))
+end
 
 # ambiguity from SparseArrays.ReadOnly
 if isdefined(SparseArrays, :ReadOnly)

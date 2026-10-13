@@ -619,6 +619,18 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
             copyto!(view(M, :, :), S)
             @test S == M2
         end
+        @testset "ldiv" begin
+            S = sparse([4.0 1 0; 1 4 1; 0 1 4])
+            b = [1.0, 2, 3]
+            X = [1.0 2 0; 2 3 1; 3 4 2]
+            for A in (S, S', transpose(S), Symmetric(S), Hermitian(S), Symmetric(S, :L))
+                for B in (MyVector(b), MyMatrix(X), Diagonal(MyVector(b)),
+                          UpperTriangular(MyMatrix(X)), UnitLowerTriangular(view(MyMatrix(X), :, :)),
+                          LowerTriangular(MyMatrix(X)'), UnitUpperTriangular(transpose(MyMatrix(X))))
+                    @test A \ B ≈ Matrix(A) \ Array(B)
+                end
+            end
+        end
     end
 
     @testset "mul! with subarrays" begin
