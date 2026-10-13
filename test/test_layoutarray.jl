@@ -313,37 +313,6 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
             @test Diagonal(view(MyVector(x), 2:4))[1:2,2:3] == Diagonal(x[2:4])[1:2,2:3]
         end
 
-        @testset "OffDiagonal mul" begin
-            for O in (FillArrays.OffDiagonal(randn(4), 1), FillArrays.OffDiagonal(randn(3), -2),
-                      FillArrays.OffDiagonal(randn(3), 2, 3, 5), FillArrays.OffDiagonal(randn(2), -1, 3, 2),
-                      FillArrays.OffDiagonal(Fill(2.0, 3), 0, 3, 4), FillArrays.OffDiagonal(Float64[], 4, 2, 3),
-                      view(FillArrays.OffDiagonal(randn(5), 1), 2:4, 1:6), view(Diagonal(randn(5)), 1:3, 2:5))
-                m, n = size(O)
-                Om = Matrix(O)
-                b, B, C = randn(n), randn(n, 3), randn(2, m)
-                @test ArrayLayouts.mulreduce(Mul(O, B)) isa ArrayLayouts.Lmul
-                @test ArrayLayouts.mulreduce(Mul(C, O)) isa ArrayLayouts.Rmul
-                @test ArrayLayouts.mul(O, b) ≈ Om * b
-                @test ArrayLayouts.mul(O, B) ≈ Om * B
-                @test ArrayLayouts.mul(C, O) ≈ C * Om
-                @test ArrayLayouts.mul(b', O') ≈ b' * Om'
-                @test O * MyVector(b) ≈ Om * b
-                @test O * MyMatrix(B) ≈ Om * B
-                @test MyMatrix(C) * O ≈ C * Om
-                @test transpose(MyVector(randn(m))) * O isa Transpose
-                # mixing with other structured matrices
-                Dm, Dn = Diagonal(randn(m)), Diagonal(randn(n))
-                Um, Un = UpperTriangular(randn(m,m)), UpperTriangular(randn(n,n))
-                @test ArrayLayouts.mul(Dm, O) ≈ Dm * Om
-                @test ArrayLayouts.mul(O, Dn) ≈ Om * Dn
-                @test ArrayLayouts.mul(Um, O) ≈ Um * Om
-                @test ArrayLayouts.mul(O, Un) ≈ Om * Un
-                O2 = FillArrays.OffDiagonal(randn(max(0,n-1)), 1, n, n)
-                @test ArrayLayouts.mul(O, O2) ≈ Om * Matrix(O2)
-            end
-            @test_throws DimensionMismatch copyto!(zeros(2,2), ArrayLayouts.Lmul(FillArrays.OffDiagonal(randn(2), 1), randn(3,3)))
-        end
-
         @testset "BroadcastStyle" begin
             A = MyMatrix2(randn(3,6))
             @test BroadcastStyle(typeof(reshape(A, (9, 2)))) == MyBroadcastStyle{2}()
