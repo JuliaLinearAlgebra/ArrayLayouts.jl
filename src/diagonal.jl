@@ -19,6 +19,45 @@ copy(M::Lmul{<:DiagonalLayout,<:DiagonalLayout}) = diagonal(diagonaldata(M.A) .*
 copy(M::Lmul{<:DiagonalLayout}) = diagonaldata(M.A) .* M.B
 copy(M::Rmul{<:Any,<:DiagonalLayout}) = M.A .* permutedims(diagonaldata(M.B))
 
+###
+# OffDiagonal multiplication shifts and rescales rows (Lmul) or columns (Rmul)
+###
+
+mulreduce(M::Mul{<:OffDiagonalLayout}) = Lmul(M)
+mulreduce(M::Mul{<:Any,<:OffDiagonalLayout}) = Rmul(M)
+mulreduce(M::Mul{<:OffDiagonalLayout,<:OffDiagonalLayout}) = Lmul(M)
+# other structured matrices already have Lmul/Rmul implementations
+mulreduce(M::Mul{<:DiagonalLayout,<:OffDiagonalLayout}) = Lmul(M)
+mulreduce(M::Mul{<:OffDiagonalLayout,<:DiagonalLayout}) = Rmul(M)
+mulreduce(M::Mul{<:TriangularLayout,<:OffDiagonalLayout}) = Lmul(M)
+mulreduce(M::Mul{<:OffDiagonalLayout,<:TriangularLayout}) = Rmul(M)
+
+# The entries of the band of an OffDiagonal A lie in rows _offdiagonalrows(A) and columns _offdiagonalcols(A)
+_offdiagonalrows(A) = max(0, -offdiagonalindex(A)) .+ axes(offdiagonaldata(A),1)
+_offdiagonalcols(A) = max(0, offdiagonalindex(A)) .+ axes(offdiagonaldata(A),1)
+
+_rowsview(B::AbstractVector, kr) = view(B, kr)
+_rowsview(B::AbstractMatrix, kr) = view(B, kr, :)
+
+function copyto!(dest::AbstractArray, M::Lmul{<:OffDiagonalLayout})
+    A, B = M.A, M.B
+    axes(dest) == axes(M) || throw(DimensionMismatch(LazyString("destination axes ", axes(dest), " do not match ", axes(M))))
+    zero!(dest)
+    _rowsview(dest, _offdiagonalrows(A)) .= offdiagonaldata(A) .* _rowsview(B, _offdiagonalcols(A))
+    dest
+end
+
+function copyto!(dest::AbstractArray, M::Rmul{<:Any,<:OffDiagonalLayout})
+    A, B = M.A, M.B
+    axes(dest) == axes(M) || throw(DimensionMismatch(LazyString("destination axes ", axes(dest), " do not match ", axes(M))))
+    zero!(dest)
+    view(dest, :, _offdiagonalcols(B)) .= view(A, :, _offdiagonalrows(B)) .* permutedims(offdiagonaldata(B))
+    dest
+end
+
+copy(M::Lmul{<:OffDiagonalLayout}) = copyto!(similar(M), M)
+copy(M::Rmul{<:Any,<:OffDiagonalLayout}) = copyto!(similar(M), M)
+
 
 dualadjoint(_) = adjoint
 dualadjoint(::Transpose) = transpose
@@ -26,6 +65,11 @@ dualadjoint(V::SubArray) = dualadjoint(parent(V))
 function copy(M::Rmul{<:DualLayout,<:DiagonalLayout})
     adj = dualadjoint(M.A)
     adj(adj(M.B) * adj(M.A))
+end
+# keep row vectors as row vectors
+function copy(M::Rmul{<:DualLayout,<:OffDiagonalLayout})
+    adj = dualadjoint(M.A)
+    adj(mul(adj(M.B), adj(M.A)))
 end
 
 
