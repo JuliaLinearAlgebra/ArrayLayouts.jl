@@ -329,6 +329,16 @@ equals_layout(A, B) = equals_layout(MemoryLayout(A), MemoryLayout(B), A, B)
 ==(A::SubArray{<:Any,<:Any,<:LayoutArray}, B::AbstractArray) = equals_layout(A, B)
 ==(A::AbstractArray, B::SubArray{<:Any,<:Any,<:LayoutArray}) = equals_layout(A, B)
 
+"""
+    sparse_layout(layout, A)
+
+Layout-aware hook for `SparseArrays.sparse(A)`, called with `layout = MemoryLayout(A)`.
+Overload this to specialise conversion to a sparse array on memory layouts. The default
+(defined in the SparseArrays extension) uses `colsupport` to deduce the sparsity pattern.
+"""
+function sparse_layout end
+sparse_layout(A) = sparse_layout(MemoryLayout(A), A)
+
 
 _fill_lmul!(β, A::AbstractArray) = iszero(β) ? zero!(A) : lmul!(β, A)
 

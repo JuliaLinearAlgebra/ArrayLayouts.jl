@@ -834,6 +834,56 @@ ArrayLayouts.equals_layout(::MyEqualsLayout, _, A, B) = false
     end
 end
 
+struct MySparseLayout <: MemoryLayout end
+struct MyBidiagonalMatrix <: LayoutMatrix{Float64} end
+Base.size(::MyBidiagonalMatrix) = (4,4)
+Base.getindex(::MyBidiagonalMatrix, k::Int, j::Int) = k == j ? Float64(k) : k+1 == j ? 1.0 : error("outside colsupport")
+MemoryLayout(::Type{MyBidiagonalMatrix}) = MySparseLayout()
+ArrayLayouts.colsupport(::MySparseLayout, A, j) = max(1,minimum(j)-1):min(size(A,1),maximum(j))
+struct MyZeroVector <: LayoutVector{Float64} end
+Base.size(::MyZeroVector) = (3,)
+Base.getindex(::MyZeroVector, k::Int) = error("outside colsupport")
+MemoryLayout(::Type{MyZeroVector}) = ZerosLayout()
+struct MySparseOverloadLayout <: MemoryLayout end
+struct MySparseOverloadVector <: LayoutVector{Float64} end
+Base.size(::MySparseOverloadVector) = (3,)
+Base.getindex(::MySparseOverloadVector, k::Int) = Float64(k)
+MemoryLayout(::Type{MySparseOverloadVector}) = MySparseOverloadLayout()
+ArrayLayouts.sparse_layout(::MySparseOverloadLayout, a) = sparsevec([2], [-1.0], 3)
+
+@testset "sparse" begin
+    A = [1.0 0 2; 0 3 4; 5 0 0]
+    M = MyMatrix(A)
+    for B in (M, view(M, 1:2, 2:3), M', transpose(M), Symmetric(M), Hermitian(M, :L),
+              UpperTriangular(M), UnitLowerTriangular(M), LowerTriangular(M'), UpperTriangular(view(M, :, :)))
+        S = sparse(B)
+        @test S isa SparseMatrixCSC{Float64,Int}
+        @test S == B
+        @test nnz(S) == count(!iszero, B)
+    end
+    v = MyVector([1.0, 0, 2])
+    for b in (v, view(v, 2:3), view(M, :, 2))
+        s = sparse(b)
+        @test s isa SparseVector{Float64,Int}
+        @test s == b
+        @test nnz(s) == count(!iszero, b)
+    end
+    D = sparse(Diagonal(v))
+    @test D isa SparseMatrixCSC{Float64,Int}
+    @test D == Diagonal([1.0, 0, 2])
+    @test nnz(D) == 2
+    @test sparse(v') == v'
+
+    B = MyBidiagonalMatrix()
+    S = sparse(B)
+    @test S == Bidiagonal([1.0:4;], ones(3), :U)
+    @test nnz(S) == 7
+    s = sparse(MyZeroVector())
+    @test s == zeros(3)
+    @test nnz(s) == 0
+    @test sparse(MySparseOverloadVector()) == [0, -1.0, 0]
+end
+
 @testset "* for infinite layouts" begin
     tup = InfSymTridiagonal(), InfTridiagonal(), InfBidiagonal('U'),
         InfBidiagonal('L'),

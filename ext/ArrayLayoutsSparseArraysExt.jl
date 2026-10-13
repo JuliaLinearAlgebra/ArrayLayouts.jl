@@ -1,14 +1,62 @@
 module ArrayLayoutsSparseArraysExt
 
 using ArrayLayouts
-using ArrayLayouts: copyto!_layout, equals_layout
+using ArrayLayouts: copyto!_layout, equals_layout, sparse_layout, LayoutVecOrMat, UpperOrLowerTriangular
 using SparseArrays
 # Specifying the full namespace is necessary because of https://github.com/JuliaLang/julia/issues/48533
 # See https://github.com/JuliaStats/LogExpFunctions.jl/pull/63
 import ArrayLayouts.LinearAlgebra
-using ArrayLayouts.LinearAlgebra: Adjoint, Transpose, Symmetric, Hermitian, Diagonal, UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriangular
+using ArrayLayouts.LinearAlgebra: Adjoint, Transpose, Symmetric, Hermitian, Diagonal, UpperTriangular, UnitUpperTriangular, LowerTriangular, UnitLowerTriangular,
+								AdjOrTrans, HermOrSym
 
 import Base: copyto!, ==
+
+# use colsupport to deduce the sparsity pattern
+ArrayLayouts.sparse_layout(_, A) = sparse_colsupport(A)
+
+function sparse_colsupport(A::AbstractMatrix{T}) where T
+	Base.require_one_based_indexing(A)
+	m, n = size(A)
+	colptr = Vector{Int}(undef, n+1)
+	rowval = Int[]
+	nzval = T[]
+	colptr[1] = 1
+	for j = 1:n
+		for k in colsupport(A, j)
+			v = A[k, j]
+			if !iszero(v)
+				push!(rowval, k)
+				push!(nzval, v)
+			end
+		end
+		colptr[j+1] = length(rowval) + 1
+	end
+	SparseMatrixCSC(m, n, colptr, rowval, nzval)
+end
+
+function sparse_colsupport(a::AbstractVector{T}) where T
+	Base.require_one_based_indexing(a)
+	nzind = Int[]
+	nzval = T[]
+	for k in colsupport(a, 1)
+		v = a[k]
+		if !iszero(v)
+			push!(nzind, k)
+			push!(nzval, v)
+		end
+	end
+	SparseVector(length(a), nzind, nzval)
+end
+
+const LayoutSparseVectors = Union{LayoutVector, SubArray{<:Any,1,<:LayoutArray}}
+const LayoutSparseMatrixParents = Union{LayoutMatrix, SubArray{<:Any,2,<:LayoutArray}, AdjOrTrans{<:Any,<:LayoutVecOrMat}}
+const LayoutSparseMatrices = Union{LayoutSparseMatrixParents,
+									HermOrSym{<:Any,<:LayoutMatrix},
+									UpperOrLowerTriangular{<:Any,<:LayoutSparseMatrixParents},
+									Diagonal{<:Any,<:LayoutVector}}
+
+SparseArrays.sparse(a::LayoutSparseVectors) = sparse_layout(a)
+SparseArrays.sparse(A::LayoutSparseMatrices) = sparse_layout(A)
 
 # ambiguity from sparsematrix.jl
 copyto!(dest::LayoutMatrix, src::SparseArrays.AbstractSparseMatrixCSC) =
