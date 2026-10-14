@@ -910,4 +910,22 @@ end
     @test transpose(lv) * F == transpose(v) * F
 end
 
+@testset "DualLayout matrix parent" begin
+    # a 1×n matrix with DualLayout that is not itself an adjoint vector
+    a = randn(5)
+    for (M, f) in ((MyMatrix(a'), adjoint), (MyMatrix(transpose(a)), transpose),
+                   (MyMatrix((a .+ im)'), adjoint), (MyMatrix(transpose(a .+ im)), transpose))
+        @test MemoryLayout(M) isa DualLayout
+        V = view(M, :, 1:3)
+        @test MemoryLayout(V) isa DualLayout
+        @test M[:,1:3] == f(f(M)[1:3])
+        # avoid linear indexing into a matrix, which reshapes
+        @test !(parent(ArrayLayouts._dual_adjoint(V)) isa Base.ReshapedArray)
+        @test !(parent(ArrayLayouts._dual_transpose(V)) isa Base.ReshapedArray)
+    end
+    # linear indexing into an infinite matrix is not supported, so must avoid reshape
+    M = MyMatrix(InfiniteArrays.InfVec()')
+    @test M[:,1:3] == M.A[:,1:3]
+end
+
 end
