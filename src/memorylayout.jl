@@ -299,8 +299,12 @@ sublayout(::DualLayout{ML}, INDS::Type) where ML = sublayout(ML(), INDS)
 
 # try to maintain "type" of parent ie adjoint/transpose when materialising, even though layouts are equivalent
 # to preserve special overloads
-_dual_adjoint(a::SubArray{<:Any, 2, <:Any, <:Tuple{Slice,Any}}) = view(parent(a)', parentindices(a)[2])
-_dual_transpose(a::SubArray{<:Any, 2, <:Any, <:Tuple{Slice,Any}}) = view(transpose(parent(a)), parentindices(a)[2])
+# parent may be a 1×n matrix with DualLayout (e.g. a wrapper around an adjoint vector), in which case
+# we take a column view of its adjoint rather than linear indexing (which would reshape)
+_dual_view(v::AbstractVector, jr) = view(v, jr)
+_dual_view(A::AbstractMatrix, jr) = view(A, jr, only(axes(A,2)))
+_dual_adjoint(a::SubArray{<:Any, 2, <:Any, <:Tuple{Slice,Any}}) = _dual_view(parent(a)', parentindices(a)[2])
+_dual_transpose(a::SubArray{<:Any, 2, <:Any, <:Tuple{Slice,Any}}) = _dual_view(transpose(parent(a)), parentindices(a)[2])
 sub_materialize(::DualLayout{ML}, A::AbstractMatrix{<:Real}) where ML = sub_materialize(adjointlayout(eltype(A), ML()), _dual_adjoint(A))'
 sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML<:ConjLayout = sub_materialize(adjointlayout(eltype(A), ML()), _dual_adjoint(A))'
 sub_materialize(::DualLayout{ML}, A::AbstractMatrix) where ML = transpose(sub_materialize(transposelayout(ML()), _dual_transpose(A)))
