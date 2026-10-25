@@ -99,6 +99,9 @@ Random.seed!(0)
             @test ArrayLayouts.Mul(X, reshape(c,2,1))[1,1] == X[1] + 2X[2]
             v = reshape([[1.0, 2.0], [3.0, 4.0]], 1, 2)
             @test ArrayLayouts.Mul(v, c)[1] == [7.0, 10.0]
+            # eltypes with zero(T) should not need any entries
+            S = Matrix{SVector{2,Float64}}(undef, 1, 0)
+            @test ArrayLayouts.Mul(S, Float64[])[1] === zero(SVector{2,Float64})
         end
 
         @testset "Diagonal Fill" begin
