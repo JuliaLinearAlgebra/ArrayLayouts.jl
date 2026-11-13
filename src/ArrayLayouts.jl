@@ -223,6 +223,16 @@ end
 *(A::Diagonal{<:Any,<:LayoutVector}, B::Diagonal) = mul(A, B)
 *(A::Diagonal, B::Diagonal{<:Any,<:LayoutVector}) = mul(A, B)
 
+# FillArrays returns an OffDiagonal for products of a Diagonal and an OffDiagonal (FillArrays.jl#465).
+# These methods resolve the ambiguity with the methods above, and fall back to mul for versions of FillArrays without it.
+@static if isdefined(FillArrays, :_offdiagonal_mul)
+    *(A::Diagonal{<:Number,<:LayoutVector}, B::OffDiagonal) = FillArrays._offdiagonal_mul(A, B)
+    *(A::OffDiagonal, B::Diagonal{<:Number,<:LayoutVector}) = FillArrays._offdiagonal_mul(A, B)
+else
+    *(A::Diagonal{<:Number,<:LayoutVector}, B::OffDiagonal) = mul(A, B)
+    *(A::OffDiagonal, B::Diagonal{<:Number,<:LayoutVector}) = mul(A, B)
+end
+
 for Mod in (:Adjoint, :Transpose, :Symmetric, :Hermitian)
     @eval begin
         *(A::Diagonal{<:Any,<:LayoutVector}, B::$Mod{<:Any,<:LayoutMatrix}) = mul(A,B)

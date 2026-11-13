@@ -340,6 +340,16 @@ BroadcastStyle(::Type{<:MyVector2{T}}) where {T} = MyBroadcastStyle{1}()
                 @test ArrayLayouts.mul(O, Un) ≈ Om * Un
                 O2 = FillArrays.OffDiagonal(randn(max(0,n-1)), 1, n, n)
                 @test ArrayLayouts.mul(O, O2) ≈ Om * Matrix(O2)
+                if O isa FillArrays.OffDiagonal
+                    # products with a Diagonal of a LayoutVector are not ambiguous
+                    dm, dn = randn(m), randn(n)
+                    @test Diagonal(MyVector(dm)) * O ≈ Diagonal(dm) * Om
+                    @test O * Diagonal(MyVector(dn)) ≈ Om * Diagonal(dn)
+                    if isdefined(FillArrays, :_offdiagonal_mul)
+                        @test Diagonal(MyVector(dm)) * O isa FillArrays.OffDiagonal
+                        @test O * Diagonal(MyVector(dn)) isa FillArrays.OffDiagonal
+                    end
+                end
             end
             @test_throws DimensionMismatch copyto!(zeros(2,2), ArrayLayouts.Lmul(FillArrays.OffDiagonal(randn(2), 1), randn(3,3)))
         end
